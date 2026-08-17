@@ -29,6 +29,18 @@ export type ReopenRuntimeGroupResponse =
   operations['reopenRuntimeGroup']['responses'][200]['content']['application/json']
 export type ReleaseQuery = NonNullable<operations['listReleases']['parameters']['query']>
 export type RuntimeDiffQuery = NonNullable<operations['getRuntimeDiff']['parameters']['query']>
+export type WebhookDestination = components['schemas']['WebhookDestination']
+export type DestinationWithSecret = components['schemas']['DestinationWithSecret']
+export type CreateWebhookDestination = components['schemas']['CreateWebhookDestination']
+export type UpdateWebhookDestination = components['schemas']['UpdateWebhookDestination']
+export type DeliverySummary = components['schemas']['DeliverySummary']
+export type DeliveryPage = components['schemas']['DeliveryPage']
+export type DeliveryAttempt = components['schemas']['DeliveryAttempt']
+export type DeliveryDetail = components['schemas']['DeliveryDetail']
+export type NotificationHealth = components['schemas']['NotificationHealth']
+export type DeliveryQuery = NonNullable<
+  operations['listNotificationDeliveries']['parameters']['query']
+>
 
 // Compile-time contract fixtures for the OpenAPI shapes used by the MVP.
 export const contractFixture = {
@@ -36,7 +48,7 @@ export const contractFixture = {
     service_version: '0.1.0',
     git_commit: 'unknown',
     api_version: 'v1',
-    required_database_migration: 6,
+    required_database_migration: 7,
   } satisfies BuildInfo,
   nullableProjectArchive: null satisfies Project['archived_at'],
   nullableApplicationObservation: null satisfies Application['latest_observed_at'],
@@ -72,4 +84,5 @@ export const contractFixture = {
     limit: 50,
   } satisfies RuntimeDiffQuery,
   dynamicJson: { nested: true } satisfies RuntimeGroup['semantic_summary'],
+  deliveryQuery: { cursor: 'cursor', limit: 50 } satisfies DeliveryQuery,
 }

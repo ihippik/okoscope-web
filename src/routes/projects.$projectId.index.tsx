@@ -48,6 +48,15 @@ function ProjectPage() {
           )}
         </div>
       </Card>
+      <nav aria-label="Project sections">
+        <Link
+          to="/projects/$projectId/notifications"
+          params={{ projectId }}
+          className="nav-link border border-slate-700"
+        >
+          Notifications
+        </Link>
+      </nav>
       <ApplicationList projectId={projectId} />
     </div>
   )

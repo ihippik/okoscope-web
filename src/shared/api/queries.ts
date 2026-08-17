@@ -7,6 +7,10 @@ import type {
   Organization,
   Project,
   ProjectPage,
+  DeliveryDetail,
+  DeliveryPage,
+  NotificationHealth,
+  WebhookDestination,
 } from './types'
 
 const withCursor = (path: string, cursor: string | null) =>
@@ -20,6 +24,16 @@ export const queryKeys = {
   applications: (projectId: string) => ['projects', projectId, 'applications'] as const,
   application: (projectId: string, applicationId: string) =>
     ['projects', projectId, 'applications', applicationId] as const,
+  notificationHealth: (projectId: string) =>
+    ['projects', projectId, 'notification-health'] as const,
+  destinations: (projectId: string) => ['projects', projectId, 'destinations'] as const,
+  destination: (projectId: string, destinationId: string) =>
+    ['projects', projectId, 'destinations', destinationId] as const,
+  deliveries: (projectId: string) => ['projects', projectId, 'deliveries'] as const,
+  deliveryPage: (projectId: string, cursor: string | null) =>
+    ['projects', projectId, 'deliveries', { cursor }] as const,
+  delivery: (projectId: string, deliveryId: string) =>
+    ['projects', projectId, 'deliveries', deliveryId] as const,
 }
 
 export const buildInfoOptions = (api: ApiClient) =>
@@ -67,4 +81,62 @@ export const applicationsOptions = (api: ApiClient, projectId: string) =>
         { protected: true },
       ),
     getNextPageParam: (page) => page.next_cursor ?? undefined,
+  })
+
+export const destinationsOptions = (api: ApiClient, projectId: string) =>
+  queryOptions({
+    queryKey: queryKeys.destinations(projectId),
+    queryFn: () =>
+      api.get<WebhookDestination[]>(
+        `/api/v1/projects/${encodeURIComponent(projectId)}/webhook-destinations`,
+        { protected: true },
+      ),
+  })
+
+export const destinationOptions = (api: ApiClient, projectId: string, destinationId: string) =>
+  queryOptions({
+    queryKey: queryKeys.destination(projectId, destinationId),
+    queryFn: () =>
+      api.get<WebhookDestination>(
+        `/api/v1/projects/${encodeURIComponent(projectId)}/webhook-destinations/${encodeURIComponent(destinationId)}`,
+        { protected: true },
+      ),
+  })
+
+export const deliveriesOptions = (api: ApiClient, projectId: string, cursor: string | null) =>
+  queryOptions({
+    queryKey: queryKeys.deliveryPage(projectId, cursor),
+    queryFn: () =>
+      api.get<DeliveryPage>(
+        withCursor(
+          `/api/v1/projects/${encodeURIComponent(projectId)}/notification-deliveries`,
+          cursor,
+        ),
+        { protected: true },
+      ),
+  })
+
+export const deliveryOptions = (api: ApiClient, projectId: string, deliveryId: string) =>
+  queryOptions({
+    queryKey: queryKeys.delivery(projectId, deliveryId),
+    queryFn: () =>
+      api.get<DeliveryDetail>(
+        `/api/v1/projects/${encodeURIComponent(projectId)}/notification-deliveries/${encodeURIComponent(deliveryId)}`,
+        { protected: true },
+      ),
+  })
+
+export const getHealthPollingInterval = (state: NotificationHealth['state'] | undefined): number =>
+  state && ['backlogged', 'retrying', 'failing', 'draining'].includes(state) ? 3_000 : 10_000
+
+export const notificationHealthOptions = (api: ApiClient, projectId: string) =>
+  queryOptions({
+    queryKey: queryKeys.notificationHealth(projectId),
+    queryFn: () =>
+      api.get<NotificationHealth>(
+        `/api/v1/projects/${encodeURIComponent(projectId)}/notification-health`,
+        { protected: true },
+      ),
+    refetchInterval: (query) => getHealthPollingInterval(query.state.data?.state),
+    refetchIntervalInBackground: false,
   })

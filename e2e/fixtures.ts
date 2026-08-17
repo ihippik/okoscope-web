@@ -89,6 +89,50 @@ const json = (route: Route, body: unknown, status = 200, requestId = 'e2e-reques
 
 export async function mockApi(page: Page) {
   let groupStatus: 'open' | 'acknowledged' | 'resolved' = 'open'
+  const destination = {
+    id: '00000000-0000-4000-8000-000000000010',
+    project_id: project.id,
+    name: 'Operations',
+    url: 'https://receiver.example/hooks',
+    enabled: true,
+    deliver_backfill: false,
+    revision: 1,
+    created_at: '2026-08-17T12:00:00Z',
+    updated_at: '2026-08-17T12:00:00Z',
+    disabled_at: null as string | null,
+  }
+  const delivery = {
+    id: '00000000-0000-4000-8000-000000000011',
+    project_id: project.id,
+    destination_id: destination.id,
+    outbox_message_id: null,
+    origin: 'test',
+    source: 'operator',
+    event_name: 'notification.test',
+    semantic_metadata: {
+      application_id: application.id,
+      group_id: group.id,
+      event_kind: 'notification.test',
+    },
+    destination: { id: destination.id, name: destination.name, enabled: true },
+    status: 'pending',
+    available_at: '2026-08-17T12:00:00Z',
+    next_attempt_at: '2026-08-17T12:05:00Z',
+    recovery_generation: 0,
+    attempt_count: 1,
+    total_attempt_count: 1,
+    max_attempts: 5,
+    last_error_class: null,
+    terminal_reason: null,
+    created_at: '2026-08-17T12:00:00Z',
+    updated_at: '2026-08-17T12:00:01Z',
+    terminal_at: null,
+    retry_allowed: false,
+    cancel_allowed: true,
+    last_recovery_operation_id: null,
+  }
+  let destinations: (typeof destination)[] = []
+  let deliveries: (typeof delivery)[] = []
   await page.route('**/api/v1/**', async (route) => {
     const url = new URL(route.request().url())
     const path = url.pathname
@@ -97,7 +141,7 @@ export async function mockApi(page: Page) {
         service_version: '0.1.0',
         git_commit: 'abcdef',
         api_version: 'v1',
-        required_database_migration: 6,
+        required_database_migration: 7,
       })
     if (!route.request().headers().authorization)
       return json(
@@ -109,6 +153,65 @@ export async function mockApi(page: Page) {
     if (path === '/api/v1/organization') return json(route, organization)
     if (path === '/api/v1/projects') return json(route, { items: [project], next_cursor: null })
     if (path === `/api/v1/projects/${project.id}`) return json(route, project)
+    if (path === `/api/v1/projects/${project.id}/notification-health`)
+      return json(route, {
+        state: 'idle',
+        delivery_enabled: true,
+        enabled_destination_count: destinations.length,
+        pending_count: 0,
+        due_count: 0,
+        retrying_count: 0,
+        in_flight_count: 0,
+        expired_lease_count: 0,
+        failed_count: 0,
+        oldest_due_age_seconds: null,
+        observed_at: '2026-08-17T20:00:00Z',
+      })
+    const destinationBase = `/api/v1/projects/${project.id}/webhook-destinations`
+    if (path === destinationBase && route.request().method() === 'GET')
+      return json(route, destinations)
+    if (path === destinationBase && route.request().method() === 'POST') {
+      destinations = [destination]
+      return json(route, { ...destination, secret: 'one-time-signing-secret' }, 201)
+    }
+    if (path === `${destinationBase}/${destination.id}` && route.request().method() === 'GET')
+      return json(route, destinations[0] ?? destination)
+    if (path === `${destinationBase}/${destination.id}` && route.request().method() === 'PATCH')
+      return json(route, {
+        ...destination,
+        ...(route.request().postDataJSON() as object),
+        revision: 2,
+      })
+    if (path === `${destinationBase}/${destination.id}/test`) {
+      deliveries = [delivery]
+      return json(route, delivery)
+    }
+    if (path === `${destinationBase}/${destination.id}/rotate-secret`)
+      return json(route, { ...destination, secret: 'rotated-one-time-secret' })
+    if (path === `${destinationBase}/${destination.id}/disable`) {
+      destinations = [{ ...destination, enabled: false, disabled_at: '2026-08-17T13:00:00Z' }]
+      return json(route, destinations[0])
+    }
+    const deliveryBase = `/api/v1/projects/${project.id}/notification-deliveries`
+    if (path === deliveryBase) return json(route, { items: deliveries, next_cursor: null })
+    if (path === `${deliveryBase}/${delivery.id}`)
+      return json(route, {
+        ...delivery,
+        attempts: [
+          {
+            id: '00000000-0000-4000-8000-000000000012',
+            recovery_generation: 0,
+            attempt_number: 1,
+            started_at: '2026-08-17T12:00:00Z',
+            finished_at: '2026-08-17T12:00:01Z',
+            duration_ms: 1000,
+            outcome: 'retry',
+            http_status: 503,
+            error_class: null,
+            response_excerpt: 'must not render',
+          },
+        ],
+      })
     if (path === `/api/v1/projects/${project.id}/applications`)
       return json(route, { items: [application], next_cursor: null })
     if (path === `/api/v1/projects/${project.id}/applications/${application.id}`)
@@ -168,7 +271,7 @@ export async function mockApi(page: Page) {
       'missing-id',
     )
   })
-  return { organization, project, application, group, releases }
+  return { organization, project, application, group, releases, destination, delivery }
 }
 
 export async function authenticate(page: Page) {

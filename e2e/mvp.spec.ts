@@ -71,7 +71,7 @@ test('shows correlated API errors and clears a rejected credential', async ({ pa
           service_version: '0.1.0',
           git_commit: 'abc',
           api_version: 'v1',
-          required_database_migration: 6,
+          required_database_migration: 7,
         }),
       })
     return route.fulfill({

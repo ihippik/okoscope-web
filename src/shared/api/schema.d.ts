@@ -384,6 +384,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/notification-deliveries/bulk-retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["bulkRetryNotificationDeliveries"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/notification-health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        get: operations["getNotificationHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/notification-deliveries/{delivery_id}": {
         parameters: {
             query?: never;
@@ -395,6 +431,81 @@ export interface paths {
             cookie?: never;
         };
         get: operations["getNotificationDelivery"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/notification-deliveries/{delivery_id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                delivery_id: components["parameters"]["DeliveryId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["retryNotificationDelivery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/notification-deliveries/{delivery_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                delivery_id: components["parameters"]["DeliveryId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cancelNotificationDelivery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/notification-recovery-operations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        get: operations["listNotificationRecoveryOperations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/notification-recovery-operations/{operation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                operation_id: components["parameters"]["OperationId"];
+            };
+            cookie?: never;
+        };
+        get: operations["getNotificationRecoveryOperation"];
         put?: never;
         post?: never;
         delete?: never;
@@ -424,7 +535,7 @@ export interface components {
             api_version: "v1";
             /**
              * Format: int64
-             * @example 6
+             * @example 7
              */
             required_database_migration: number;
         };
@@ -609,23 +720,49 @@ export interface components {
             origin: string;
             source: string;
             event_name: string;
-            status: string;
+            semantic_metadata: components["schemas"]["NullableDeliverySemanticMetadata"];
+            destination: components["schemas"]["SafeDestination"];
+            /** @enum {string} */
+            status: "pending" | "in_flight" | "succeeded" | "failed" | "suppressed" | "cancelled";
             available_at: components["schemas"]["Timestamp"];
+            next_attempt_at: components["schemas"]["NullableTimestamp"];
+            /** Format: int32 */
+            recovery_generation: number;
             /** Format: int32 */
             attempt_count: number;
+            /** Format: int64 */
+            total_attempt_count: number;
             /** Format: int32 */
             max_attempts: number;
             last_error_class: string | null;
+            terminal_reason: string | null;
             created_at: components["schemas"]["Timestamp"];
             updated_at: components["schemas"]["Timestamp"];
             terminal_at: components["schemas"]["NullableTimestamp"];
+            retry_allowed: boolean;
+            cancel_allowed: boolean;
+            last_recovery_operation_id: components["schemas"]["NullableUuid"];
         };
+        /** @description Destination identity and operational state without URL, credentials, or signing material. */
+        SafeDestination: {
+            id: components["schemas"]["Uuid"];
+            name: string;
+            enabled: boolean;
+        };
+        DeliverySemanticMetadata: {
+            application_id: components["schemas"]["NullableUuid"];
+            group_id: components["schemas"]["NullableUuid"];
+            event_kind: string | null;
+        };
+        NullableDeliverySemanticMetadata: components["schemas"]["DeliverySemanticMetadata"] | null;
         DeliveryPage: {
             items: components["schemas"]["DeliverySummary"][];
             next_cursor: components["schemas"]["NullableUuid"];
         };
         DeliveryAttempt: {
             id: components["schemas"]["Uuid"];
+            /** Format: int32 */
+            recovery_generation: number;
             /** Format: int32 */
             attempt_number: number;
             started_at: components["schemas"]["Timestamp"];
@@ -640,6 +777,110 @@ export interface components {
         };
         DeliveryDetail: components["schemas"]["DeliverySummary"] & {
             attempts: components["schemas"]["DeliveryAttempt"][];
+        };
+        NotificationHealth: {
+            /** @enum {string} */
+            state: "disabled" | "idle" | "backlogged" | "retrying" | "failing" | "draining";
+            delivery_enabled: boolean;
+            /** Format: int64 */
+            enabled_destination_count: number;
+            /** Format: int64 */
+            pending_count: number;
+            /** Format: int64 */
+            due_count: number;
+            /** Format: int64 */
+            retrying_count: number;
+            /** Format: int64 */
+            in_flight_count: number;
+            /** Format: int64 */
+            expired_lease_count: number;
+            /** Format: int64 */
+            failed_count: number;
+            /** Format: int64 */
+            oldest_due_age_seconds: number | null;
+            observed_at: components["schemas"]["Timestamp"];
+        };
+        /** @enum {string} */
+        RecoveryCommandType: "retry" | "cancel" | "bulk_retry";
+        /** @enum {string} */
+        RecoveryConflictCode: "invalid_state" | "active_lease" | "destination_disabled" | "idempotency_key_reused" | "bulk_limit_exceeded";
+        BulkRetryFilter: {
+            destination_id?: components["schemas"]["Uuid"];
+            failed_before?: components["schemas"]["Timestamp"];
+            failed_after?: components["schemas"]["Timestamp"];
+            error_class?: string;
+            /**
+             * Format: int64
+             * @default 50
+             */
+            limit: number;
+        };
+        DeliveryRecoveryResult: {
+            operation_id: components["schemas"]["Uuid"];
+            delivery_id: components["schemas"]["Uuid"];
+            /** @enum {string} */
+            status: "pending" | "cancelled";
+            /** Format: int32 */
+            recovery_generation: number;
+            /** Format: int32 */
+            current_attempt_count: number;
+            /** Format: int64 */
+            total_attempt_count: number;
+            replayed: boolean;
+            completed_at: components["schemas"]["Timestamp"];
+        };
+        BulkRecoveryResult: {
+            operation_id: components["schemas"]["Uuid"];
+            /** Format: int32 */
+            selected_count: number;
+            /** Format: int32 */
+            retried_count: number;
+            /** Format: int32 */
+            skipped_count: number;
+            /** Format: int32 */
+            remaining_count: number;
+            has_more: boolean;
+            replayed: boolean;
+            completed_at: components["schemas"]["Timestamp"];
+        };
+        RecoveryOperationSummary: {
+            id: components["schemas"]["Uuid"];
+            project_id: components["schemas"]["Uuid"];
+            command_type: components["schemas"]["RecoveryCommandType"];
+            target_delivery_id: components["schemas"]["NullableUuid"];
+            /** @enum {string} */
+            actor_kind: "api_credential";
+            actor_id: components["schemas"]["Uuid"];
+            request_id: string;
+            /** @enum {string} */
+            outcome: "completed" | "conflict";
+            /** Format: int32 */
+            selected_count: number;
+            /** Format: int32 */
+            retried_count: number;
+            /** Format: int32 */
+            cancelled_count: number;
+            /** Format: int32 */
+            skipped_count: number;
+            /** Format: int32 */
+            remaining_count: number;
+            created_at: components["schemas"]["Timestamp"];
+            completed_at: components["schemas"]["Timestamp"];
+        };
+        RecoveryOperationDelivery: {
+            delivery_id: components["schemas"]["Uuid"];
+            /** Format: int32 */
+            recovery_generation: number;
+            /** @enum {string} */
+            action: "retried" | "cancelled" | "skipped";
+            created_at: components["schemas"]["Timestamp"];
+        };
+        RecoveryOperationPage: {
+            items: components["schemas"]["RecoveryOperationSummary"][];
+            next_cursor: components["schemas"]["NullableUuid"];
+        };
+        RecoveryOperationDetail: components["schemas"]["RecoveryOperationSummary"] & {
+            affected_deliveries: components["schemas"]["RecoveryOperationDelivery"][];
         };
         /** Format: uuid */
         Uuid: string;
@@ -844,6 +1085,56 @@ export interface components {
                 "application/json": components["schemas"]["DeliveryDetail"];
             };
         };
+        /** @description Secret-free Project notification health snapshot */
+        NotificationHealth: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["NotificationHealth"];
+            };
+        };
+        /** @description Idempotent single-delivery recovery result */
+        DeliveryRecoveryResult: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["DeliveryRecoveryResult"];
+            };
+        };
+        /** @description Bounded bulk retry result */
+        BulkRecoveryResult: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["BulkRecoveryResult"];
+            };
+        };
+        /** @description Recovery operation page */
+        RecoveryOperationPage: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["RecoveryOperationPage"];
+            };
+        };
+        /** @description Recovery operation detail */
+        RecoveryOperationDetail: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["RecoveryOperationDetail"];
+            };
+        };
         /** @description Correlated API error */
         Error: {
             headers: {
@@ -866,6 +1157,8 @@ export interface components {
         TargetId: string;
         DestinationId: string;
         DeliveryId: string;
+        OperationId: string;
+        IdempotencyKey: string;
     };
     requestBodies: {
         CreateRelease: {
@@ -881,6 +1174,11 @@ export interface components {
         UpdateWebhookDestination: {
             content: {
                 "application/json": components["schemas"]["UpdateWebhookDestination"];
+            };
+        };
+        BulkRetryFilter: {
+            content: {
+                "application/json": components["schemas"]["BulkRetryFilter"];
             };
         };
     };
@@ -1285,6 +1583,43 @@ export interface operations {
             200: components["responses"]["DeliveryPage"];
         };
     };
+    bulkRetryNotificationDeliveries: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["BulkRetryFilter"];
+        responses: {
+            200: components["responses"]["BulkRecoveryResult"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    getNotificationHealth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["NotificationHealth"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
     getNotificationDelivery: {
         parameters: {
             query?: never;
@@ -1298,6 +1633,82 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["DeliveryDetail"];
+        };
+    };
+    retryNotificationDelivery: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                delivery_id: components["parameters"]["DeliveryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["DeliveryRecoveryResult"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    cancelNotificationDelivery: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                delivery_id: components["parameters"]["DeliveryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["DeliveryRecoveryResult"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    listNotificationRecoveryOperations: {
+        parameters: {
+            query?: {
+                command_type?: components["schemas"]["RecoveryCommandType"];
+                /** @description Opaque cursor scoped to the authenticated collection. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["RecoveryOperationPage"];
+        };
+    };
+    getNotificationRecoveryOperation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                operation_id: components["parameters"]["OperationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["RecoveryOperationDetail"];
         };
     };
 }

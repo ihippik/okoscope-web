@@ -18,6 +18,9 @@ export function ErrorState({
       <p className="mt-2 text-sm text-slate-300">
         {detail?.message ?? 'An unexpected error occurred.'}
       </p>
+      {detail?.kind === 'api' && (
+        <p className="mt-2 text-xs text-slate-400">Error code: {detail.code}</p>
+      )}
       {detail?.requestId && (
         <p className="mt-3 font-mono text-xs text-slate-400">
           Request ID:{' '}

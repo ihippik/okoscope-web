@@ -43,18 +43,26 @@ export class ApiClient {
 
   async post<T>(
     path: string,
-    options: { protected?: boolean; signal?: AbortSignal } = {},
+    options: { protected?: boolean; signal?: AbortSignal; body?: unknown } = {},
   ): Promise<T> {
     return this.request<T>('POST', path, options)
   }
 
-  private async request<T>(
-    method: 'GET' | 'POST',
+  async patch<T>(
     path: string,
-    options: { protected?: boolean; signal?: AbortSignal },
+    options: { protected?: boolean; signal?: AbortSignal; body: unknown },
+  ): Promise<T> {
+    return this.request<T>('PATCH', path, options)
+  }
+
+  private async request<T>(
+    method: 'GET' | 'POST' | 'PATCH',
+    path: string,
+    options: { protected?: boolean; signal?: AbortSignal; body?: unknown },
   ): Promise<T> {
     const requestId = crypto.randomUUID()
     const headers = new Headers({ Accept: 'application/json', 'X-Request-Id': requestId })
+    if (options.body !== undefined) headers.set('Content-Type', 'application/json')
     if (options.protected) {
       const credential = credentialSession.get()
       if (credential) headers.set('Authorization', `Bearer ${credential}`)
@@ -64,6 +72,7 @@ export class ApiClient {
       response = await fetch(`${this.config.apiBaseUrl}${path}`, {
         method,
         headers,
+        ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
         ...(options.signal ? { signal: options.signal } : {}),
       })
     } catch {

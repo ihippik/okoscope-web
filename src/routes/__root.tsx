@@ -10,7 +10,7 @@ import { ErrorState } from '../shared/ui/error-state'
 import { Loading } from '../shared/ui/loading'
 
 export const REQUIRED_API_VERSION = 'v1'
-export const REQUIRED_DATABASE_MIGRATION = 6
+export const REQUIRED_DATABASE_MIGRATION = 7
 export const isBuildCompatible = (info: unknown): boolean => {
   if (!info || typeof info !== 'object') return false
   const value = info as { api_version?: unknown; required_database_migration?: unknown }
