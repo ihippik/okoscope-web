@@ -31,6 +31,20 @@ describe('ApiClient', () => {
     expect(JSON.stringify(fetchMock.mock.calls)).not.toContain('credential=')
   })
 
+  it('sends lifecycle mutations as protected POST requests', async () => {
+    credentialSession.set('token')
+    const fetchMock = vi.fn().mockResolvedValue(response({ status: 'acknowledged' }))
+    vi.stubGlobal('fetch', fetchMock)
+    const api = new ApiClient({ apiBaseUrl: 'https://api.example' }, vi.fn())
+    await api.post('/api/v1/runtime-groups/group/acknowledge', { protected: true })
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.example/api/v1/runtime-groups/group/acknowledge',
+      expect.objectContaining({ method: 'POST' }),
+    )
+    const headers = fetchMock.mock.calls[0]?.[1]?.headers as Headers
+    expect(headers.get('authorization')).toBe('Bearer token')
+  })
+
   it('prefers response header request ID and clears on 401', async () => {
     credentialSession.set('bad')
     const unauthorized = vi.fn()

@@ -13,7 +13,19 @@ test('explores runtime groups and release diff with history and deep links', asy
   await expect(page).toHaveURL(/namespace=production/)
   await page.getByRole('link', { name: 'process.exec' }).click()
   await expect(page.getByRole('heading', { name: 'Representative event' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Occurrences' })).toBeVisible()
   await expect(page.getByText('node-1').first()).toBeVisible()
+  await expect(page.getByText('Pending', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Acknowledge' }).click()
+  await expect(page.getByRole('button', { name: 'Reopen' })).toBeVisible()
+  await page.getByRole('button', { name: 'Resolve' }).click()
+  await expect(page.getByRole('alertdialog')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeFocused()
+  await page.getByRole('button', { name: 'Confirm resolve' }).click()
+  await expect(page.getByRole('button', { name: 'Reopen' })).toBeVisible()
+  await page.getByRole('button', { name: 'Reopen' }).click()
+  await expect(page.getByRole('button', { name: 'Acknowledge' })).toBeVisible()
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   await page.goBack()
   await expect(page).toHaveURL(/namespace=production/)
   await page
@@ -41,6 +53,26 @@ test('observability routes are keyboard accessible at a narrow viewport and axe-
   await page.keyboard.press('Tab')
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   await expect(page.getByRole('heading', { name: 'Runtime Groups' })).toBeVisible()
+})
+
+test('restores all first-seen filters and cursor through detail navigation', async ({ page }) => {
+  const { project, application } = await mockApi(page)
+  const search = new URLSearchParams({
+    event_kind: 'process.exec',
+    status: 'acknowledged',
+    release_id: 'release',
+    first_seen_from: '2026-08-16T00:00:00Z',
+    first_seen_to: '2026-08-18T00:00:00Z',
+    last_seen_to: '2026-08-18T12:00:00Z',
+    cursor: 'opaque-cursor',
+  })
+  await page.goto(`/projects/${project.id}/applications/${application.id}/runtime-groups?${search}`)
+  await authenticate(page)
+  await page.getByRole('link', { name: 'process.exec' }).click()
+  await page.goBack()
+  await expect(page).toHaveURL(/status=acknowledged/)
+  await expect(page).toHaveURL(/cursor=opaque-cursor/)
+  await expect(page).toHaveURL(/first_seen_from=/)
 })
 
 test('withholds runtime group data on route ownership mismatch', async ({ page }) => {

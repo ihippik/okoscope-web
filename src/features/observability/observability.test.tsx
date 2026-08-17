@@ -1,13 +1,22 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { QueryClient } from '@tanstack/react-query'
 import {
   JsonDetailsViewer,
   RuntimeDiffClassificationBadge,
   RuntimeGroupStatusBadge,
+  NotificationSummary,
+  OccurrenceTimeline,
+  getNotificationPresentation,
+  validLifecycleActions,
   isRecentlyFirstSeen,
 } from './components'
-import { observabilityKeys } from './queries'
+import {
+  invalidateRuntimeGroupLifecycle,
+  observabilityKeys,
+  runtimeGroupOccurrencesPath,
+} from './queries'
 import {
   changeBaseline,
   changeRuntimeGroupFilters,
@@ -25,9 +34,20 @@ describe('observability URL state', () => {
         event_kind: ' exec ',
         status: 'closed',
         since: 'nope',
+        first_seen_from: '2026-08-17T00:00:00Z',
+        first_seen_to: 'bad',
+        last_seen_to: '2026-08-18T00:00:00Z',
+        release_id: ' release ',
         cursor: '',
       }),
-    ).toEqual({ event_kind: 'exec' })
+    ).toEqual({
+      event_kind: 'exec',
+      first_seen_from: '2026-08-17T00:00:00Z',
+      last_seen_to: '2026-08-18T00:00:00Z',
+      release_id: 'release',
+    })
+    for (const status of ['open', 'acknowledged', 'resolved'] as const)
+      expect(parseRuntimeGroupSearch({ status })).toEqual({ status })
     expect(parseReleaseSearch({ cursor: ' next ' })).toEqual({ cursor: 'next' })
     expect(parseRuntimeDiffSearch({ baseline: 'base', cursor: 'next' })).toEqual({
       baseline: 'base',
@@ -58,6 +78,9 @@ describe('observability query keys', () => {
     expect(observabilityKeys.runtimeGroup('p', 'a', 'g')).not.toEqual(
       observabilityKeys.runtimeGroup('p', 'a', 'g2'),
     )
+    expect(observabilityKeys.occurrences('p', 'a', 'g', 'one')).not.toEqual(
+      observabilityKeys.occurrences('p', 'a', 'g', 'two'),
+    )
     expect(observabilityKeys.releases('p', 'a', { cursor: 'one' })).not.toEqual(
       observabilityKeys.releases('p', 'a', { cursor: 'two' }),
     )
@@ -66,6 +89,27 @@ describe('observability query keys', () => {
     ).not.toEqual(
       observabilityKeys.runtimeDiff('p', 'a', 'target', { baseline: 'b2', cursor: 'c' }),
     )
+  })
+  it('builds one bounded occurrence page request', () => {
+    expect(runtimeGroupOccurrencesPath('group/id', 'opaque cursor')).toBe(
+      '/api/v1/runtime-groups/group%2Fid/occurrences?cursor=opaque+cursor&limit=25',
+    )
+  })
+  it('invalidates detail and every scoped list after lifecycle updates', async () => {
+    const client = new QueryClient()
+    const detail = observabilityKeys.runtimeGroup('p', 'a', 'g')
+    const listOne = observabilityKeys.runtimeGroups('p', 'a', { status: 'open' })
+    const listTwo = observabilityKeys.runtimeGroups('p', 'a', { cursor: 'next' })
+    const other = observabilityKeys.runtimeGroups('p2', 'a2', {})
+    client.setQueryData(detail, {})
+    client.setQueryData(listOne, {})
+    client.setQueryData(listTwo, {})
+    client.setQueryData(other, {})
+    await invalidateRuntimeGroupLifecycle(client, 'p', 'a', 'g')
+    expect(client.getQueryState(detail)?.isInvalidated).toBe(true)
+    expect(client.getQueryState(listOne)?.isInvalidated).toBe(true)
+    expect(client.getQueryState(listTwo)?.isInvalidated).toBe(true)
+    expect(client.getQueryState(other)?.isInvalidated).toBe(false)
   })
 })
 
@@ -89,6 +133,81 @@ describe('observability presentation', () => {
     expect(isRecentlyFirstSeen('2026-08-15T00:00:00Z', Date.parse('2026-08-17T12:00:00Z'))).toBe(
       false,
     )
+    expect(isRecentlyFirstSeen('invalid', Date.parse('2026-08-17T12:00:00Z'))).toBe(false)
+    expect(isRecentlyFirstSeen('2026-08-18T00:00:00Z', Date.parse('2026-08-17T12:00:00Z'))).toBe(
+      false,
+    )
+  })
+  it('maps lifecycle actions without exposing invalid transitions', () => {
+    expect(validLifecycleActions('open')).toEqual(['acknowledge', 'resolve'])
+    expect(validLifecycleActions('acknowledged')).toEqual(['resolve', 'reopen'])
+    expect(validLifecycleActions('resolved')).toEqual(['reopen'])
+    expect(validLifecycleActions('unknown')).toEqual([])
+  })
+  it('explains every notification state independently of severity', () => {
+    const states = [
+      'pending',
+      'not_configured',
+      'delivering',
+      'delivered',
+      'terminally_failed',
+      'backfill_suppressed',
+    ] as const
+    for (const state of states) {
+      const copy = getNotificationPresentation(state)
+      expect(copy.label).toBeTruthy()
+      expect(copy.description).toBeTruthy()
+    }
+    expect(getNotificationPresentation('pending').description).toContain('has not completed')
+    expect(getNotificationPresentation('not_configured').description).toContain(
+      'webhook destination',
+    )
+    render(
+      <NotificationSummary
+        notification={{
+          state: 'terminally_failed',
+          delivery_count: 2,
+          succeeded_count: 0,
+          failed_count: 2,
+        }}
+      />,
+    )
+    expect(screen.getByText('Delivery failed')).toBeInTheDocument()
+    expect(screen.queryByText(/severity|risk/i)).not.toBeInTheDocument()
+  })
+  it('renders only notification summary fields and neutral occurrence fallbacks', () => {
+    const notification = {
+      state: 'delivered' as const,
+      delivery_count: 1,
+      succeeded_count: 1,
+      failed_count: 0,
+      signing_secret: 'must-not-render',
+    }
+    render(
+      <>
+        <NotificationSummary notification={notification} />
+        <OccurrenceTimeline
+          occurrences={[
+            {
+              id: 'occurrence',
+              event_id: 'event',
+              observed_at: '2026-08-17T12:00:00Z',
+              node_name: '',
+              namespace: '',
+              pod_name: '',
+              container_name: '',
+              process_command: '',
+              event_kind: 'exec',
+              payload: {},
+              release_id: null,
+              release_version: null,
+            },
+          ]}
+        />
+      </>,
+    )
+    expect(screen.queryByText('must-not-render')).not.toBeInTheDocument()
+    expect(screen.getAllByText('Unavailable')).toHaveLength(6)
   })
   it('renders markup literally, bounds nesting, and copies original JSON', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined)

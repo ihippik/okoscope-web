@@ -12,3 +12,15 @@
 | Cursor pagination without duplicate items                                               | query implementation plus Playwright pagination journey                       |
 | Keyboard semantics, focus, labels, and document titles                                  | component semantics plus Playwright and axe checks                            |
 | Immutable runtime-configured image, health, cache policy, SPA fallback, invalid startup | `scripts/container-smoke.sh`                                                  |
+| Migration 6 compatibility and first-seen contract operations                            | `root-compatibility.test.ts`, compile-time fixtures, `npm run api:check`      |
+| Runtime Group filters, first-seen detail, notification state, and bounded occurrences   | observability unit/component tests and Playwright first-seen journey          |
+| Acknowledge, resolve confirmation, reopen, and cache invalidation                       | lifecycle component/integration coverage and Playwright first-seen journey    |
+
+## Production first-seen smoke fixture
+
+Use these identifiers only for manual production verification against `https://okoscope.com/api`:
+
+- Application: Payment API
+- Project ID: `018f4f9c-3f9a-7de1-8000-000000000001`
+- Application ID: `018f4f9c-3f9a-7de1-8000-000000000002`
+- Runtime Group (`busybox`): `a2a69436-f722-48bf-acdd-436a0d678c7c` (at least three occurrences)

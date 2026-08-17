@@ -70,6 +70,7 @@ function RuntimeGroupsPage() {
           groups={groups.data.items}
           projectId={projectId}
           applicationId={applicationId}
+          search={search}
         />
       ) : (
         <EmptyState
@@ -132,13 +133,52 @@ function Filters({
         <select
           name="status"
           value={search.status ?? ''}
-          onChange={(e) => apply({ status: e.target.value === 'open' ? 'open' : undefined })}
+          onChange={(e) => {
+            const value = e.target.value
+            apply({
+              status:
+                value === 'open' || value === 'acknowledged' || value === 'resolved'
+                  ? value
+                  : undefined,
+            })
+          }}
           className="mt-1 w-full rounded border border-slate-700 bg-slate-950 p-2"
         >
           <option value="">Any</option>
           <option value="open">Open</option>
+          <option value="acknowledged">Acknowledged</option>
+          <option value="resolved">Resolved</option>
         </select>
       </label>
+      <label className="text-sm">
+        Release ID
+        <input
+          name="release_id"
+          value={search.release_id ?? ''}
+          onChange={(e) => apply({ release_id: e.target.value.trim() || undefined })}
+          className="mt-1 w-full rounded border border-slate-700 bg-slate-950 p-2"
+        />
+      </label>
+      {(
+        [
+          ['first_seen_from', 'First seen from'],
+          ['first_seen_to', 'First seen to'],
+          ['last_seen_to', 'Last seen to'],
+        ] as const
+      ).map(([key, label]) => (
+        <label key={key} className="text-sm">
+          {label}
+          <input
+            name={key}
+            type="datetime-local"
+            value={search[key]?.slice(0, 16) ?? ''}
+            onChange={(e) =>
+              apply({ [key]: e.target.value ? new Date(e.target.value).toISOString() : undefined })
+            }
+            className="mt-1 w-full rounded border border-slate-700 bg-slate-950 p-2"
+          />
+        </label>
+      ))}
       <label className="text-sm">
         Observed since
         <input

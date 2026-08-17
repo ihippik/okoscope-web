@@ -1,7 +1,9 @@
-import { queryOptions } from '@tanstack/react-query'
+import { queryOptions, type QueryClient } from '@tanstack/react-query'
 import type { ApiClient } from '../../shared/api/client'
 import type {
   ReleasePage,
+  OccurrencePage,
+  RuntimeGroup,
   RuntimeDiff,
   RuntimeGroupDetail,
   RuntimeGroupPage,
@@ -24,10 +26,21 @@ const normalized = <T extends object>(value: T) =>
   )
 
 export const observabilityKeys = {
+  runtimeGroupsScope: (projectId: string, applicationId: string) =>
+    ['runtime-groups', projectId, applicationId] as const,
   runtimeGroups: (projectId: string, applicationId: string, search: RuntimeGroupSearch) =>
     ['runtime-groups', projectId, applicationId, normalized(search)] as const,
   runtimeGroup: (projectId: string, applicationId: string, groupId: string) =>
     ['runtime-group', projectId, applicationId, groupId] as const,
+  occurrences: (projectId: string, applicationId: string, groupId: string, cursor?: string) =>
+    [
+      'runtime-group-occurrences',
+      projectId,
+      applicationId,
+      groupId,
+      cursor ?? null,
+      OCCURRENCE_PAGE_SIZE,
+    ] as const,
   releases: (projectId: string, applicationId: string, search: ReleaseSearch) =>
     ['releases', projectId, applicationId, normalized(search)] as const,
   runtimeDiff: (
@@ -45,6 +58,9 @@ export const observabilityKeys = {
       search.cursor ?? null,
     ] as const,
 }
+export const OCCURRENCE_PAGE_SIZE = 25
+export const runtimeGroupOccurrencesPath = (groupId: string, cursor?: string) =>
+  `/api/v1/runtime-groups/${encodeURIComponent(groupId)}/occurrences${params({ cursor, limit: OCCURRENCE_PAGE_SIZE })}`
 export const runtimeGroupsOptions = (
   api: ApiClient,
   projectId: string,
@@ -72,6 +88,43 @@ export const runtimeGroupOptions = (
         protected: true,
       }),
   })
+export const runtimeGroupOccurrencesOptions = (
+  api: ApiClient,
+  projectId: string,
+  applicationId: string,
+  groupId: string,
+  cursor?: string,
+) =>
+  queryOptions({
+    queryKey: observabilityKeys.occurrences(projectId, applicationId, groupId, cursor),
+    queryFn: () =>
+      api.get<OccurrencePage>(runtimeGroupOccurrencesPath(groupId, cursor), { protected: true }),
+  })
+
+export type RuntimeGroupLifecycleAction = 'acknowledge' | 'resolve' | 'reopen'
+export const runRuntimeGroupLifecycle = (
+  api: ApiClient,
+  groupId: string,
+  action: RuntimeGroupLifecycleAction,
+) =>
+  api.post<RuntimeGroup>(`/api/v1/runtime-groups/${encodeURIComponent(groupId)}/${action}`, {
+    protected: true,
+  })
+
+export const invalidateRuntimeGroupLifecycle = (
+  queryClient: QueryClient,
+  projectId: string,
+  applicationId: string,
+  groupId: string,
+) =>
+  Promise.all([
+    queryClient.invalidateQueries({
+      queryKey: observabilityKeys.runtimeGroup(projectId, applicationId, groupId),
+    }),
+    queryClient.invalidateQueries({
+      queryKey: observabilityKeys.runtimeGroupsScope(projectId, applicationId),
+    }),
+  ])
 export const releasesOptions = (
   api: ApiClient,
   projectId: string,

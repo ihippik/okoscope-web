@@ -38,6 +38,21 @@ export class ApiClient {
     path: string,
     options: { protected?: boolean; signal?: AbortSignal } = {},
   ): Promise<T> {
+    return this.request<T>('GET', path, options)
+  }
+
+  async post<T>(
+    path: string,
+    options: { protected?: boolean; signal?: AbortSignal } = {},
+  ): Promise<T> {
+    return this.request<T>('POST', path, options)
+  }
+
+  private async request<T>(
+    method: 'GET' | 'POST',
+    path: string,
+    options: { protected?: boolean; signal?: AbortSignal },
+  ): Promise<T> {
     const requestId = crypto.randomUUID()
     const headers = new Headers({ Accept: 'application/json', 'X-Request-Id': requestId })
     if (options.protected) {
@@ -47,6 +62,7 @@ export class ApiClient {
     let response: Response
     try {
       response = await fetch(`${this.config.apiBaseUrl}${path}`, {
+        method,
         headers,
         ...(options.signal ? { signal: options.signal } : {}),
       })

@@ -4,18 +4,80 @@ import { useState } from 'react'
 import type React from 'react'
 import type {
   EventOccurrence,
+  FirstSeenNotificationSummary,
   Release,
   RuntimeDiffEntry,
   RuntimeGroup,
 } from '../../shared/api/types'
+import type { RuntimeGroupSearch } from './url-state'
 import { Button } from '../../shared/ui/button'
 import { Card } from '../../shared/ui/card'
 import { ErrorState } from '../../shared/ui/error-state'
 import { formatCount, formatTimestamp } from '../tenant/format'
 
 export const RECENT_WINDOW_MS = 24 * 60 * 60 * 1000
-export const isRecentlyFirstSeen = (value: string, now = Date.now()) =>
-  now - Date.parse(value) <= RECENT_WINDOW_MS
+export const isRecentlyFirstSeen = (value: string, now = Date.now()) => {
+  const observed = Date.parse(value)
+  return Number.isFinite(observed) && observed <= now && now - observed <= RECENT_WINDOW_MS
+}
+
+export type RuntimeGroupLifecycleAction = 'acknowledge' | 'resolve' | 'reopen'
+export const validLifecycleActions = (status: string): RuntimeGroupLifecycleAction[] => {
+  if (status === 'open') return ['acknowledge', 'resolve']
+  if (status === 'acknowledged') return ['resolve', 'reopen']
+  if (status === 'resolved') return ['reopen']
+  return []
+}
+
+const notificationCopy: Record<
+  FirstSeenNotificationSummary['state'],
+  { label: string; description: string }
+> = {
+  pending: {
+    label: 'Pending',
+    description:
+      'Delivery has not completed. If the delivery worker is disabled, it will remain pending.',
+  },
+  not_configured: {
+    label: 'Not configured',
+    description: 'No webhook destination is configured for this project.',
+  },
+  delivering: { label: 'Delivering', description: 'Delivery is currently in progress.' },
+  delivered: { label: 'Delivered', description: 'The first-seen notification was delivered.' },
+  terminally_failed: {
+    label: 'Delivery failed',
+    description: 'Delivery stopped after a terminal failure.',
+  },
+  backfill_suppressed: {
+    label: 'Backfill suppressed',
+    description: 'Notification was intentionally suppressed for backfilled data.',
+  },
+}
+export const getNotificationPresentation = (state: FirstSeenNotificationSummary['state']) =>
+  notificationCopy[state]
+
+export function NotificationSummary({
+  notification,
+}: {
+  notification: FirstSeenNotificationSummary
+}) {
+  const copy = getNotificationPresentation(notification.state)
+  return (
+    <Card>
+      <h2 className="text-xl font-semibold">First-seen notification</h2>
+      <p className="mt-3 font-semibold">{copy.label}</p>
+      <p className="mt-1 text-sm text-slate-400">{copy.description}</p>
+      <dl className="details mt-4">
+        <dt>Deliveries</dt>
+        <dd>{formatCount(notification.delivery_count)}</dd>
+        <dt>Succeeded</dt>
+        <dd>{formatCount(notification.succeeded_count)}</dd>
+        <dt>Failed</dt>
+        <dd>{formatCount(notification.failed_count)}</dd>
+      </dl>
+    </Card>
+  )
+}
 
 export function EmptyState({ title, description }: { title: string; description: string }) {
   return (
@@ -135,10 +197,12 @@ export function RuntimeGroupList({
   groups,
   projectId,
   applicationId,
+  search,
 }: {
   groups: RuntimeGroup[]
   projectId: string
   applicationId: string
+  search: RuntimeGroupSearch
 }) {
   return (
     <div className="space-y-4">
@@ -154,13 +218,14 @@ export function RuntimeGroupList({
                   className="text-xl font-semibold text-cyan-200 underline"
                   to="/projects/$projectId/applications/$applicationId/runtime-groups/$groupId"
                   params={{ projectId, applicationId, groupId: group.id }}
+                  search={search}
                 >
                   {group.event_kind}
                 </Link>
                 <RuntimeGroupStatusBadge status={group.status} />
                 {isRecentlyFirstSeen(group.first_seen_at) && (
                   <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-300">
-                    <Sparkles size={14} /> Newly observed
+                    <Sparkles size={14} aria-hidden="true" /> Recently first seen
                   </span>
                 )}
               </div>
@@ -193,13 +258,21 @@ export function OccurrenceTimeline({ occurrences }: { occurrences: EventOccurren
             <p className="font-semibold">{formatTimestamp(item.observed_at)}</p>
             <dl className="details mt-3">
               <dt>Node</dt>
-              <dd>{item.node_name}</dd>
+              <dd>{item.node_name || 'Unavailable'}</dd>
+              <dt>Namespace</dt>
+              <dd>{item.namespace || 'Unavailable'}</dd>
               <dt>Pod</dt>
-              <dd>{item.pod_name}</dd>
+              <dd>{item.pod_name || 'Unavailable'}</dd>
               <dt>Container</dt>
-              <dd>{item.container_name}</dd>
+              <dd>{item.container_name || 'Unavailable'}</dd>
               <dt>Process</dt>
-              <dd className="break-all font-mono text-sm">{item.process_command}</dd>
+              <dd className="break-all font-mono text-sm">
+                {item.process_command || 'Unavailable'}
+              </dd>
+              <dt>Event kind</dt>
+              <dd>{item.event_kind}</dd>
+              <dt>Release</dt>
+              <dd>{item.release_version ?? item.release_id ?? 'Unavailable'}</dd>
             </dl>
             <div className="mt-4">
               <JsonDetailsViewer value={item.payload} label="Event payload" />

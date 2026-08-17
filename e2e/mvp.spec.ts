@@ -46,7 +46,7 @@ test('blocks an incompatible backend with diagnostics', async ({ page }) => {
     }),
   )
   await page.goto('/')
-  await expect(page.getByRole('heading', { name: 'Unsupported API version' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Incompatible backend' })).toBeVisible()
   await expect(page.getByText('v2')).toBeVisible()
   await expect(page.getByLabel('Bearer credential')).toHaveCount(0)
 })
@@ -71,7 +71,7 @@ test('shows correlated API errors and clears a rejected credential', async ({ pa
           service_version: '0.1.0',
           git_commit: 'abc',
           api_version: 'v1',
-          required_database_migration: 5,
+          required_database_migration: 6,
         }),
       })
     return route.fulfill({

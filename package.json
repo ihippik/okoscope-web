@@ -14,8 +14,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "api:generate": "openapi-typescript \"${OKOSCOPE_OPENAPI_SOURCE:-/Users/ihippik/RustroverProjects/okoscope/openapi/okoscope-v1.yaml}\" -o src/shared/api/schema.d.ts",
-    "api:check": "sh -c 'source=${OKOSCOPE_OPENAPI_SOURCE:-/Users/ihippik/RustroverProjects/okoscope/openapi/okoscope-v1.yaml}; if [ -f \"$source\" ]; then npm run api:generate && git diff --exit-code -- src/shared/api/schema.d.ts; else echo \"OpenAPI source unavailable; checking committed generated contract\"; test -s src/shared/api/schema.d.ts; fi'",
+    "api:generate": "openapi-typescript \"${OKOSCOPE_OPENAPI_SOURCE:-openapi/okoscope-v1.yaml}\" -o src/shared/api/schema.d.ts",
+    "api:check": "npm run api:generate && git diff --exit-code -- openapi/okoscope-v1.yaml src/shared/api/schema.d.ts",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run api:check && npm test && npm run build",
     "container:smoke": "./scripts/container-smoke.sh okoscope-web:smoke"
   },

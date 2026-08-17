@@ -141,6 +141,78 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/runtime-groups/{group_id}/occurrences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group_id: components["parameters"]["GroupId"];
+            };
+            cookie?: never;
+        };
+        get: operations["listRuntimeGroupOccurrences"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runtime-groups/{group_id}/acknowledge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group_id: components["parameters"]["GroupId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["acknowledgeRuntimeGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runtime-groups/{group_id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group_id: components["parameters"]["GroupId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["resolveRuntimeGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runtime-groups/{group_id}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group_id: components["parameters"]["GroupId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reopenRuntimeGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/applications/{application_id}/releases": {
         parameters: {
             query?: never;
@@ -352,7 +424,7 @@ export interface components {
             api_version: "v1";
             /**
              * Format: int64
-             * @example 5
+             * @example 6
              */
             required_database_migration: number;
         };
@@ -406,12 +478,16 @@ export interface components {
             semantic_summary: {
                 [key: string]: unknown;
             };
-            status: string;
+            /** @enum {string} */
+            status: "open" | "acknowledged" | "resolved";
             first_seen_at: components["schemas"]["Timestamp"];
+            first_seen_event_id: components["schemas"]["Uuid"];
             last_seen_at: components["schemas"]["Timestamp"];
             /** Format: int64 */
             occurrence_count: number;
             representative_event_id: components["schemas"]["Uuid"];
+            status_changed_at: components["schemas"]["NullableTimestamp"];
+            status_changed_by: components["schemas"]["NullableUuid"];
         };
         RuntimeGroupPage: {
             items: components["schemas"]["RuntimeGroup"][];
@@ -430,10 +506,26 @@ export interface components {
             payload: {
                 [key: string]: unknown;
             };
+            release_id: components["schemas"]["NullableUuid"];
+            release_version: string | null;
+        };
+        OccurrencePage: {
+            items: components["schemas"]["EventOccurrence"][];
+            next_cursor: components["schemas"]["NullableUuid"];
+        };
+        FirstSeenNotificationSummary: {
+            /** @enum {string} */
+            state: "pending" | "not_configured" | "delivering" | "delivered" | "terminally_failed" | "backfill_suppressed";
+            /** Format: int64 */
+            delivery_count: number;
+            /** Format: int64 */
+            succeeded_count: number;
+            /** Format: int64 */
+            failed_count: number;
         };
         RuntimeGroupDetail: components["schemas"]["RuntimeGroup"] & {
             representative_event: components["schemas"]["EventOccurrence"];
-            recent_occurrences: components["schemas"]["EventOccurrence"][];
+            notification: components["schemas"]["FirstSeenNotificationSummary"];
         };
         Release: {
             id: components["schemas"]["Uuid"];
@@ -632,6 +724,16 @@ export interface components {
                 "application/json": components["schemas"]["RuntimeGroupPage"];
             };
         };
+        /** @description Runtime group */
+        RuntimeGroup: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["RuntimeGroup"];
+            };
+        };
         /** @description Runtime group detail */
         RuntimeGroupDetail: {
             headers: {
@@ -640,6 +742,16 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["RuntimeGroupDetail"];
+            };
+        };
+        /** @description Runtime group occurrence page */
+        OccurrencePage: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["OccurrencePage"];
             };
         };
         /** @description Release */
@@ -878,11 +990,15 @@ export interface operations {
                 project_id: string;
                 application_id: string;
                 event_kind?: string;
-                status?: "open";
+                status?: "open" | "acknowledged" | "resolved";
                 namespace?: string;
                 workload_kind?: string;
                 workload_name?: string;
                 since?: string;
+                first_seen_from?: string;
+                first_seen_to?: string;
+                last_seen_to?: string;
+                release_id?: string;
                 /** @description Opaque cursor scoped to the authenticated collection. */
                 cursor?: components["parameters"]["Cursor"];
                 limit?: components["parameters"]["Limit"];
@@ -908,6 +1024,73 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["RuntimeGroupDetail"];
+        };
+    };
+    listRuntimeGroupOccurrences: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor scoped to the authenticated collection. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                group_id: components["parameters"]["GroupId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["OccurrencePage"];
+            404: components["responses"]["Error"];
+        };
+    };
+    acknowledgeRuntimeGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group_id: components["parameters"]["GroupId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["RuntimeGroup"];
+            400: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    resolveRuntimeGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group_id: components["parameters"]["GroupId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["RuntimeGroup"];
+            400: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    reopenRuntimeGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group_id: components["parameters"]["GroupId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["RuntimeGroup"];
+            400: components["responses"]["Error"];
+            404: components["responses"]["Error"];
         };
     };
     listReleases: {

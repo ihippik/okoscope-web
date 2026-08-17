@@ -38,9 +38,12 @@ const group = {
   semantic_summary: { command: '/app/gateway' },
   status: 'open',
   first_seen_at: '2026-08-17T10:00:00Z',
+  first_seen_event_id: '00000000-0000-4000-8000-000000000006',
   last_seen_at: '2026-08-17T12:00:00Z',
   occurrence_count: 12,
   representative_event_id: '00000000-0000-4000-8000-000000000006',
+  status_changed_at: null,
+  status_changed_by: null,
 }
 const occurrence = {
   id: '00000000-0000-4000-8000-000000000007',
@@ -53,6 +56,8 @@ const occurrence = {
   process_command: '/app/gateway serve',
   event_kind: 'process.exec',
   payload: { argv: ['serve'] },
+  release_id: '00000000-0000-4000-8000-000000000008',
+  release_version: 'v2',
 }
 const targetRelease = {
   id: '00000000-0000-4000-8000-000000000008',
@@ -83,6 +88,7 @@ const json = (route: Route, body: unknown, status = 200, requestId = 'e2e-reques
   })
 
 export async function mockApi(page: Page) {
+  let groupStatus: 'open' | 'acknowledged' | 'resolved' = 'open'
   await page.route('**/api/v1/**', async (route) => {
     const url = new URL(route.request().url())
     const path = url.pathname
@@ -91,7 +97,7 @@ export async function mockApi(page: Page) {
         service_version: '0.1.0',
         git_commit: 'abcdef',
         api_version: 'v1',
-        required_database_migration: 5,
+        required_database_migration: 6,
       })
     if (!route.request().headers().authorization)
       return json(
@@ -107,12 +113,28 @@ export async function mockApi(page: Page) {
       return json(route, { items: [application], next_cursor: null })
     if (path === `/api/v1/projects/${project.id}/applications/${application.id}`)
       return json(route, application)
-    if (path === '/api/v1/runtime-groups') return json(route, { items: [group], next_cursor: null })
+    if (path === '/api/v1/runtime-groups')
+      return json(route, { items: [{ ...group, status: groupStatus }], next_cursor: null })
+    if (path === `/api/v1/runtime-groups/${group.id}/occurrences`)
+      return json(route, { items: [occurrence], next_cursor: null })
+    const action = path.match(
+      new RegExp(`/api/v1/runtime-groups/${group.id}/(acknowledge|resolve|reopen)$`),
+    )?.[1]
+    if (action && route.request().method() === 'POST') {
+      groupStatus =
+        action === 'acknowledge' ? 'acknowledged' : action === 'resolve' ? 'resolved' : 'open'
+      return json(route, {
+        ...group,
+        status: groupStatus,
+        status_changed_at: '2026-08-17T13:00:00Z',
+      })
+    }
     if (path === `/api/v1/runtime-groups/${group.id}`)
       return json(route, {
         ...group,
+        status: groupStatus,
         representative_event: occurrence,
-        recent_occurrences: [occurrence],
+        notification: { state: 'pending', delivery_count: 0, succeeded_count: 0, failed_count: 0 },
       })
     if (path === `/api/v1/projects/${project.id}/applications/${application.id}/releases`)
       return json(route, { items: releases, next_cursor: null })
