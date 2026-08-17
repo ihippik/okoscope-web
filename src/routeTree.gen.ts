@@ -13,6 +13,10 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects.index'
 import { Route as ProjectsProjectIdIndexRouteImport } from './routes/projects.$projectId.index'
 import { Route as ProjectsProjectIdApplicationsApplicationIdRouteImport } from './routes/projects.$projectId.applications.$applicationId'
+import { Route as ProjectsProjectIdApplicationsApplicationIdReleasesRouteImport } from './routes/projects.$projectId.applications.$applicationId.releases'
+import { Route as ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteImport } from './routes/projects.$projectId.applications.$applicationId.runtime-groups'
+import { Route as ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsGroupIdRouteImport } from './routes/projects.$projectId.applications.$applicationId.runtime-groups.$groupId'
+import { Route as ProjectsProjectIdApplicationsApplicationIdReleasesTargetReleaseIdRuntimeDiffRouteImport } from './routes/projects.$projectId.applications.$applicationId.releases.$targetReleaseId.runtime-diff'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -35,25 +39,67 @@ const ProjectsProjectIdApplicationsApplicationIdRoute =
     path: '/projects/$projectId/applications/$applicationId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ProjectsProjectIdApplicationsApplicationIdReleasesRoute =
+  ProjectsProjectIdApplicationsApplicationIdReleasesRouteImport.update({
+    id: '/releases',
+    path: '/releases',
+    getParentRoute: () => ProjectsProjectIdApplicationsApplicationIdRoute,
+  } as any)
+const ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRoute =
+  ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteImport.update({
+    id: '/runtime-groups',
+    path: '/runtime-groups',
+    getParentRoute: () => ProjectsProjectIdApplicationsApplicationIdRoute,
+  } as any)
+const ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsGroupIdRoute =
+  ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsGroupIdRouteImport.update(
+    {
+      id: '/$groupId',
+      path: '/$groupId',
+      getParentRoute: () =>
+        ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRoute,
+    } as any,
+  )
+const ProjectsProjectIdApplicationsApplicationIdReleasesTargetReleaseIdRuntimeDiffRoute =
+  ProjectsProjectIdApplicationsApplicationIdReleasesTargetReleaseIdRuntimeDiffRouteImport.update(
+    {
+      id: '/$targetReleaseId/runtime-diff',
+      path: '/$targetReleaseId/runtime-diff',
+      getParentRoute: () =>
+        ProjectsProjectIdApplicationsApplicationIdReleasesRoute,
+    } as any,
+  )
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/projects/': typeof ProjectsIndexRoute
   '/projects/$projectId/': typeof ProjectsProjectIdIndexRoute
-  '/projects/$projectId/applications/$applicationId': typeof ProjectsProjectIdApplicationsApplicationIdRoute
+  '/projects/$projectId/applications/$applicationId': typeof ProjectsProjectIdApplicationsApplicationIdRouteWithChildren
+  '/projects/$projectId/applications/$applicationId/releases': typeof ProjectsProjectIdApplicationsApplicationIdReleasesRouteWithChildren
+  '/projects/$projectId/applications/$applicationId/runtime-groups': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteWithChildren
+  '/projects/$projectId/applications/$applicationId/runtime-groups/$groupId': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsGroupIdRoute
+  '/projects/$projectId/applications/$applicationId/releases/$targetReleaseId/runtime-diff': typeof ProjectsProjectIdApplicationsApplicationIdReleasesTargetReleaseIdRuntimeDiffRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/projects': typeof ProjectsIndexRoute
   '/projects/$projectId': typeof ProjectsProjectIdIndexRoute
-  '/projects/$projectId/applications/$applicationId': typeof ProjectsProjectIdApplicationsApplicationIdRoute
+  '/projects/$projectId/applications/$applicationId': typeof ProjectsProjectIdApplicationsApplicationIdRouteWithChildren
+  '/projects/$projectId/applications/$applicationId/releases': typeof ProjectsProjectIdApplicationsApplicationIdReleasesRouteWithChildren
+  '/projects/$projectId/applications/$applicationId/runtime-groups': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteWithChildren
+  '/projects/$projectId/applications/$applicationId/runtime-groups/$groupId': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsGroupIdRoute
+  '/projects/$projectId/applications/$applicationId/releases/$targetReleaseId/runtime-diff': typeof ProjectsProjectIdApplicationsApplicationIdReleasesTargetReleaseIdRuntimeDiffRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/projects/': typeof ProjectsIndexRoute
   '/projects/$projectId/': typeof ProjectsProjectIdIndexRoute
-  '/projects/$projectId/applications/$applicationId': typeof ProjectsProjectIdApplicationsApplicationIdRoute
+  '/projects/$projectId/applications/$applicationId': typeof ProjectsProjectIdApplicationsApplicationIdRouteWithChildren
+  '/projects/$projectId/applications/$applicationId/releases': typeof ProjectsProjectIdApplicationsApplicationIdReleasesRouteWithChildren
+  '/projects/$projectId/applications/$applicationId/runtime-groups': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteWithChildren
+  '/projects/$projectId/applications/$applicationId/runtime-groups/$groupId': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsGroupIdRoute
+  '/projects/$projectId/applications/$applicationId/releases/$targetReleaseId/runtime-diff': typeof ProjectsProjectIdApplicationsApplicationIdReleasesTargetReleaseIdRuntimeDiffRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -62,25 +108,37 @@ export interface FileRouteTypes {
     | '/projects/'
     | '/projects/$projectId/'
     | '/projects/$projectId/applications/$applicationId'
+    | '/projects/$projectId/applications/$applicationId/releases'
+    | '/projects/$projectId/applications/$applicationId/runtime-groups'
+    | '/projects/$projectId/applications/$applicationId/runtime-groups/$groupId'
+    | '/projects/$projectId/applications/$applicationId/releases/$targetReleaseId/runtime-diff'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/projects'
     | '/projects/$projectId'
     | '/projects/$projectId/applications/$applicationId'
+    | '/projects/$projectId/applications/$applicationId/releases'
+    | '/projects/$projectId/applications/$applicationId/runtime-groups'
+    | '/projects/$projectId/applications/$applicationId/runtime-groups/$groupId'
+    | '/projects/$projectId/applications/$applicationId/releases/$targetReleaseId/runtime-diff'
   id:
     | '__root__'
     | '/'
     | '/projects/'
     | '/projects/$projectId/'
     | '/projects/$projectId/applications/$applicationId'
+    | '/projects/$projectId/applications/$applicationId/releases'
+    | '/projects/$projectId/applications/$applicationId/runtime-groups'
+    | '/projects/$projectId/applications/$applicationId/runtime-groups/$groupId'
+    | '/projects/$projectId/applications/$applicationId/releases/$targetReleaseId/runtime-diff'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
   ProjectsProjectIdIndexRoute: typeof ProjectsProjectIdIndexRoute
-  ProjectsProjectIdApplicationsApplicationIdRoute: typeof ProjectsProjectIdApplicationsApplicationIdRoute
+  ProjectsProjectIdApplicationsApplicationIdRoute: typeof ProjectsProjectIdApplicationsApplicationIdRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -113,15 +171,91 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsProjectIdApplicationsApplicationIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/projects/$projectId/applications/$applicationId/releases': {
+      id: '/projects/$projectId/applications/$applicationId/releases'
+      path: '/releases'
+      fullPath: '/projects/$projectId/applications/$applicationId/releases'
+      preLoaderRoute: typeof ProjectsProjectIdApplicationsApplicationIdReleasesRouteImport
+      parentRoute: typeof ProjectsProjectIdApplicationsApplicationIdRoute
+    }
+    '/projects/$projectId/applications/$applicationId/runtime-groups': {
+      id: '/projects/$projectId/applications/$applicationId/runtime-groups'
+      path: '/runtime-groups'
+      fullPath: '/projects/$projectId/applications/$applicationId/runtime-groups'
+      preLoaderRoute: typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteImport
+      parentRoute: typeof ProjectsProjectIdApplicationsApplicationIdRoute
+    }
+    '/projects/$projectId/applications/$applicationId/runtime-groups/$groupId': {
+      id: '/projects/$projectId/applications/$applicationId/runtime-groups/$groupId'
+      path: '/$groupId'
+      fullPath: '/projects/$projectId/applications/$applicationId/runtime-groups/$groupId'
+      preLoaderRoute: typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsGroupIdRouteImport
+      parentRoute: typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRoute
+    }
+    '/projects/$projectId/applications/$applicationId/releases/$targetReleaseId/runtime-diff': {
+      id: '/projects/$projectId/applications/$applicationId/releases/$targetReleaseId/runtime-diff'
+      path: '/$targetReleaseId/runtime-diff'
+      fullPath: '/projects/$projectId/applications/$applicationId/releases/$targetReleaseId/runtime-diff'
+      preLoaderRoute: typeof ProjectsProjectIdApplicationsApplicationIdReleasesTargetReleaseIdRuntimeDiffRouteImport
+      parentRoute: typeof ProjectsProjectIdApplicationsApplicationIdReleasesRoute
+    }
   }
 }
+
+interface ProjectsProjectIdApplicationsApplicationIdReleasesRouteChildren {
+  ProjectsProjectIdApplicationsApplicationIdReleasesTargetReleaseIdRuntimeDiffRoute: typeof ProjectsProjectIdApplicationsApplicationIdReleasesTargetReleaseIdRuntimeDiffRoute
+}
+
+const ProjectsProjectIdApplicationsApplicationIdReleasesRouteChildren: ProjectsProjectIdApplicationsApplicationIdReleasesRouteChildren =
+  {
+    ProjectsProjectIdApplicationsApplicationIdReleasesTargetReleaseIdRuntimeDiffRoute:
+      ProjectsProjectIdApplicationsApplicationIdReleasesTargetReleaseIdRuntimeDiffRoute,
+  }
+
+const ProjectsProjectIdApplicationsApplicationIdReleasesRouteWithChildren =
+  ProjectsProjectIdApplicationsApplicationIdReleasesRoute._addFileChildren(
+    ProjectsProjectIdApplicationsApplicationIdReleasesRouteChildren,
+  )
+
+interface ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteChildren {
+  ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsGroupIdRoute: typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsGroupIdRoute
+}
+
+const ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteChildren: ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteChildren =
+  {
+    ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsGroupIdRoute:
+      ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsGroupIdRoute,
+  }
+
+const ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteWithChildren =
+  ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRoute._addFileChildren(
+    ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteChildren,
+  )
+
+interface ProjectsProjectIdApplicationsApplicationIdRouteChildren {
+  ProjectsProjectIdApplicationsApplicationIdReleasesRoute: typeof ProjectsProjectIdApplicationsApplicationIdReleasesRouteWithChildren
+  ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRoute: typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteWithChildren
+}
+
+const ProjectsProjectIdApplicationsApplicationIdRouteChildren: ProjectsProjectIdApplicationsApplicationIdRouteChildren =
+  {
+    ProjectsProjectIdApplicationsApplicationIdReleasesRoute:
+      ProjectsProjectIdApplicationsApplicationIdReleasesRouteWithChildren,
+    ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRoute:
+      ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteWithChildren,
+  }
+
+const ProjectsProjectIdApplicationsApplicationIdRouteWithChildren =
+  ProjectsProjectIdApplicationsApplicationIdRoute._addFileChildren(
+    ProjectsProjectIdApplicationsApplicationIdRouteChildren,
+  )
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
   ProjectsProjectIdIndexRoute: ProjectsProjectIdIndexRoute,
   ProjectsProjectIdApplicationsApplicationIdRoute:
-    ProjectsProjectIdApplicationsApplicationIdRoute,
+    ProjectsProjectIdApplicationsApplicationIdRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

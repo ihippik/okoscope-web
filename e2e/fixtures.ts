@@ -25,6 +25,54 @@ const application = {
   runtime_group_count: 3,
   latest_observed_at: null,
 }
+const group = {
+  id: '00000000-0000-4000-8000-000000000004',
+  project_id: project.id,
+  application_id: application.id,
+  cluster_id: '00000000-0000-4000-8000-000000000005',
+  namespace: 'production',
+  workload_kind: 'Deployment',
+  workload_name: 'gateway',
+  fingerprint_version: 1,
+  event_kind: 'process.exec',
+  semantic_summary: { command: '/app/gateway' },
+  status: 'open',
+  first_seen_at: '2026-08-17T10:00:00Z',
+  last_seen_at: '2026-08-17T12:00:00Z',
+  occurrence_count: 12,
+  representative_event_id: '00000000-0000-4000-8000-000000000006',
+}
+const occurrence = {
+  id: '00000000-0000-4000-8000-000000000007',
+  event_id: group.representative_event_id,
+  observed_at: '2026-08-17T12:00:00Z',
+  node_name: 'node-1',
+  namespace: 'production',
+  pod_name: 'gateway-abc',
+  container_name: 'gateway',
+  process_command: '/app/gateway serve',
+  event_kind: 'process.exec',
+  payload: { argv: ['serve'] },
+}
+const targetRelease = {
+  id: '00000000-0000-4000-8000-000000000008',
+  project_id: project.id,
+  application_id: application.id,
+  version: 'v2',
+  description: 'Current',
+  deployed_at: '2026-08-17T11:00:00Z',
+  created_at: '2026-08-17T11:00:00Z',
+}
+const baselineRelease = {
+  id: '00000000-0000-4000-8000-000000000009',
+  project_id: project.id,
+  application_id: application.id,
+  version: 'v1',
+  description: 'Baseline',
+  deployed_at: '2026-08-16T11:00:00Z',
+  created_at: '2026-08-16T11:00:00Z',
+}
+const releases = [targetRelease, baselineRelease]
 
 const json = (route: Route, body: unknown, status = 200, requestId = 'e2e-request') =>
   route.fulfill({
@@ -59,6 +107,38 @@ export async function mockApi(page: Page) {
       return json(route, { items: [application], next_cursor: null })
     if (path === `/api/v1/projects/${project.id}/applications/${application.id}`)
       return json(route, application)
+    if (path === '/api/v1/runtime-groups') return json(route, { items: [group], next_cursor: null })
+    if (path === `/api/v1/runtime-groups/${group.id}`)
+      return json(route, {
+        ...group,
+        representative_event: occurrence,
+        recent_occurrences: [occurrence],
+      })
+    if (path === `/api/v1/projects/${project.id}/applications/${application.id}/releases`)
+      return json(route, { items: releases, next_cursor: null })
+    if (
+      path ===
+      `/api/v1/projects/${project.id}/applications/${application.id}/releases/${targetRelease.id}/runtime-diff`
+    )
+      return json(route, {
+        baseline: baselineRelease,
+        target: targetRelease,
+        items: [
+          {
+            group_id: group.id,
+            classification: 'new',
+            event_kind: group.event_kind,
+            semantic_summary: group.semantic_summary,
+            baseline_occurrence_count: 0,
+            baseline_first_seen_at: null,
+            baseline_last_seen_at: null,
+            target_occurrence_count: 12,
+            target_first_seen_at: group.first_seen_at,
+            target_last_seen_at: group.last_seen_at,
+          },
+        ],
+        next_cursor: null,
+      })
     return json(
       route,
       { error: 'not_found', message: 'resource not found', request_id: 'missing-id' },
@@ -66,7 +146,7 @@ export async function mockApi(page: Page) {
       'missing-id',
     )
   })
-  return { organization, project, application }
+  return { organization, project, application, group, releases }
 }
 
 export async function authenticate(page: Page) {

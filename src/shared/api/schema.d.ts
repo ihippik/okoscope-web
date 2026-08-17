@@ -877,6 +877,12 @@ export interface operations {
             query: {
                 project_id: string;
                 application_id: string;
+                event_kind?: string;
+                status?: "open";
+                namespace?: string;
+                workload_kind?: string;
+                workload_name?: string;
+                since?: string;
                 /** @description Opaque cursor scoped to the authenticated collection. */
                 cursor?: components["parameters"]["Cursor"];
                 limit?: components["parameters"]["Limit"];
@@ -906,7 +912,11 @@ export interface operations {
     };
     listReleases: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Opaque cursor scoped to the authenticated collection. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
             header?: never;
             path: {
                 project_id: components["parameters"]["ProjectId"];
@@ -953,6 +963,7 @@ export interface operations {
     getRuntimeDiff: {
         parameters: {
             query?: {
+                baseline_id?: string;
                 /** @description Opaque cursor scoped to the authenticated collection. */
                 cursor?: components["parameters"]["Cursor"];
                 limit?: components["parameters"]["Limit"];
