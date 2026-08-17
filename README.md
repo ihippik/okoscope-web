@@ -53,3 +53,5 @@ npm run container:smoke
 ```
 
 Images should be published by immutable digest with OCI version/commit labels added by release automation. Roll back by restoring the previous image digest; the Web UI performs no database migrations.
+
+On every successful GitHub `push`, CI publishes the tested image to GHCR as `ghcr.io/ihippik/okoscope-web:<commit-sha>`. Pushes to `main` also update `ghcr.io/ihippik/okoscope-web:main`. Kubernetes manifests should use the immutable commit SHA tag rather than the mutable alias.
