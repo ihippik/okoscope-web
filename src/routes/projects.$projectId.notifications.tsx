@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { DeliveryHistory } from '../features/notifications/deliveries'
 import { DestinationList } from '../features/notifications/destinations'
 import { NotificationHealthPanel } from '../features/notifications/health'
+import { BulkRetry } from '../features/notifications/recovery'
 import { NotificationBreadcrumbs } from '../features/notifications/shared'
 
 export const parseDeliverySearch = (search: Record<string, unknown>) => ({
@@ -35,6 +36,7 @@ function NotificationsPage() {
       </div>
       <NotificationHealthPanel projectId={projectId} />
       <DestinationList projectId={projectId} />
+      <BulkRetry projectId={projectId} />
       <DeliveryHistory
         projectId={projectId}
         cursor={search.cursor ?? null}

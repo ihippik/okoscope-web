@@ -10,6 +10,9 @@ import type {
   DeliveryDetail,
   DeliveryPage,
   NotificationHealth,
+  RecoveryOperationDetail,
+  RecoveryOperationPage,
+  RecoveryCommandType,
   WebhookDestination,
 } from './types'
 
@@ -34,6 +37,14 @@ export const queryKeys = {
     ['projects', projectId, 'deliveries', { cursor }] as const,
   delivery: (projectId: string, deliveryId: string) =>
     ['projects', projectId, 'deliveries', deliveryId] as const,
+  recoveries: (projectId: string) => ['projects', projectId, 'recoveries'] as const,
+  recoveryPage: (
+    projectId: string,
+    commandType: RecoveryCommandType | null,
+    cursor: string | null,
+  ) => ['projects', projectId, 'recoveries', { commandType, cursor }] as const,
+  recovery: (projectId: string, operationId: string) =>
+    ['projects', projectId, 'recoveries', operationId] as const,
 }
 
 export const buildInfoOptions = (api: ApiClient) =>
@@ -139,4 +150,33 @@ export const notificationHealthOptions = (api: ApiClient, projectId: string) =>
       ),
     refetchInterval: (query) => getHealthPollingInterval(query.state.data?.state),
     refetchIntervalInBackground: false,
+  })
+
+export const recoveryOperationsOptions = (
+  api: ApiClient,
+  projectId: string,
+  commandType: RecoveryCommandType | null,
+  cursor: string | null,
+) => {
+  const params = new URLSearchParams({ limit: '50' })
+  if (commandType) params.set('command_type', commandType)
+  if (cursor) params.set('cursor', cursor)
+  return queryOptions({
+    queryKey: queryKeys.recoveryPage(projectId, commandType, cursor),
+    queryFn: () =>
+      api.get<RecoveryOperationPage>(
+        `/api/v1/projects/${encodeURIComponent(projectId)}/notification-recovery-operations?${params}`,
+        { protected: true },
+      ),
+  })
+}
+
+export const recoveryOperationOptions = (api: ApiClient, projectId: string, operationId: string) =>
+  queryOptions({
+    queryKey: queryKeys.recovery(projectId, operationId),
+    queryFn: () =>
+      api.get<RecoveryOperationDetail>(
+        `/api/v1/projects/${encodeURIComponent(projectId)}/notification-recovery-operations/${encodeURIComponent(operationId)}`,
+        { protected: true },
+      ),
   })

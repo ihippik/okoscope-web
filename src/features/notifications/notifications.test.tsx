@@ -16,9 +16,11 @@ import {
   queryKeys,
 } from '../../shared/api/queries'
 import type { NotificationHealth } from '../../shared/api/types'
+import type { DeliveryDetail } from '../../shared/api/types'
 import { DeliveryHistory } from './deliveries'
 import { DestinationList } from './destinations'
 import { healthPresentation, NotificationHealthPanel } from './health'
+import { BulkRetry, SingleRecoveryActions } from './recovery'
 import { SecretDialog } from './secret-dialog'
 
 function renderWithProviders(node: React.ReactNode, api: Partial<ApiClient>) {
@@ -53,6 +55,34 @@ const healthFixture = (state: NotificationHealth['state']): NotificationHealth =
   oldest_due_age_seconds: 125,
   observed_at: '2026-08-17T20:00:00Z',
 })
+
+const recoveryDelivery = {
+  id: 'delivery-1',
+  project_id: 'project-1',
+  destination_id: 'destination-1',
+  outbox_message_id: null,
+  origin: 'event',
+  source: 'test',
+  event_name: 'test',
+  semantic_metadata: null,
+  destination: { id: 'destination-1', name: 'Ops', enabled: true },
+  status: 'failed',
+  available_at: '2026-08-17T00:00:00Z',
+  next_attempt_at: null,
+  recovery_generation: 0,
+  attempt_count: 1,
+  total_attempt_count: 1,
+  max_attempts: 5,
+  last_error_class: 'http',
+  terminal_reason: 'attempts_exhausted',
+  created_at: '2026-08-17T00:00:00Z',
+  updated_at: '2026-08-17T00:00:00Z',
+  terminal_at: '2026-08-17T00:00:00Z',
+  retry_allowed: true,
+  cancel_allowed: true,
+  last_recovery_operation_id: null,
+  attempts: [],
+} satisfies DeliveryDetail
 
 describe('notification operations', () => {
   it.each(['disabled', 'idle', 'backlogged', 'retrying', 'failing', 'draining'] as const)(
@@ -150,5 +180,39 @@ describe('notification operations', () => {
     )
     await userEvent.click(await screen.findByRole('button', { name: 'Next' }))
     expect(onNext).toHaveBeenCalledWith('next-page')
+  })
+
+  it('confirms recovery and sends a non-persisted idempotency header', async () => {
+    const user = userEvent.setup()
+    const post = vi.fn().mockResolvedValue({
+      operation_id: 'operation-1',
+      delivery_id: 'delivery-1',
+      status: 'pending',
+      recovery_generation: 1,
+      current_attempt_count: 0,
+      total_attempt_count: 1,
+      replayed: false,
+      completed_at: '2026-08-17T00:00:00Z',
+    })
+    renderWithProviders(
+      <SingleRecoveryActions projectId="project-1" delivery={recoveryDelivery} />,
+      { post },
+    )
+    await user.click(await screen.findByRole('button', { name: 'Retry delivery' }))
+    await user.click(screen.getByRole('button', { name: 'Confirm retry' }))
+    await waitFor(() => expect(post).toHaveBeenCalledTimes(1))
+    expect(post).toHaveBeenCalledWith(
+      expect.stringMatching(/\/retry$/),
+      expect.objectContaining({ headers: { 'Idempotency-Key': expect.any(String) } }),
+    )
+  })
+
+  it('bounds bulk retry limit to the OpenAPI maximum', async () => {
+    renderWithProviders(<BulkRetry projectId="project-1" />, {})
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Bulk retry failed deliveries' }),
+    )
+    expect(screen.getByLabelText('Limit')).toHaveAttribute('min', '1')
+    expect(screen.getByLabelText('Limit')).toHaveAttribute('max', '200')
   })
 })

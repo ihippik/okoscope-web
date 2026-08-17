@@ -14,10 +14,12 @@ import { Route as ProjectsIndexRouteImport } from './routes/projects.index'
 import { Route as ProjectsProjectIdIndexRouteImport } from './routes/projects.$projectId.index'
 import { Route as ProjectsProjectIdNotificationsRouteImport } from './routes/projects.$projectId.notifications'
 import { Route as ProjectsProjectIdApplicationsApplicationIdRouteImport } from './routes/projects.$projectId.applications.$applicationId'
+import { Route as ProjectsProjectIdNotificationsRecoveryRouteImport } from './routes/projects.$projectId.notifications.recovery'
 import { Route as ProjectsProjectIdApplicationsApplicationIdReleasesRouteImport } from './routes/projects.$projectId.applications.$applicationId.releases'
 import { Route as ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteImport } from './routes/projects.$projectId.applications.$applicationId.runtime-groups'
 import { Route as ProjectsProjectIdNotificationsDeliveriesDeliveryIdRouteImport } from './routes/projects.$projectId.notifications.deliveries.$deliveryId'
 import { Route as ProjectsProjectIdNotificationsDestinationsDestinationIdRouteImport } from './routes/projects.$projectId.notifications.destinations.$destinationId'
+import { Route as ProjectsProjectIdNotificationsRecoveryOperationIdRouteImport } from './routes/projects.$projectId.notifications.recovery.$operationId'
 import { Route as ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsGroupIdRouteImport } from './routes/projects.$projectId.applications.$applicationId.runtime-groups.$groupId'
 import { Route as ProjectsProjectIdApplicationsApplicationIdReleasesTargetReleaseIdRuntimeDiffRouteImport } from './routes/projects.$projectId.applications.$applicationId.releases.$targetReleaseId.runtime-diff'
 
@@ -48,6 +50,12 @@ const ProjectsProjectIdApplicationsApplicationIdRoute =
     path: '/projects/$projectId/applications/$applicationId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ProjectsProjectIdNotificationsRecoveryRoute =
+  ProjectsProjectIdNotificationsRecoveryRouteImport.update({
+    id: '/recovery',
+    path: '/recovery',
+    getParentRoute: () => ProjectsProjectIdNotificationsRoute,
+  } as any)
 const ProjectsProjectIdApplicationsApplicationIdReleasesRoute =
   ProjectsProjectIdApplicationsApplicationIdReleasesRouteImport.update({
     id: '/releases',
@@ -71,6 +79,12 @@ const ProjectsProjectIdNotificationsDestinationsDestinationIdRoute =
     id: '/destinations/$destinationId',
     path: '/destinations/$destinationId',
     getParentRoute: () => ProjectsProjectIdNotificationsRoute,
+  } as any)
+const ProjectsProjectIdNotificationsRecoveryOperationIdRoute =
+  ProjectsProjectIdNotificationsRecoveryOperationIdRouteImport.update({
+    id: '/$operationId',
+    path: '/$operationId',
+    getParentRoute: () => ProjectsProjectIdNotificationsRecoveryRoute,
   } as any)
 const ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsGroupIdRoute =
   ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsGroupIdRouteImport.update(
@@ -97,10 +111,12 @@ export interface FileRoutesByFullPath {
   '/projects/$projectId/notifications': typeof ProjectsProjectIdNotificationsRouteWithChildren
   '/projects/$projectId/': typeof ProjectsProjectIdIndexRoute
   '/projects/$projectId/applications/$applicationId': typeof ProjectsProjectIdApplicationsApplicationIdRouteWithChildren
+  '/projects/$projectId/notifications/recovery': typeof ProjectsProjectIdNotificationsRecoveryRouteWithChildren
   '/projects/$projectId/applications/$applicationId/releases': typeof ProjectsProjectIdApplicationsApplicationIdReleasesRouteWithChildren
   '/projects/$projectId/applications/$applicationId/runtime-groups': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteWithChildren
   '/projects/$projectId/notifications/deliveries/$deliveryId': typeof ProjectsProjectIdNotificationsDeliveriesDeliveryIdRoute
   '/projects/$projectId/notifications/destinations/$destinationId': typeof ProjectsProjectIdNotificationsDestinationsDestinationIdRoute
+  '/projects/$projectId/notifications/recovery/$operationId': typeof ProjectsProjectIdNotificationsRecoveryOperationIdRoute
   '/projects/$projectId/applications/$applicationId/runtime-groups/$groupId': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsGroupIdRoute
   '/projects/$projectId/applications/$applicationId/releases/$targetReleaseId/runtime-diff': typeof ProjectsProjectIdApplicationsApplicationIdReleasesTargetReleaseIdRuntimeDiffRoute
 }
@@ -110,10 +126,12 @@ export interface FileRoutesByTo {
   '/projects/$projectId/notifications': typeof ProjectsProjectIdNotificationsRouteWithChildren
   '/projects/$projectId': typeof ProjectsProjectIdIndexRoute
   '/projects/$projectId/applications/$applicationId': typeof ProjectsProjectIdApplicationsApplicationIdRouteWithChildren
+  '/projects/$projectId/notifications/recovery': typeof ProjectsProjectIdNotificationsRecoveryRouteWithChildren
   '/projects/$projectId/applications/$applicationId/releases': typeof ProjectsProjectIdApplicationsApplicationIdReleasesRouteWithChildren
   '/projects/$projectId/applications/$applicationId/runtime-groups': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteWithChildren
   '/projects/$projectId/notifications/deliveries/$deliveryId': typeof ProjectsProjectIdNotificationsDeliveriesDeliveryIdRoute
   '/projects/$projectId/notifications/destinations/$destinationId': typeof ProjectsProjectIdNotificationsDestinationsDestinationIdRoute
+  '/projects/$projectId/notifications/recovery/$operationId': typeof ProjectsProjectIdNotificationsRecoveryOperationIdRoute
   '/projects/$projectId/applications/$applicationId/runtime-groups/$groupId': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsGroupIdRoute
   '/projects/$projectId/applications/$applicationId/releases/$targetReleaseId/runtime-diff': typeof ProjectsProjectIdApplicationsApplicationIdReleasesTargetReleaseIdRuntimeDiffRoute
 }
@@ -124,10 +142,12 @@ export interface FileRoutesById {
   '/projects/$projectId/notifications': typeof ProjectsProjectIdNotificationsRouteWithChildren
   '/projects/$projectId/': typeof ProjectsProjectIdIndexRoute
   '/projects/$projectId/applications/$applicationId': typeof ProjectsProjectIdApplicationsApplicationIdRouteWithChildren
+  '/projects/$projectId/notifications/recovery': typeof ProjectsProjectIdNotificationsRecoveryRouteWithChildren
   '/projects/$projectId/applications/$applicationId/releases': typeof ProjectsProjectIdApplicationsApplicationIdReleasesRouteWithChildren
   '/projects/$projectId/applications/$applicationId/runtime-groups': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteWithChildren
   '/projects/$projectId/notifications/deliveries/$deliveryId': typeof ProjectsProjectIdNotificationsDeliveriesDeliveryIdRoute
   '/projects/$projectId/notifications/destinations/$destinationId': typeof ProjectsProjectIdNotificationsDestinationsDestinationIdRoute
+  '/projects/$projectId/notifications/recovery/$operationId': typeof ProjectsProjectIdNotificationsRecoveryOperationIdRoute
   '/projects/$projectId/applications/$applicationId/runtime-groups/$groupId': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsGroupIdRoute
   '/projects/$projectId/applications/$applicationId/releases/$targetReleaseId/runtime-diff': typeof ProjectsProjectIdApplicationsApplicationIdReleasesTargetReleaseIdRuntimeDiffRoute
 }
@@ -139,10 +159,12 @@ export interface FileRouteTypes {
     | '/projects/$projectId/notifications'
     | '/projects/$projectId/'
     | '/projects/$projectId/applications/$applicationId'
+    | '/projects/$projectId/notifications/recovery'
     | '/projects/$projectId/applications/$applicationId/releases'
     | '/projects/$projectId/applications/$applicationId/runtime-groups'
     | '/projects/$projectId/notifications/deliveries/$deliveryId'
     | '/projects/$projectId/notifications/destinations/$destinationId'
+    | '/projects/$projectId/notifications/recovery/$operationId'
     | '/projects/$projectId/applications/$applicationId/runtime-groups/$groupId'
     | '/projects/$projectId/applications/$applicationId/releases/$targetReleaseId/runtime-diff'
   fileRoutesByTo: FileRoutesByTo
@@ -152,10 +174,12 @@ export interface FileRouteTypes {
     | '/projects/$projectId/notifications'
     | '/projects/$projectId'
     | '/projects/$projectId/applications/$applicationId'
+    | '/projects/$projectId/notifications/recovery'
     | '/projects/$projectId/applications/$applicationId/releases'
     | '/projects/$projectId/applications/$applicationId/runtime-groups'
     | '/projects/$projectId/notifications/deliveries/$deliveryId'
     | '/projects/$projectId/notifications/destinations/$destinationId'
+    | '/projects/$projectId/notifications/recovery/$operationId'
     | '/projects/$projectId/applications/$applicationId/runtime-groups/$groupId'
     | '/projects/$projectId/applications/$applicationId/releases/$targetReleaseId/runtime-diff'
   id:
@@ -165,10 +189,12 @@ export interface FileRouteTypes {
     | '/projects/$projectId/notifications'
     | '/projects/$projectId/'
     | '/projects/$projectId/applications/$applicationId'
+    | '/projects/$projectId/notifications/recovery'
     | '/projects/$projectId/applications/$applicationId/releases'
     | '/projects/$projectId/applications/$applicationId/runtime-groups'
     | '/projects/$projectId/notifications/deliveries/$deliveryId'
     | '/projects/$projectId/notifications/destinations/$destinationId'
+    | '/projects/$projectId/notifications/recovery/$operationId'
     | '/projects/$projectId/applications/$applicationId/runtime-groups/$groupId'
     | '/projects/$projectId/applications/$applicationId/releases/$targetReleaseId/runtime-diff'
   fileRoutesById: FileRoutesById
@@ -218,6 +244,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsProjectIdApplicationsApplicationIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/projects/$projectId/notifications/recovery': {
+      id: '/projects/$projectId/notifications/recovery'
+      path: '/recovery'
+      fullPath: '/projects/$projectId/notifications/recovery'
+      preLoaderRoute: typeof ProjectsProjectIdNotificationsRecoveryRouteImport
+      parentRoute: typeof ProjectsProjectIdNotificationsRoute
+    }
     '/projects/$projectId/applications/$applicationId/releases': {
       id: '/projects/$projectId/applications/$applicationId/releases'
       path: '/releases'
@@ -246,6 +279,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsProjectIdNotificationsDestinationsDestinationIdRouteImport
       parentRoute: typeof ProjectsProjectIdNotificationsRoute
     }
+    '/projects/$projectId/notifications/recovery/$operationId': {
+      id: '/projects/$projectId/notifications/recovery/$operationId'
+      path: '/$operationId'
+      fullPath: '/projects/$projectId/notifications/recovery/$operationId'
+      preLoaderRoute: typeof ProjectsProjectIdNotificationsRecoveryOperationIdRouteImport
+      parentRoute: typeof ProjectsProjectIdNotificationsRecoveryRoute
+    }
     '/projects/$projectId/applications/$applicationId/runtime-groups/$groupId': {
       id: '/projects/$projectId/applications/$applicationId/runtime-groups/$groupId'
       path: '/$groupId'
@@ -263,13 +303,31 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ProjectsProjectIdNotificationsRecoveryRouteChildren {
+  ProjectsProjectIdNotificationsRecoveryOperationIdRoute: typeof ProjectsProjectIdNotificationsRecoveryOperationIdRoute
+}
+
+const ProjectsProjectIdNotificationsRecoveryRouteChildren: ProjectsProjectIdNotificationsRecoveryRouteChildren =
+  {
+    ProjectsProjectIdNotificationsRecoveryOperationIdRoute:
+      ProjectsProjectIdNotificationsRecoveryOperationIdRoute,
+  }
+
+const ProjectsProjectIdNotificationsRecoveryRouteWithChildren =
+  ProjectsProjectIdNotificationsRecoveryRoute._addFileChildren(
+    ProjectsProjectIdNotificationsRecoveryRouteChildren,
+  )
+
 interface ProjectsProjectIdNotificationsRouteChildren {
+  ProjectsProjectIdNotificationsRecoveryRoute: typeof ProjectsProjectIdNotificationsRecoveryRouteWithChildren
   ProjectsProjectIdNotificationsDeliveriesDeliveryIdRoute: typeof ProjectsProjectIdNotificationsDeliveriesDeliveryIdRoute
   ProjectsProjectIdNotificationsDestinationsDestinationIdRoute: typeof ProjectsProjectIdNotificationsDestinationsDestinationIdRoute
 }
 
 const ProjectsProjectIdNotificationsRouteChildren: ProjectsProjectIdNotificationsRouteChildren =
   {
+    ProjectsProjectIdNotificationsRecoveryRoute:
+      ProjectsProjectIdNotificationsRecoveryRouteWithChildren,
     ProjectsProjectIdNotificationsDeliveriesDeliveryIdRoute:
       ProjectsProjectIdNotificationsDeliveriesDeliveryIdRoute,
     ProjectsProjectIdNotificationsDestinationsDestinationIdRoute:

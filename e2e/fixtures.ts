@@ -127,12 +127,30 @@ export async function mockApi(page: Page) {
     created_at: '2026-08-17T12:00:00Z',
     updated_at: '2026-08-17T12:00:01Z',
     terminal_at: null,
-    retry_allowed: false,
+    retry_allowed: true,
     cancel_allowed: true,
     last_recovery_operation_id: null,
   }
   let destinations: (typeof destination)[] = []
   let deliveries: (typeof delivery)[] = []
+  const recoveryOperation = {
+    id: '00000000-0000-4000-8000-000000000013',
+    project_id: project.id,
+    command_type: 'retry',
+    target_delivery_id: delivery.id as string | null,
+    actor_kind: 'api_credential',
+    actor_id: '00000000-0000-4000-8000-000000000014',
+    request_id: 'recovery-request',
+    outcome: 'completed',
+    selected_count: 1,
+    retried_count: 1,
+    cancelled_count: 0,
+    skipped_count: 0,
+    remaining_count: 0,
+    created_at: '2026-08-17T13:00:00Z',
+    completed_at: '2026-08-17T13:00:01Z',
+  }
+  let recoveries: (typeof recoveryOperation)[] = []
   await page.route('**/api/v1/**', async (route) => {
     const url = new URL(route.request().url())
     const path = url.pathname
@@ -194,6 +212,53 @@ export async function mockApi(page: Page) {
     }
     const deliveryBase = `/api/v1/projects/${project.id}/notification-deliveries`
     if (path === deliveryBase) return json(route, { items: deliveries, next_cursor: null })
+    if (path === `${deliveryBase}/bulk-retry`) {
+      recoveries = [
+        {
+          ...recoveryOperation,
+          command_type: 'bulk_retry',
+          target_delivery_id: null as string | null,
+        },
+      ]
+      return json(route, {
+        operation_id: recoveryOperation.id,
+        selected_count: 1,
+        retried_count: 1,
+        skipped_count: 0,
+        remaining_count: 0,
+        has_more: false,
+        replayed: false,
+        completed_at: recoveryOperation.completed_at,
+      })
+    }
+    if (path === `${deliveryBase}/${delivery.id}/retry`) {
+      recoveries = [recoveryOperation]
+      return json(route, {
+        operation_id: recoveryOperation.id,
+        delivery_id: delivery.id,
+        status: 'pending',
+        recovery_generation: 1,
+        current_attempt_count: 0,
+        total_attempt_count: 1,
+        replayed: false,
+        completed_at: recoveryOperation.completed_at,
+      })
+    }
+    if (path === `${deliveryBase}/${delivery.id}/cancel`) {
+      recoveries = [
+        { ...recoveryOperation, command_type: 'cancel', retried_count: 0, cancelled_count: 1 },
+      ]
+      return json(route, {
+        operation_id: recoveryOperation.id,
+        delivery_id: delivery.id,
+        status: 'cancelled',
+        recovery_generation: 0,
+        current_attempt_count: 1,
+        total_attempt_count: 1,
+        replayed: false,
+        completed_at: recoveryOperation.completed_at,
+      })
+    }
     if (path === `${deliveryBase}/${delivery.id}`)
       return json(route, {
         ...delivery,
@@ -209,6 +274,20 @@ export async function mockApi(page: Page) {
             http_status: 503,
             error_class: null,
             response_excerpt: 'must not render',
+          },
+        ],
+      })
+    const recoveryBase = `/api/v1/projects/${project.id}/notification-recovery-operations`
+    if (path === recoveryBase) return json(route, { items: recoveries, next_cursor: null })
+    if (path === `${recoveryBase}/${recoveryOperation.id}`)
+      return json(route, {
+        ...(recoveries[0] ?? recoveryOperation),
+        affected_deliveries: [
+          {
+            delivery_id: delivery.id,
+            recovery_generation: 1,
+            action: 'retried',
+            created_at: recoveryOperation.completed_at,
           },
         ],
       })
@@ -271,7 +350,16 @@ export async function mockApi(page: Page) {
       'missing-id',
     )
   })
-  return { organization, project, application, group, releases, destination, delivery }
+  return {
+    organization,
+    project,
+    application,
+    group,
+    releases,
+    destination,
+    delivery,
+    recoveryOperation,
+  }
 }
 
 export async function authenticate(page: Page) {

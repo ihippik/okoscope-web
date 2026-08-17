@@ -38,6 +38,16 @@ export type DeliveryPage = components['schemas']['DeliveryPage']
 export type DeliveryAttempt = components['schemas']['DeliveryAttempt']
 export type DeliveryDetail = components['schemas']['DeliveryDetail']
 export type NotificationHealth = components['schemas']['NotificationHealth']
+export type BulkRetryFilter = components['schemas']['BulkRetryFilter']
+export type DeliveryRecoveryResult = components['schemas']['DeliveryRecoveryResult']
+export type BulkRecoveryResult = components['schemas']['BulkRecoveryResult']
+export type RecoveryCommandType = components['schemas']['RecoveryCommandType']
+export type RecoveryOperationSummary = components['schemas']['RecoveryOperationSummary']
+export type RecoveryOperationPage = components['schemas']['RecoveryOperationPage']
+export type RecoveryOperationDetail = components['schemas']['RecoveryOperationDetail']
+export type RecoveryOperationQuery = NonNullable<
+  operations['listNotificationRecoveryOperations']['parameters']['query']
+>
 export type DeliveryQuery = NonNullable<
   operations['listNotificationDeliveries']['parameters']['query']
 >

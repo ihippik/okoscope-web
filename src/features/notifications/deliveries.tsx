@@ -9,6 +9,7 @@ import { Card } from '../../shared/ui/card'
 import { ErrorState } from '../../shared/ui/error-state'
 import { Loading } from '../../shared/ui/loading'
 import { formatTime } from './shared'
+import { SingleRecoveryActions } from './recovery'
 
 export function DeliveryHistory({
   projectId,
@@ -213,6 +214,7 @@ export function DeliveryDetailView({
           <dd>{delivery.last_error_class ?? '—'}</dd>
         </dl>
       </Card>
+      <SingleRecoveryActions projectId={projectId} delivery={delivery} />
       <section aria-labelledby="attempts-heading">
         <h2 id="attempts-heading" className="text-2xl font-semibold">
           Attempt timeline

@@ -61,3 +61,53 @@ test('shows a safe test-delivery failure with error code and request ID', async 
   await expect(page.getByText('Error code: receiver_unavailable')).toBeVisible()
   await expect(page.getByText('test-delivery-request')).toBeVisible()
 })
+
+test('recovers deliveries and audits recovery operations', async ({ page }) => {
+  const { project, delivery, recoveryOperation } = await mockApi(page)
+  await page.goto(`/projects/${project.id}/notifications/deliveries/${delivery.id}`)
+  await authenticate(page)
+  await page.getByRole('button', { name: 'Retry delivery' }).click()
+  await expect(page.getByRole('dialog')).toBeVisible()
+  await page.getByRole('button', { name: 'Confirm retry' }).click()
+  await expect(page.getByText(/Command completed: pending/)).toBeVisible()
+  await page.getByRole('button', { name: 'Cancel delivery' }).click()
+  await page.getByRole('button', { name: 'Confirm cancel' }).click()
+  await expect(page.getByText(/Command completed: cancelled/)).toBeVisible()
+  await page.getByRole('link', { name: 'Notifications' }).click()
+  await page.getByRole('link', { name: 'Recovery history' }).click()
+  await expect(page.getByRole('heading', { name: 'Recovery history' })).toBeVisible()
+  await page.getByRole('link', { name: recoveryOperation.id }).click()
+  await expect(page.getByRole('heading', { name: 'Affected deliveries' })).toBeVisible()
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  await page.getByRole('link', { name: 'Notifications' }).click()
+  await page.getByRole('button', { name: 'Bulk retry failed deliveries' }).click()
+  await page.getByLabel('Limit').fill('1')
+  await page.getByRole('button', { name: 'Review bulk retry' }).click()
+  await page.getByRole('button', { name: 'Confirm bulk retry' }).click()
+  await expect(page.getByText(/Selected 1; retried 1/)).toBeVisible()
+})
+
+test('shows a correlated recovery conflict without automatic replay', async ({ page }) => {
+  const { project, delivery } = await mockApi(page)
+  let commandCount = 0
+  await page.route(`**/notification-deliveries/${delivery.id}/retry`, (route) => {
+    commandCount += 1
+    return route.fulfill({
+      status: 409,
+      contentType: 'application/json',
+      headers: { 'x-request-id': 'recovery-conflict-request' },
+      body: JSON.stringify({
+        error: 'active_lease',
+        message: 'Delivery has an active lease.',
+        request_id: 'body-request',
+      }),
+    })
+  })
+  await page.goto(`/projects/${project.id}/notifications/deliveries/${delivery.id}`)
+  await authenticate(page)
+  await page.getByRole('button', { name: 'Retry delivery' }).click()
+  await page.getByRole('button', { name: 'Confirm retry' }).click()
+  await expect(page.getByText('Error code: active_lease')).toBeVisible()
+  await expect(page.getByText('recovery-conflict-request')).toBeVisible()
+  expect(commandCount).toBe(1)
+})

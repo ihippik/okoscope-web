@@ -36,21 +36,31 @@ export class ApiClient {
 
   async get<T>(
     path: string,
-    options: { protected?: boolean; signal?: AbortSignal } = {},
+    options: { protected?: boolean; signal?: AbortSignal; headers?: Record<string, string> } = {},
   ): Promise<T> {
     return this.request<T>('GET', path, options)
   }
 
   async post<T>(
     path: string,
-    options: { protected?: boolean; signal?: AbortSignal; body?: unknown } = {},
+    options: {
+      protected?: boolean
+      signal?: AbortSignal
+      body?: unknown
+      headers?: Record<string, string>
+    } = {},
   ): Promise<T> {
     return this.request<T>('POST', path, options)
   }
 
   async patch<T>(
     path: string,
-    options: { protected?: boolean; signal?: AbortSignal; body: unknown },
+    options: {
+      protected?: boolean
+      signal?: AbortSignal
+      body: unknown
+      headers?: Record<string, string>
+    },
   ): Promise<T> {
     return this.request<T>('PATCH', path, options)
   }
@@ -58,10 +68,16 @@ export class ApiClient {
   private async request<T>(
     method: 'GET' | 'POST' | 'PATCH',
     path: string,
-    options: { protected?: boolean; signal?: AbortSignal; body?: unknown },
+    options: {
+      protected?: boolean
+      signal?: AbortSignal
+      body?: unknown
+      headers?: Record<string, string>
+    },
   ): Promise<T> {
     const requestId = crypto.randomUUID()
     const headers = new Headers({ Accept: 'application/json', 'X-Request-Id': requestId })
+    for (const [name, value] of Object.entries(options.headers ?? {})) headers.set(name, value)
     if (options.body !== undefined) headers.set('Content-Type', 'application/json')
     if (options.protected) {
       const credential = credentialSession.get()
