@@ -107,6 +107,165 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/applications/{application_id}/runtime-inventory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        get: operations["listApplicationRuntimeInventory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/runtime-inventory/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        get: operations["getApplicationRuntimeInventorySummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/runtime-inventory/facets/{facet}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                facet: components["schemas"]["InventoryFacet"];
+            };
+            cookie?: never;
+        };
+        /** @description Returns bounded dependent options. Every active filter except the requested facet's own value is applied. Cursors are opaque and valid only for the exact Application, facet, and normalized filter scope. */
+        get: operations["listApplicationRuntimeInventoryFacetOptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/runtime-inventory/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                item_id: components["parameters"]["InventoryItemId"];
+            };
+            cookie?: never;
+        };
+        get: operations["getApplicationRuntimeInventoryItem"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/runtime-inventory/{item_id}/releases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                item_id: components["parameters"]["InventoryItemId"];
+            };
+            cookie?: never;
+        };
+        get: operations["listApplicationRuntimeInventoryItemReleases"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/runtime-inventory/{item_id}/sightings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                item_id: components["parameters"]["InventoryItemId"];
+            };
+            cookie?: never;
+        };
+        get: operations["listApplicationRuntimeInventoryItemSightings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/runtime-inventory/{item_id}/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                item_id: components["parameters"]["InventoryItemId"];
+            };
+            cookie?: never;
+        };
+        get: operations["listApplicationRuntimeInventoryItemGroups"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/runtime-inventory/{item_id}/occurrences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                item_id: components["parameters"]["InventoryItemId"];
+            };
+            cookie?: never;
+        };
+        get: operations["listApplicationRuntimeInventoryItemOccurrences"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/runtime-groups": {
         parameters: {
             query?: never;
@@ -1010,10 +1169,197 @@ export interface components {
         RecoveryOperationDetail: components["schemas"]["RecoveryOperationSummary"] & {
             affected_deliveries: components["schemas"]["RecoveryOperationDelivery"][];
         };
+        /** @enum {string} */
+        InventoryKind: "process" | "destination" | "domain" | "syscall";
+        /**
+         * @description Evidence-qualified state; not_observed does not prove behavior cannot occur.
+         * @enum {string}
+         */
+        InventoryReleasePresence: "observed" | "not_observed" | "unknown";
+        InventorySemanticSummary: components["schemas"]["InventoryProcessIdentity"] | components["schemas"]["InventoryDestinationIdentity"] | components["schemas"]["InventoryDomainIdentity"] | components["schemas"]["InventorySyscallIdentity"];
+        InventoryProcessIdentity: {
+            /** @example /app/payments */
+            executable: string;
+        };
+        InventoryDestinationIdentity: {
+            /** @example payments */
+            process_command: string;
+            /** @enum {string} */
+            address_family: "ipv4" | "ipv6";
+            /**
+             * Format: ip
+             * @example 203.0.113.7
+             */
+            destination_address: string;
+            /** @example 443 */
+            destination_port: number;
+        };
+        InventoryDomainIdentity: {
+            /** @example payments */
+            process_command: string;
+            /** @example api.example.com */
+            name: string;
+            /** @enum {string} */
+            query_type: "A" | "AAAA";
+        };
+        InventorySyscallIdentity: {
+            /** @example payments */
+            process_command: string;
+            /** @example epoll_wait */
+            syscall: string;
+        };
+        InventoryItem: {
+            id: components["schemas"]["Uuid"];
+            project_id: components["schemas"]["Uuid"];
+            application_id: components["schemas"]["Uuid"];
+            inventory_kind: components["schemas"]["InventoryKind"];
+            /**
+             * Format: int32
+             * @example 1
+             */
+            identity_version: number;
+            semantic_summary: components["schemas"]["InventorySemanticSummary"];
+            first_seen_at: components["schemas"]["Timestamp"];
+            last_seen_at: components["schemas"]["Timestamp"];
+            /** Format: int64 */
+            occurrence_count: number;
+            /** Format: int64 */
+            release_count: number;
+            /** Format: int64 */
+            cluster_count: number;
+            /** Format: int64 */
+            namespace_count: number;
+            /** Format: int64 */
+            workload_count: number;
+            /** Format: int64 */
+            pod_count: number;
+            /** Format: int64 */
+            container_count: number;
+            /** Format: int64 */
+            group_count: number;
+        };
+        InventoryItemPage: {
+            items: components["schemas"]["InventoryItem"][];
+            next_cursor: components["schemas"]["NullableUuid"];
+        };
+        InventoryKindCount: {
+            kind: components["schemas"]["InventoryKind"];
+            /** Format: int64 */
+            item_count: number;
+            /** Format: int64 */
+            occurrence_count: number;
+        };
+        InventorySummary: {
+            /** Format: int32 */
+            identity_version: number;
+            /** Format: int64 */
+            item_count: number;
+            /** Format: int64 */
+            occurrence_count: number;
+            first_seen_at: components["schemas"]["NullableTimestamp"];
+            last_seen_at: components["schemas"]["NullableTimestamp"];
+            kinds: components["schemas"]["InventoryKindCount"][];
+        };
+        /** @enum {string} */
+        InventoryFacet: "cluster" | "namespace" | "workload_kind" | "workload_name" | "container_name";
+        InventoryFacetOption: {
+            value: string;
+            label: string;
+            /** Format: int64 */
+            item_count: number;
+            /** Format: int64 */
+            occurrence_count: number;
+        };
+        InventoryFacetPage: {
+            items: components["schemas"]["InventoryFacetOption"][];
+            /** @description Opaque cursor bound to the exact Application */
+            next_cursor: string | null;
+        };
+        InventoryEvidenceLinks: {
+            releases: string;
+            sightings: string;
+            groups: string;
+            occurrences: string;
+        };
+        InventoryItemDetail: components["schemas"]["InventoryItem"] & {
+            evidence: components["schemas"]["InventoryEvidenceLinks"];
+        };
+        InventoryReleaseEvidence: {
+            release_id: components["schemas"]["Uuid"];
+            version: string;
+            deployed_at: components["schemas"]["Timestamp"];
+            presence: components["schemas"]["InventoryReleasePresence"];
+            /** Format: int64 */
+            occurrence_count: number | null;
+            first_seen_at: components["schemas"]["NullableTimestamp"];
+            last_seen_at: components["schemas"]["NullableTimestamp"];
+            /** Format: int64 */
+            release_evidence_count: number;
+        };
+        InventoryReleasePresencePage: {
+            items: components["schemas"]["InventoryReleaseEvidence"][];
+            next_cursor: components["schemas"]["NullableUuid"];
+        };
+        InventorySighting: {
+            cluster_id: components["schemas"]["Uuid"];
+            namespace: string;
+            workload_kind: string;
+            workload_name: string;
+            pod_uid: string;
+            pod_name: string;
+            container_name: string;
+            /** Format: int64 */
+            occurrence_count: number;
+            first_seen_at: components["schemas"]["Timestamp"];
+            last_seen_at: components["schemas"]["Timestamp"];
+        };
+        InventorySightingPage: {
+            items: components["schemas"]["InventorySighting"][];
+            next_cursor: components["schemas"]["NullableOpaqueCursor"];
+        };
+        InventoryGroup: {
+            id: components["schemas"]["Uuid"];
+            cluster_id: components["schemas"]["Uuid"];
+            namespace: string;
+            workload_kind: string;
+            workload_name: string;
+            event_kind: string;
+            /** @enum {string} */
+            status: "open" | "acknowledged" | "resolved";
+            first_seen_at: components["schemas"]["Timestamp"];
+            last_seen_at: components["schemas"]["Timestamp"];
+            /** Format: int64 */
+            occurrence_count: number;
+        };
+        InventoryGroupPage: {
+            items: components["schemas"]["InventoryGroup"][];
+            next_cursor: components["schemas"]["NullableUuid"];
+        };
+        InventoryOccurrence: {
+            id: components["schemas"]["Uuid"];
+            event_id: components["schemas"]["Uuid"];
+            observed_at: components["schemas"]["Timestamp"];
+            cluster_id: components["schemas"]["Uuid"];
+            node_name: string;
+            namespace: string;
+            pod_uid: string;
+            pod_name: string;
+            container_name: string;
+            process_command: string;
+            event_kind: string;
+            payload: components["schemas"]["RuntimeEventPayload"];
+            release_id: components["schemas"]["NullableUuid"];
+            release_version: string | null;
+        };
+        InventoryOccurrencePage: {
+            items: components["schemas"]["InventoryOccurrence"][];
+            next_cursor: components["schemas"]["NullableUuid"];
+        };
         /** Format: uuid */
         Uuid: string;
         /** Format: uuid */
         NullableUuid: string | null;
+        NullableOpaqueCursor: string | null;
         /**
          * Format: date-time
          * @example 2026-08-17T12:00:00Z
@@ -1081,6 +1427,86 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["ApplicationPage"];
+            };
+        };
+        /** @description Application runtime inventory aggregate */
+        InventorySummary: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["InventorySummary"];
+            };
+        };
+        /** @description Bounded runtime inventory facet options */
+        InventoryFacetPage: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["InventoryFacetPage"];
+            };
+        };
+        /** @description Bounded application runtime inventory page */
+        InventoryItemPage: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["InventoryItemPage"];
+            };
+        };
+        /** @description Runtime inventory item with evidence navigation */
+        InventoryItemDetail: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["InventoryItemDetail"];
+            };
+        };
+        /** @description Evidence-qualified release presence page */
+        InventoryReleasePresencePage: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["InventoryReleasePresencePage"];
+            };
+        };
+        /** @description Bounded Kubernetes sighting page */
+        InventorySightingPage: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["InventorySightingPage"];
+            };
+        };
+        /** @description Contributing runtime group page */
+        InventoryGroupPage: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["InventoryGroupPage"];
+            };
+        };
+        /** @description Raw inventory evidence page */
+        InventoryOccurrencePage: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["InventoryOccurrencePage"];
             };
         };
         /** @description Runtime group page */
@@ -1277,9 +1703,12 @@ export interface components {
     parameters: {
         /** @description Opaque cursor scoped to the authenticated collection. */
         Cursor: string;
+        /** @description Opaque cursor scoped to the authenticated collection; clients must not parse it. */
+        OpaqueCursor: string;
         Limit: number;
         ProjectId: string;
         ApplicationId: string;
+        InventoryItemId: string;
         GroupId: string;
         ReleaseId: string;
         TargetId: string;
@@ -1407,6 +1836,212 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["Application"];
+            404: components["responses"]["Error"];
+        };
+    };
+    listApplicationRuntimeInventory: {
+        parameters: {
+            query?: {
+                kind?: components["schemas"]["InventoryKind"];
+                release_id?: string;
+                cluster_id?: string;
+                namespace?: string;
+                workload_kind?: string;
+                workload_name?: string;
+                container_name?: string;
+                observed_from?: string;
+                observed_to?: string;
+                /** @description Case-insensitive search over allowlisted safe semantic identity fields only. */
+                search?: string;
+                /** @description Opaque cursor scoped to the authenticated collection. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["InventoryItemPage"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    getApplicationRuntimeInventorySummary: {
+        parameters: {
+            query?: {
+                release_id?: string;
+                cluster_id?: string;
+                namespace?: string;
+                workload_kind?: string;
+                workload_name?: string;
+                container_name?: string;
+                observed_from?: string;
+                observed_to?: string;
+                search?: string;
+            };
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["InventorySummary"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    listApplicationRuntimeInventoryFacetOptions: {
+        parameters: {
+            query?: {
+                kind?: components["schemas"]["InventoryKind"];
+                release_id?: string;
+                cluster_id?: string;
+                namespace?: string;
+                workload_kind?: string;
+                workload_name?: string;
+                container_name?: string;
+                observed_from?: string;
+                observed_to?: string;
+                search?: string;
+                facet_search?: string;
+                /** @description Opaque cursor scoped to the authenticated collection; clients must not parse it. */
+                cursor?: components["parameters"]["OpaqueCursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                facet: components["schemas"]["InventoryFacet"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["InventoryFacetPage"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    getApplicationRuntimeInventoryItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                item_id: components["parameters"]["InventoryItemId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["InventoryItemDetail"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    listApplicationRuntimeInventoryItemReleases: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor scoped to the authenticated collection. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                item_id: components["parameters"]["InventoryItemId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["InventoryReleasePresencePage"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    listApplicationRuntimeInventoryItemSightings: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor scoped to the authenticated collection; clients must not parse it. */
+                cursor?: components["parameters"]["OpaqueCursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                item_id: components["parameters"]["InventoryItemId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["InventorySightingPage"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    listApplicationRuntimeInventoryItemGroups: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor scoped to the authenticated collection. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                item_id: components["parameters"]["InventoryItemId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["InventoryGroupPage"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    listApplicationRuntimeInventoryItemOccurrences: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor scoped to the authenticated collection. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                item_id: components["parameters"]["InventoryItemId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["InventoryOccurrencePage"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
             404: components["responses"]["Error"];
         };
     };

@@ -93,6 +93,14 @@ function ApplicationPage() {
           >
             View releases
           </Link>
+          <Link
+            className="rounded-lg border border-slate-600 px-4 py-2 font-semibold"
+            to="/projects/$projectId/applications/$applicationId/runtime-inventory"
+            params={{ projectId, applicationId }}
+            search={{ kind: 'process' }}
+          >
+            View runtime inventory
+          </Link>
         </div>
       </Card>
     </div>

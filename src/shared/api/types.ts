@@ -25,6 +25,33 @@ export type Release = components['schemas']['Release']
 export type ReleasePage = components['schemas']['ReleasePage']
 export type RuntimeDiff = components['schemas']['RuntimeDiff']
 export type RuntimeDiffEntry = components['schemas']['RuntimeDiffEntry']
+export type InventoryKind = components['schemas']['InventoryKind']
+export type InventoryFacet = components['schemas']['InventoryFacet']
+export type InventoryItem = components['schemas']['InventoryItem']
+export type InventoryItemPage = components['schemas']['InventoryItemPage']
+export type InventorySummary = components['schemas']['InventorySummary']
+export type InventoryFacetPage = components['schemas']['InventoryFacetPage']
+export type InventoryItemDetail = components['schemas']['InventoryItemDetail']
+export type InventoryReleaseEvidence = components['schemas']['InventoryReleaseEvidence']
+export type InventoryReleasePresencePage = components['schemas']['InventoryReleasePresencePage']
+export type InventorySighting = components['schemas']['InventorySighting']
+export type InventorySightingPage = components['schemas']['InventorySightingPage']
+export type InventoryGroup = components['schemas']['InventoryGroup']
+export type InventoryGroupPage = components['schemas']['InventoryGroupPage']
+export type InventoryOccurrence = components['schemas']['InventoryOccurrence']
+export type InventoryOccurrencePage = components['schemas']['InventoryOccurrencePage']
+export type InventoryListQuery = NonNullable<
+  operations['listApplicationRuntimeInventory']['parameters']['query']
+>
+export type InventorySummaryQuery = NonNullable<
+  operations['getApplicationRuntimeInventorySummary']['parameters']['query']
+>
+export type InventoryFacetQuery = NonNullable<
+  operations['listApplicationRuntimeInventoryFacetOptions']['parameters']['query']
+>
+export type InventoryEvidenceQuery = NonNullable<
+  operations['listApplicationRuntimeInventoryItemOccurrences']['parameters']['query']
+>
 export type RuntimeGroupQuery = operations['listRuntimeGroups']['parameters']['query']
 export type RuntimeGroupOccurrenceQuery = NonNullable<
   operations['listRuntimeGroupOccurrences']['parameters']['query']
@@ -151,5 +178,128 @@ export const contractFixture = {
     confidence: 'observed_recently',
     ambiguous: true,
   } satisfies DnsContext,
+  inventoryListQuery: {
+    kind: 'process',
+    release_id: 'release',
+    cluster_id: 'cluster',
+    namespace: 'production',
+    workload_kind: 'Deployment',
+    workload_name: 'payments',
+    container_name: 'payments',
+    observed_from: '2026-08-17T00:00:00Z',
+    observed_to: '2026-08-18T00:00:00Z',
+    search: 'pay',
+    cursor: 'opaque',
+    limit: 50,
+  } satisfies InventoryListQuery,
+  inventorySummary: {
+    identity_version: 1,
+    item_count: 1,
+    occurrence_count: 12,
+    first_seen_at: '2026-08-17T00:00:00Z',
+    last_seen_at: '2026-08-18T00:00:00Z',
+    kinds: [{ kind: 'process', item_count: 1, occurrence_count: 12 }],
+  } satisfies InventorySummary,
+  inventoryFacetPage: {
+    items: [{ value: 'production', label: 'production', item_count: 1, occurrence_count: 12 }],
+    next_cursor: null,
+  } satisfies InventoryFacetPage,
+  inventoryItemDetail: {
+    id: '10000000-0000-4000-8000-000000000001',
+    project_id: '20000000-0000-4000-8000-000000000001',
+    application_id: '30000000-0000-4000-8000-000000000001',
+    inventory_kind: 'process',
+    identity_version: 1,
+    semantic_summary: { executable: '/app/payments' },
+    first_seen_at: '2026-08-17T00:00:00Z',
+    last_seen_at: '2026-08-18T00:00:00Z',
+    occurrence_count: 12,
+    release_count: 2,
+    cluster_count: 1,
+    namespace_count: 1,
+    workload_count: 1,
+    pod_count: 2,
+    container_count: 1,
+    group_count: 1,
+    evidence: {
+      releases: '/releases',
+      sightings: '/sightings',
+      groups: '/groups',
+      occurrences: '/occurrences',
+    },
+  } satisfies InventoryItemDetail,
+  inventoryReleasePage: {
+    items: [
+      {
+        release_id: '40000000-0000-4000-8000-000000000001',
+        version: '2.14.0',
+        deployed_at: '2026-08-18T00:00:00Z',
+        presence: 'observed',
+        occurrence_count: 8,
+        first_seen_at: '2026-08-18T00:00:00Z',
+        last_seen_at: '2026-08-18T01:00:00Z',
+        release_evidence_count: 55,
+      },
+    ],
+    next_cursor: null,
+  } satisfies InventoryReleasePresencePage,
+  inventorySightingPage: {
+    items: [
+      {
+        cluster_id: '50000000-0000-4000-8000-000000000001',
+        namespace: 'production',
+        workload_kind: 'Deployment',
+        workload_name: 'payments',
+        pod_uid: 'pod-uid',
+        pod_name: 'payments-1',
+        container_name: 'payments',
+        occurrence_count: 8,
+        first_seen_at: '2026-08-18T00:00:00Z',
+        last_seen_at: '2026-08-18T01:00:00Z',
+      },
+    ],
+    next_cursor: null,
+  } satisfies InventorySightingPage,
+  inventoryGroupPage: {
+    items: [
+      {
+        id: '60000000-0000-4000-8000-000000000001',
+        cluster_id: '50000000-0000-4000-8000-000000000001',
+        namespace: 'production',
+        workload_kind: 'Deployment',
+        workload_name: 'payments',
+        event_kind: 'exec',
+        status: 'open',
+        first_seen_at: '2026-08-18T00:00:00Z',
+        last_seen_at: '2026-08-18T01:00:00Z',
+        occurrence_count: 8,
+      },
+    ],
+    next_cursor: null,
+  } satisfies InventoryGroupPage,
+  inventoryOccurrencePage: {
+    items: [
+      {
+        id: '70000000-0000-4000-8000-000000000001',
+        event_id: '70000000-0000-4000-8000-000000000002',
+        observed_at: '2026-08-18T00:00:00Z',
+        cluster_id: '50000000-0000-4000-8000-000000000001',
+        node_name: 'node-1',
+        namespace: 'production',
+        pod_uid: 'pod-uid',
+        pod_name: 'payments-1',
+        container_name: 'payments',
+        process_command: '/app/payments',
+        event_kind: 'exec',
+        payload: {
+          type: 'ProcessExec',
+          data: { executable: '/app/payments', parent_command: null },
+        },
+        release_id: null,
+        release_version: null,
+      },
+    ],
+    next_cursor: null,
+  } satisfies InventoryOccurrencePage,
   deliveryQuery: { cursor: 'cursor', limit: 50 } satisfies DeliveryQuery,
 }

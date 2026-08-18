@@ -105,6 +105,36 @@ const baselineRelease = {
   created_at: '2026-08-16T11:00:00Z',
 }
 const releases = [targetRelease, baselineRelease]
+const inventoryItemId = '10000000-0000-4000-8000-000000000001'
+const unsafeInventoryText = "<img src=x onerror=alert('inventory')>"
+const inventoryBase = `/api/v1/projects/${project.id}/applications/${application.id}/runtime-inventory`
+const inventoryItem = {
+  id: inventoryItemId,
+  project_id: project.id,
+  application_id: application.id,
+  inventory_kind: 'process',
+  identity_version: 1,
+  semantic_summary: { executable: unsafeInventoryText },
+  first_seen_at: '2026-08-17T10:00:00Z',
+  last_seen_at: '2026-08-18T10:00:00Z',
+  occurrence_count: 12,
+  release_count: 2,
+  cluster_count: 1,
+  namespace_count: 1,
+  workload_count: 1,
+  pod_count: 2,
+  container_count: 1,
+  group_count: 1,
+}
+const inventoryDetail = {
+  ...inventoryItem,
+  evidence: {
+    releases: `${inventoryBase}/${inventoryItemId}/releases`,
+    sightings: `${inventoryBase}/${inventoryItemId}/sightings`,
+    groups: `${inventoryBase}/${inventoryItemId}/groups`,
+    occurrences: `${inventoryBase}/${inventoryItemId}/occurrences`,
+  },
+}
 
 const json = (route: Route, body: unknown, status = 200, requestId = 'e2e-request') =>
   route.fulfill({
@@ -322,6 +352,125 @@ export async function mockApi(page: Page) {
       return json(route, { items: [application], next_cursor: null })
     if (path === `/api/v1/projects/${project.id}/applications/${application.id}`)
       return json(route, application)
+    if (path === `${inventoryBase}/summary`)
+      return json(route, {
+        identity_version: 1,
+        item_count: 4,
+        occurrence_count: 126,
+        first_seen_at: inventoryItem.first_seen_at,
+        last_seen_at: inventoryItem.last_seen_at,
+        kinds: [
+          { kind: 'process', item_count: 1, occurrence_count: 12 },
+          { kind: 'destination', item_count: 1, occurrence_count: 24 },
+          { kind: 'domain', item_count: 1, occurrence_count: 30 },
+          { kind: 'syscall', item_count: 1, occurrence_count: 60 },
+        ],
+      })
+    if (path.startsWith(`${inventoryBase}/facets/`)) {
+      const facet = path.split('/').at(-1) ?? 'scope'
+      const values: Record<string, [string, string]> = {
+        cluster: ['00000000-0000-4000-8000-000000000005', 'Primary cluster'],
+        namespace: ['production', 'production'],
+        workload_kind: ['Deployment', 'Deployment'],
+        workload_name: ['gateway', 'gateway'],
+        container_name: ['gateway', 'gateway'],
+      }
+      const [value, label] = values[facet] ?? ['value', 'value']
+      return json(route, {
+        items: [{ value, label, item_count: 1, occurrence_count: 12 }],
+        next_cursor: null,
+      })
+    }
+    if (path === inventoryBase) {
+      if (url.searchParams.get('cursor') === 'terminal')
+        return json(route, { items: [], next_cursor: null })
+      const kind = url.searchParams.get('kind') ?? 'process'
+      const identity =
+        kind === 'destination'
+          ? {
+              process_command: 'gateway',
+              address_family: 'ipv4',
+              destination_address: '203.0.113.7',
+              destination_port: 443,
+            }
+          : kind === 'domain'
+            ? { process_command: 'gateway', name: 'api.example.com', query_type: 'A' }
+            : kind === 'syscall'
+              ? { process_command: 'gateway', syscall: 'epoll_wait' }
+              : inventoryItem.semantic_summary
+      return json(route, {
+        items: [{ ...inventoryItem, inventory_kind: kind, semantic_summary: identity }],
+        next_cursor: 'terminal',
+      })
+    }
+    if (path === `${inventoryBase}/${inventoryItemId}`) return json(route, inventoryDetail)
+    if (path === `${inventoryBase}/${inventoryItemId}/releases`)
+      return json(route, {
+        items: [
+          {
+            release_id: targetRelease.id,
+            version: targetRelease.version,
+            deployed_at: targetRelease.deployed_at,
+            presence: 'observed',
+            occurrence_count: 8,
+            first_seen_at: inventoryItem.first_seen_at,
+            last_seen_at: inventoryItem.last_seen_at,
+            release_evidence_count: 55,
+          },
+          {
+            release_id: baselineRelease.id,
+            version: baselineRelease.version,
+            deployed_at: baselineRelease.deployed_at,
+            presence: 'not_observed',
+            occurrence_count: null,
+            first_seen_at: null,
+            last_seen_at: null,
+            release_evidence_count: 48,
+          },
+        ],
+        next_cursor: null,
+      })
+    if (path === `${inventoryBase}/${inventoryItemId}/sightings`)
+      return json(route, {
+        items: [
+          {
+            cluster_id: group.cluster_id,
+            namespace: "<script>alert('scope')</script>",
+            workload_kind: group.workload_kind,
+            workload_name: "javascript:alert('workload')",
+            pod_uid: 'pod-uid',
+            pod_name: 'gateway-abc',
+            container_name: 'gateway',
+            occurrence_count: 12,
+            first_seen_at: group.first_seen_at,
+            last_seen_at: group.last_seen_at,
+          },
+        ],
+        next_cursor: null,
+      })
+    if (path === `${inventoryBase}/${inventoryItemId}/groups`)
+      return json(route, {
+        items: [
+          {
+            id: group.id,
+            cluster_id: group.cluster_id,
+            namespace: group.namespace,
+            workload_kind: group.workload_kind,
+            workload_name: group.workload_name,
+            event_kind: group.event_kind,
+            status: groupStatus,
+            first_seen_at: group.first_seen_at,
+            last_seen_at: group.last_seen_at,
+            occurrence_count: group.occurrence_count,
+          },
+        ],
+        next_cursor: null,
+      })
+    if (path === `${inventoryBase}/${inventoryItemId}/occurrences`)
+      return json(route, {
+        items: [{ ...occurrence, cluster_id: group.cluster_id, pod_uid: 'pod-uid' }],
+        next_cursor: null,
+      })
     if (path === '/api/v1/runtime-groups')
       return json(route, { items: [{ ...group, status: groupStatus }], next_cursor: null })
     if (path === `/api/v1/runtime-groups/${group.id}/occurrences`)

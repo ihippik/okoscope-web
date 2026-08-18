@@ -16,6 +16,17 @@
 | Runtime Group filters, first-seen detail, notification state, and bounded occurrences                | observability unit/component tests and Playwright first-seen journey          |
 | Notification destinations, one-time secrets, delivery history/detail, confirmations, and request IDs | notification component tests and Playwright notification journey with axe     |
 | Acknowledge, resolve confirmation, reopen, and cache invalidation                                    | lifecycle component/integration coverage and Playwright first-seen journey    |
+| Runtime Inventory summary, four behavior kinds, dependent facets, URL scope, search, and cursors     | runtime-inventory unit/component tests and Playwright inventory journey       |
+| Runtime Inventory release states, evidence tabs, ownership, and inert observed strings               | fixture-driven safety tests, Playwright evidence journey, and axe checks      |
+
+## Runtime Inventory contract fixture coverage
+
+The backend `runtime-inventory.json` fixture is used directly for summary, list, terminal/empty pages,
+release presence, and markup-like observed text. The published fixture does not currently include facet,
+item-detail, sighting, group, occurrence, unauthorized/not-found/server-error, or invalid-cursor envelopes;
+those cases use generated-type-checked frontend builders and Playwright responses. Invalid-cursor recovery
+accepts the centralized `invalid_cursor`, `cursor_invalid`, and `expired_cursor` codes until the backend
+contract enumerates one canonical error value.
 
 ## Production first-seen smoke fixture
 
