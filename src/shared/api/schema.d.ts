@@ -620,7 +620,7 @@ export interface components {
             items: components["schemas"]["EventOccurrence"][];
             next_cursor: components["schemas"]["NullableUuid"];
         };
-        RuntimeEventSemanticSummary: components["schemas"]["ProcessExecSemanticSummary"] | components["schemas"]["SyscallSemanticSummary"] | components["schemas"]["NetworkConnectSemanticSummary"];
+        RuntimeEventSemanticSummary: components["schemas"]["ProcessExecSemanticSummary"] | components["schemas"]["SyscallSemanticSummary"] | components["schemas"]["NetworkConnectSemanticSummary"] | components["schemas"]["NetworkDnsQuerySemanticSummary"] | components["schemas"]["NetworkDnsResponseSemanticSummary"];
         ProcessExecSemanticSummary: {
             executable: string;
         };
@@ -640,8 +640,24 @@ export interface components {
             destination_address: string;
             /** @example 443 */
             destination_port: number;
+            dns_context?: components["schemas"]["DnsContext"];
         };
-        RuntimeEventPayload: components["schemas"]["ProcessExecPayload"] | components["schemas"]["SyscallPayload"] | components["schemas"]["NetworkConnectPayload"];
+        NetworkDnsQuerySemanticSummary: {
+            process_command: string;
+            name: components["schemas"]["DnsName"];
+            query_type: components["schemas"]["DnsQueryType"];
+            transport: components["schemas"]["DnsTransport"];
+            direction: components["schemas"]["DnsDirection"];
+        };
+        NetworkDnsResponseSemanticSummary: {
+            process_command: string;
+            name: components["schemas"]["DnsName"];
+            query_type: components["schemas"]["DnsQueryType"];
+            response_code: components["schemas"]["DnsResponseCode"];
+            transport: components["schemas"]["DnsTransport"];
+            direction: components["schemas"]["DnsDirection"];
+        };
+        RuntimeEventPayload: components["schemas"]["ProcessExecPayload"] | components["schemas"]["SyscallPayload"] | components["schemas"]["NetworkConnectPayload"] | components["schemas"]["NetworkDnsQueryPayload"] | components["schemas"]["NetworkDnsResponsePayload"];
         ProcessExecPayload: {
             /** @constant */
             type: "ProcessExec";
@@ -674,7 +690,69 @@ export interface components {
                 outcome: "succeeded" | "in_progress" | "failed";
                 /** @example 111 */
                 errno?: number;
+                dns_context?: components["schemas"]["DnsContext"];
             };
+        };
+        NetworkDnsQueryPayload: {
+            /** @constant */
+            type: "NetworkDnsQuery";
+            data: {
+                transaction_id: number;
+                direction: components["schemas"]["DnsDirection"];
+                transport: components["schemas"]["DnsTransport"];
+                /** Format: ip */
+                resolver_address: string;
+                name: components["schemas"]["DnsName"];
+                query_type: components["schemas"]["DnsQueryType"];
+            };
+        };
+        NetworkDnsResponsePayload: {
+            /** @constant */
+            type: "NetworkDnsResponse";
+            data: {
+                transaction_id: number;
+                direction: components["schemas"]["DnsDirection"];
+                transport: components["schemas"]["DnsTransport"];
+                /** Format: ip */
+                resolver_address: string;
+                name: components["schemas"]["DnsName"];
+                query_type: components["schemas"]["DnsQueryType"];
+                response_code: components["schemas"]["DnsResponseCode"];
+                truncated: boolean;
+                answers: components["schemas"]["DnsAddressAnswer"][];
+                cname_chain: components["schemas"]["DnsCname"][];
+                effective_ttl_seconds: number | null;
+            };
+        };
+        /** @example api.example.com */
+        DnsName: string;
+        /** @enum {string} */
+        DnsQueryType: "A" | "AAAA";
+        /** @enum {string} */
+        DnsTransport: "udp" | "tcp";
+        /** @enum {string} */
+        DnsDirection: "egress" | "ingress";
+        /** @enum {string} */
+        DnsResponseCode: "no_error" | "form_err" | "serv_fail" | "nx_domain" | "not_imp" | "refused";
+        /** @enum {string} */
+        DnsConfidence: "observed_recently";
+        DnsAddressAnswer: {
+            name: components["schemas"]["DnsName"];
+            /** Format: ip */
+            address: string;
+            ttl_seconds: number;
+        };
+        DnsCname: {
+            alias: components["schemas"]["DnsName"];
+            canonical: components["schemas"]["DnsName"];
+            ttl_seconds: number;
+        };
+        DnsContext: {
+            names: components["schemas"]["DnsName"][];
+            observed_at: components["schemas"]["Timestamp"];
+            expires_at: components["schemas"]["Timestamp"];
+            confidence: components["schemas"]["DnsConfidence"];
+            ambiguous: boolean;
         };
         FirstSeenNotificationSummary: {
             /** @enum {string} */

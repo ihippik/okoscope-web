@@ -4,9 +4,12 @@ import { useState } from 'react'
 import type React from 'react'
 import type {
   EventOccurrence,
+  DnsContext,
   FirstSeenNotificationSummary,
   NetworkConnectPayload,
   NetworkConnectSemanticSummary,
+  NetworkDnsQueryPayload,
+  NetworkDnsResponsePayload,
   Release,
   RuntimeDiffEntry,
   RuntimeGroup,
@@ -194,8 +197,55 @@ export function JsonDetailsViewer({
 const isNetworkSummary = (
   value: RuntimeGroup['semantic_summary'],
 ): value is NetworkConnectSemanticSummary => 'destination_address' in value
+const isDnsSummary = (value: RuntimeGroup['semantic_summary']) =>
+  'query_type' in value && 'name' in value
+
+function DnsContextView({ context }: { context: DnsContext }) {
+  return (
+    <>
+      <dt className="sr-only">DNS context</dt>
+      <dd className="col-span-2 mt-2 rounded border border-cyan-900 bg-cyan-950/30 p-3">
+        <p className="font-semibold text-cyan-200">Recently observed DNS evidence</p>
+        <ul aria-label="Observed DNS names" className="mt-2 list-disc pl-5 font-mono">
+          {context.names.map((name) => (
+            <li key={name} className="break-all">
+              {name}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-2 text-xs text-slate-400">
+          {context.ambiguous ? 'Ambiguous: multiple names were observed for this IP. ' : ''}
+          Evidence expires {formatTimestamp(context.expires_at)}. The IP remains the canonical
+          destination.
+        </p>
+      </dd>
+    </>
+  )
+}
 
 export function SemanticSummary({ value }: { value: RuntimeGroup['semantic_summary'] }) {
+  if (isDnsSummary(value))
+    return (
+      <dl
+        className="details rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm"
+        aria-label="DNS behavior summary"
+      >
+        <dt>Process</dt>
+        <dd className="font-mono">{value.process_command}</dd>
+        <dt>Name</dt>
+        <dd className="break-all font-mono">{value.name}</dd>
+        <dt>Query type</dt>
+        <dd>{value.query_type}</dd>
+        {'response_code' in value && (
+          <>
+            <dt>Response</dt>
+            <dd>{value.response_code.toUpperCase()}</dd>
+          </>
+        )}
+        <dt>Transport</dt>
+        <dd>{value.transport.toUpperCase()}</dd>
+      </dl>
+    )
   if (!isNetworkSummary(value)) return <JsonDetailsViewer value={value} label="Semantic summary" />
   return (
     <dl
@@ -210,6 +260,7 @@ export function SemanticSummary({ value }: { value: RuntimeGroup['semantic_summa
       <dd className="break-all font-mono">{value.destination_address}</dd>
       <dt className="text-slate-300">Port</dt>
       <dd>{value.destination_port}</dd>
+      {value.dns_context && <DnsContextView context={value.dns_context} />}
     </dl>
   )
 }
@@ -240,6 +291,55 @@ function NetworkOccurrence({ payload }: { payload: NetworkConnectPayload }) {
           <dd>{payload.data.errno}</dd>
         </>
       )}
+      {payload.data.dns_context && <DnsContextView context={payload.data.dns_context} />}
+    </dl>
+  )
+}
+
+function DnsOccurrence({
+  payload,
+}: {
+  payload: NetworkDnsQueryPayload | NetworkDnsResponsePayload
+}) {
+  const data = payload.data
+  return (
+    <dl
+      className="details rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm"
+      aria-label="DNS observation"
+    >
+      <dt>Name</dt>
+      <dd className="break-all font-mono">{data.name}</dd>
+      <dt>Query type</dt>
+      <dd>{data.query_type}</dd>
+      <dt>Transport</dt>
+      <dd>{data.transport.toUpperCase()}</dd>
+      <dt>Direction</dt>
+      <dd>{data.direction}</dd>
+      <dt>Resolver</dt>
+      <dd className="font-mono">{data.resolver_address}</dd>
+      {'response_code' in data && (
+        <>
+          <dt>Response</dt>
+          <dd>{data.response_code}</dd>
+          <dt>Answers</dt>
+          <dd>
+            {data.answers.length
+              ? data.answers
+                  .map((answer) => `${answer.address} (${answer.ttl_seconds}s)`)
+                  .join(', ')
+              : 'No address answer'}
+          </dd>
+          <dt>CNAME chain</dt>
+          <dd>
+            {data.cname_chain.length
+              ? data.cname_chain.map((item) => `${item.alias} → ${item.canonical}`).join(', ')
+              : 'None'}
+          </dd>
+        </>
+      )}
+      <div className="col-span-2 mt-2 text-xs text-slate-400">
+        Plaintext DNS evidence only. Cached or encrypted DNS may be unavailable.
+      </div>
     </dl>
   )
 }
@@ -328,6 +428,9 @@ export function OccurrenceTimeline({ occurrences }: { occurrences: EventOccurren
             <div className="mt-4">
               {item.payload.type === 'NetworkConnect' ? (
                 <NetworkOccurrence payload={item.payload} />
+              ) : item.payload.type === 'NetworkDnsQuery' ||
+                item.payload.type === 'NetworkDnsResponse' ? (
+                <DnsOccurrence payload={item.payload} />
               ) : (
                 <JsonDetailsViewer value={item.payload} label="Event payload" />
               )}

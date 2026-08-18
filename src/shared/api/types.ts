@@ -12,7 +12,13 @@ export type RuntimeGroupPage = components['schemas']['RuntimeGroupPage']
 export type RuntimeGroupDetail = components['schemas']['RuntimeGroupDetail']
 export type EventOccurrence = components['schemas']['EventOccurrence']
 export type NetworkConnectSemanticSummary = components['schemas']['NetworkConnectSemanticSummary']
+export type NetworkDnsQuerySemanticSummary = components['schemas']['NetworkDnsQuerySemanticSummary']
+export type NetworkDnsResponseSemanticSummary =
+  components['schemas']['NetworkDnsResponseSemanticSummary']
 export type NetworkConnectPayload = components['schemas']['NetworkConnectPayload']
+export type NetworkDnsQueryPayload = components['schemas']['NetworkDnsQueryPayload']
+export type NetworkDnsResponsePayload = components['schemas']['NetworkDnsResponsePayload']
+export type DnsContext = components['schemas']['DnsContext']
 export type OccurrencePage = components['schemas']['OccurrencePage']
 export type FirstSeenNotificationSummary = components['schemas']['FirstSeenNotificationSummary']
 export type Release = components['schemas']['Release']
@@ -111,5 +117,39 @@ export const contractFixture = {
       errno: 115,
     },
   } satisfies NetworkConnectPayload,
+  dnsQueryPayload: {
+    type: 'NetworkDnsQuery',
+    data: {
+      transaction_id: 42,
+      direction: 'egress',
+      transport: 'udp',
+      resolver_address: '10.96.0.10',
+      name: 'api.example.com',
+      query_type: 'A',
+    },
+  } satisfies NetworkDnsQueryPayload,
+  dnsResponsePayload: {
+    type: 'NetworkDnsResponse',
+    data: {
+      transaction_id: 42,
+      direction: 'ingress',
+      transport: 'udp',
+      resolver_address: '10.96.0.10',
+      name: 'api.example.com',
+      query_type: 'A',
+      response_code: 'no_error',
+      truncated: false,
+      answers: [{ name: 'api.example.com', address: '203.0.113.7', ttl_seconds: 60 }],
+      cname_chain: [],
+      effective_ttl_seconds: 60,
+    },
+  } satisfies NetworkDnsResponsePayload,
+  ambiguousDnsContext: {
+    names: ['api.example.com', 'cdn.example.com'],
+    observed_at: '2026-08-18T10:00:00Z',
+    expires_at: '2026-08-18T10:01:00Z',
+    confidence: 'observed_recently',
+    ambiguous: true,
+  } satisfies DnsContext,
   deliveryQuery: { cursor: 'cursor', limit: 50 } satisfies DeliveryQuery,
 }

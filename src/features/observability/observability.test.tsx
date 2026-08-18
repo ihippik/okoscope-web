@@ -267,6 +267,94 @@ describe('observability presentation', () => {
     expect(formatCount(1_234_567)).toBe('1,234,567')
     expect(screen.getAllByText('Unavailable')).toHaveLength(3)
   })
+  it('renders DNS evidence as inert qualified text with ambiguity and unavailable guidance', () => {
+    render(
+      <>
+        <SemanticSummary
+          value={{
+            process_command: 'curl',
+            name: 'api.example.com',
+            query_type: 'A',
+            response_code: 'nx_domain',
+            transport: 'udp',
+            direction: 'ingress',
+          }}
+        />
+        <OccurrenceTimeline
+          occurrences={[
+            {
+              id: 'dns-response',
+              event_id: 'event-dns-response',
+              observed_at: '2026-08-18T10:00:00Z',
+              node_name: 'node-1',
+              namespace: 'production',
+              pod_name: 'api-1',
+              container_name: 'api',
+              process_command: 'curl',
+              event_kind: 'network.dns.response',
+              payload: {
+                type: 'NetworkDnsResponse',
+                data: {
+                  transaction_id: 42,
+                  direction: 'ingress',
+                  transport: 'tcp',
+                  resolver_address: '10.96.0.10',
+                  name: 'api.example.com',
+                  query_type: 'AAAA',
+                  response_code: 'no_error',
+                  truncated: false,
+                  answers: [{ name: 'api.example.com', address: '2001:db8::7', ttl_seconds: 60 }],
+                  cname_chain: [
+                    { alias: 'api.example.com', canonical: 'cdn.example.com', ttl_seconds: 60 },
+                  ],
+                  effective_ttl_seconds: 60,
+                },
+              },
+              release_id: null,
+              release_version: null,
+            },
+            {
+              id: 'connect',
+              event_id: 'event-connect',
+              observed_at: '2026-08-18T10:00:01Z',
+              node_name: 'node-1',
+              namespace: 'production',
+              pod_name: 'api-1',
+              container_name: 'api',
+              process_command: 'curl',
+              event_kind: 'network.connect',
+              payload: {
+                type: 'NetworkConnect',
+                data: {
+                  address_family: 'ipv6',
+                  destination_address: '2001:db8::7',
+                  destination_port: 443,
+                  outcome: 'succeeded',
+                  dns_context: {
+                    names: ['api.example.com', 'cdn.example.com'],
+                    observed_at: '2026-08-18T10:00:00Z',
+                    expires_at: '2026-08-18T10:01:00Z',
+                    confidence: 'observed_recently',
+                    ambiguous: true,
+                  },
+                },
+              },
+              release_id: null,
+              release_version: null,
+            },
+          ]}
+        />
+      </>,
+    )
+    expect(screen.getByText('NX_DOMAIN')).toBeInTheDocument()
+    expect(screen.getByText(/2001:db8::7 \(60s\)/)).toBeInTheDocument()
+    expect(screen.getByText(/api.example.com → cdn.example.com/)).toBeInTheDocument()
+    expect(screen.getByText(/Ambiguous: multiple names/)).toBeInTheDocument()
+    expect(screen.getByText(/Cached or encrypted DNS may be unavailable/)).toBeInTheDocument()
+    expect(
+      screen.queryByRole('link', { name: /api\.example\.com|cdn\.example\.com/ }),
+    ).not.toBeInTheDocument()
+  })
   it('renders markup literally, bounds nesting, and copies original JSON', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined)
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
