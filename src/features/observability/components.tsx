@@ -5,6 +5,8 @@ import type React from 'react'
 import type {
   EventOccurrence,
   FirstSeenNotificationSummary,
+  NetworkConnectPayload,
+  NetworkConnectSemanticSummary,
   Release,
   RuntimeDiffEntry,
   RuntimeGroup,
@@ -189,9 +191,58 @@ export function JsonDetailsViewer({
     </div>
   )
 }
-export const SemanticSummary = ({ value }: { value: RuntimeGroup['semantic_summary'] }) => (
-  <JsonDetailsViewer value={value} label="Semantic summary" />
-)
+const isNetworkSummary = (
+  value: RuntimeGroup['semantic_summary'],
+): value is NetworkConnectSemanticSummary => 'destination_address' in value
+
+export function SemanticSummary({ value }: { value: RuntimeGroup['semantic_summary'] }) {
+  if (!isNetworkSummary(value)) return <JsonDetailsViewer value={value} label="Semantic summary" />
+  return (
+    <dl
+      className="details rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm"
+      aria-label="Network destination summary"
+    >
+      <dt className="text-slate-300">Process</dt>
+      <dd className="break-all font-mono">{value.process_command}</dd>
+      <dt className="text-slate-300">Address family</dt>
+      <dd>{value.address_family === 'ipv4' ? 'IPv4' : 'IPv6'}</dd>
+      <dt className="text-slate-300">Destination</dt>
+      <dd className="break-all font-mono">{value.destination_address}</dd>
+      <dt className="text-slate-300">Port</dt>
+      <dd>{value.destination_port}</dd>
+    </dl>
+  )
+}
+
+const networkOutcomeCopy: Record<NetworkConnectPayload['data']['outcome'], string> = {
+  succeeded: 'Syscall succeeded',
+  in_progress: 'Connection attempt continues asynchronously; establishment is not confirmed',
+  failed: 'Syscall failed',
+}
+
+function NetworkOccurrence({ payload }: { payload: NetworkConnectPayload }) {
+  return (
+    <dl
+      className="details rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm"
+      aria-label="Network connection attempt"
+    >
+      <dt className="text-slate-300">Address family</dt>
+      <dd>{payload.data.address_family === 'ipv4' ? 'IPv4' : 'IPv6'}</dd>
+      <dt className="text-slate-300">Destination</dt>
+      <dd className="break-all font-mono">{payload.data.destination_address}</dd>
+      <dt className="text-slate-300">Port</dt>
+      <dd>{payload.data.destination_port}</dd>
+      <dt className="text-slate-300">Outcome</dt>
+      <dd>{networkOutcomeCopy[payload.data.outcome]}</dd>
+      {payload.data.errno !== undefined && (
+        <>
+          <dt className="text-slate-300">Errno</dt>
+          <dd>{payload.data.errno}</dd>
+        </>
+      )}
+    </dl>
+  )
+}
 
 export function RuntimeGroupList({
   groups,
@@ -275,7 +326,11 @@ export function OccurrenceTimeline({ occurrences }: { occurrences: EventOccurren
               <dd>{item.release_version ?? item.release_id ?? 'Unavailable'}</dd>
             </dl>
             <div className="mt-4">
-              <JsonDetailsViewer value={item.payload} label="Event payload" />
+              {item.payload.type === 'NetworkConnect' ? (
+                <NetworkOccurrence payload={item.payload} />
+              ) : (
+                <JsonDetailsViewer value={item.payload} label="Event payload" />
+              )}
             </div>
           </Card>
         </li>

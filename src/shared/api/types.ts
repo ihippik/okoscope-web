@@ -11,6 +11,8 @@ export type RuntimeGroup = components['schemas']['RuntimeGroup']
 export type RuntimeGroupPage = components['schemas']['RuntimeGroupPage']
 export type RuntimeGroupDetail = components['schemas']['RuntimeGroupDetail']
 export type EventOccurrence = components['schemas']['EventOccurrence']
+export type NetworkConnectSemanticSummary = components['schemas']['NetworkConnectSemanticSummary']
+export type NetworkConnectPayload = components['schemas']['NetworkConnectPayload']
 export type OccurrencePage = components['schemas']['OccurrencePage']
 export type FirstSeenNotificationSummary = components['schemas']['FirstSeenNotificationSummary']
 export type Release = components['schemas']['Release']
@@ -93,6 +95,21 @@ export const contractFixture = {
     cursor: 'cursor',
     limit: 50,
   } satisfies RuntimeDiffQuery,
-  dynamicJson: { nested: true } satisfies RuntimeGroup['semantic_summary'],
+  networkSemanticSummary: {
+    process_command: 'curl',
+    address_family: 'ipv4',
+    destination_address: '203.0.113.7',
+    destination_port: 443,
+  } satisfies NetworkConnectSemanticSummary,
+  networkOccurrencePayload: {
+    type: 'NetworkConnect',
+    data: {
+      address_family: 'ipv6',
+      destination_address: '2001:db8::7',
+      destination_port: 443,
+      outcome: 'in_progress',
+      errno: 115,
+    },
+  } satisfies NetworkConnectPayload,
   deliveryQuery: { cursor: 'cursor', limit: 50 } satisfies DeliveryQuery,
 }

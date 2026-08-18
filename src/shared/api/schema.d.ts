@@ -586,9 +586,7 @@ export interface components {
             workload_name: string;
             fingerprint_version: number;
             event_kind: string;
-            semantic_summary: {
-                [key: string]: unknown;
-            };
+            semantic_summary: components["schemas"]["RuntimeEventSemanticSummary"];
             /** @enum {string} */
             status: "open" | "acknowledged" | "resolved";
             first_seen_at: components["schemas"]["Timestamp"];
@@ -614,15 +612,69 @@ export interface components {
             container_name: string;
             process_command: string;
             event_kind: string;
-            payload: {
-                [key: string]: unknown;
-            };
+            payload: components["schemas"]["RuntimeEventPayload"];
             release_id: components["schemas"]["NullableUuid"];
             release_version: string | null;
         };
         OccurrencePage: {
             items: components["schemas"]["EventOccurrence"][];
             next_cursor: components["schemas"]["NullableUuid"];
+        };
+        RuntimeEventSemanticSummary: components["schemas"]["ProcessExecSemanticSummary"] | components["schemas"]["SyscallSemanticSummary"] | components["schemas"]["NetworkConnectSemanticSummary"];
+        ProcessExecSemanticSummary: {
+            executable: string;
+        };
+        SyscallSemanticSummary: {
+            process_command: string;
+            syscall: string;
+        };
+        NetworkConnectSemanticSummary: {
+            /** @example curl */
+            process_command: string;
+            /** @enum {string} */
+            address_family: "ipv4" | "ipv6";
+            /**
+             * Format: ip
+             * @example 203.0.113.7
+             */
+            destination_address: string;
+            /** @example 443 */
+            destination_port: number;
+        };
+        RuntimeEventPayload: components["schemas"]["ProcessExecPayload"] | components["schemas"]["SyscallPayload"] | components["schemas"]["NetworkConnectPayload"];
+        ProcessExecPayload: {
+            /** @constant */
+            type: "ProcessExec";
+            data: {
+                executable: string;
+                parent_command: string | null;
+            };
+        };
+        SyscallPayload: {
+            /** @constant */
+            type: "Syscall";
+            data: {
+                name: string;
+            };
+        };
+        NetworkConnectPayload: {
+            /** @constant */
+            type: "NetworkConnect";
+            data: {
+                /** @enum {string} */
+                address_family: "ipv4" | "ipv6";
+                /**
+                 * Format: ip
+                 * @example 2001:db8::7
+                 */
+                destination_address: string;
+                /** @example 443 */
+                destination_port: number;
+                /** @enum {string} */
+                outcome: "succeeded" | "in_progress" | "failed";
+                /** @example 111 */
+                errno?: number;
+            };
         };
         FirstSeenNotificationSummary: {
             /** @enum {string} */
@@ -661,9 +713,7 @@ export interface components {
             /** @enum {string} */
             classification: "new" | "disappeared" | "unchanged";
             event_kind: string;
-            semantic_summary: {
-                [key: string]: unknown;
-            };
+            semantic_summary: components["schemas"]["RuntimeEventSemanticSummary"];
             /** Format: int64 */
             baseline_occurrence_count: number | null;
             baseline_first_seen_at: components["schemas"]["NullableTimestamp"];

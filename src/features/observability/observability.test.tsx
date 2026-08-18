@@ -8,6 +8,7 @@ import {
   RuntimeGroupStatusBadge,
   NotificationSummary,
   OccurrenceTimeline,
+  SemanticSummary,
   getNotificationPresentation,
   validLifecycleActions,
   isRecentlyFirstSeen,
@@ -24,6 +25,7 @@ import {
   parseRuntimeDiffSearch,
   parseRuntimeGroupSearch,
 } from './url-state'
+import { formatCount } from '../tenant/format'
 
 afterEach(cleanup)
 
@@ -198,7 +200,10 @@ describe('observability presentation', () => {
               container_name: '',
               process_command: '',
               event_kind: 'exec',
-              payload: {},
+              payload: {
+                type: 'ProcessExec',
+                data: { executable: '/bin/sh', parent_command: null },
+              },
               release_id: null,
               release_version: null,
             },
@@ -208,6 +213,59 @@ describe('observability presentation', () => {
     )
     expect(screen.queryByText('must-not-render')).not.toBeInTheDocument()
     expect(screen.getAllByText('Unavailable')).toHaveLength(6)
+  })
+  it('renders network destinations as inert text and explains every syscall outcome', () => {
+    render(
+      <>
+        <SemanticSummary
+          value={{
+            process_command: 'curl',
+            address_family: 'ipv6',
+            destination_address: '2001:db8::7',
+            destination_port: 443,
+          }}
+        />
+        <OccurrenceTimeline
+          occurrences={(['succeeded', 'in_progress', 'failed'] as const).map((outcome, index) => ({
+            id: `occurrence-${outcome}`,
+            event_id: `event-${outcome}`,
+            observed_at: '2026-08-17T12:00:00Z',
+            node_name: 'node-1',
+            namespace: 'production',
+            pod_name: 'api-1',
+            container_name: 'api',
+            process_command: 'curl',
+            event_kind: 'network.connect',
+            payload: {
+              type: 'NetworkConnect',
+              data: {
+                address_family: index === 0 ? 'ipv4' : 'ipv6',
+                destination_address: index === 0 ? '203.0.113.7' : '2001:db8::7',
+                destination_port: 443,
+                outcome,
+                ...(outcome === 'succeeded'
+                  ? {}
+                  : { errno: outcome === 'in_progress' ? 115 : 111 }),
+              },
+            },
+            release_id: null,
+            release_version: null,
+          }))}
+        />
+      </>,
+    )
+    expect(screen.getAllByText('2001:db8::7').length).toBeGreaterThan(0)
+    expect(screen.getByText('203.0.113.7')).toBeInTheDocument()
+    expect(screen.getByText('Syscall succeeded')).toBeInTheDocument()
+    expect(screen.getByText(/establishment is not confirmed/)).toBeInTheDocument()
+    expect(screen.getByText('Syscall failed')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('link', { name: /203\.0\.113\.7|2001:db8::7/ }),
+    ).not.toBeInTheDocument()
+    for (const forbidden of ['packet payload', 'dns_name', 'source_port', 'https://'])
+      expect(screen.queryByText(forbidden)).not.toBeInTheDocument()
+    expect(formatCount(1_234_567)).toBe('1,234,567')
+    expect(screen.getAllByText('Unavailable')).toHaveLength(3)
   })
   it('renders markup literally, bounds nesting, and copies original JSON', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined)

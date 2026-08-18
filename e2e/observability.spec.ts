@@ -11,10 +11,15 @@ test('explores runtime groups and release diff with history and deep links', asy
   await page.getByLabel('Namespace').fill('production')
   await page.getByRole('button', { name: 'Apply filters' }).click()
   await expect(page).toHaveURL(/namespace=production/)
-  await page.getByRole('link', { name: 'process.exec' }).click()
+  await page.getByLabel('Event kind').fill('network.connect')
+  await page.getByRole('button', { name: 'Apply filters' }).click()
+  await expect(page).toHaveURL(/event_kind=network.connect/)
+  await page.getByRole('link', { name: 'network.connect' }).click()
   await expect(page.getByRole('heading', { name: 'Representative event' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Occurrences' })).toBeVisible()
   await expect(page.getByText('node-1').first()).toBeVisible()
+  await expect(page.getByText('203.0.113.7').first()).toBeVisible()
+  await expect(page.getByText('Syscall succeeded').first()).toBeVisible()
   await expect(page.getByText('Pending', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Acknowledge' }).click()
   await expect(page.getByRole('button', { name: 'Reopen' })).toBeVisible()
@@ -58,7 +63,7 @@ test('observability routes are keyboard accessible at a narrow viewport and axe-
 test('restores all first-seen filters and cursor through detail navigation', async ({ page }) => {
   const { project, application } = await mockApi(page)
   const search = new URLSearchParams({
-    event_kind: 'process.exec',
+    event_kind: 'network.connect',
     status: 'acknowledged',
     release_id: 'release',
     first_seen_from: '2026-08-16T00:00:00Z',
@@ -68,7 +73,7 @@ test('restores all first-seen filters and cursor through detail navigation', asy
   })
   await page.goto(`/projects/${project.id}/applications/${application.id}/runtime-groups?${search}`)
   await authenticate(page)
-  await page.getByRole('link', { name: 'process.exec' }).click()
+  await page.getByRole('link', { name: 'network.connect' }).click()
   await page.goBack()
   await expect(page).toHaveURL(/status=acknowledged/)
   await expect(page).toHaveURL(/cursor=opaque-cursor/)
