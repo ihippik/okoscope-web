@@ -8,6 +8,8 @@ import { Button } from '../shared/ui/button'
 import { Card } from '../shared/ui/card'
 import { ErrorState } from '../shared/ui/error-state'
 import { Loading } from '../shared/ui/loading'
+import { useT } from '../shared/i18n'
+import { LanguageSelector } from '../shared/i18n/language-selector'
 
 export const REQUIRED_API_VERSION = 'v1'
 export const REQUIRED_DATABASE_MIGRATION = 7
@@ -23,28 +25,34 @@ export const isBuildCompatible = (info: unknown): boolean => {
 
 export const Route = createRootRoute({
   component: RootComponent,
-  notFoundComponent: () => (
-    <main id="main-content" className="page">
-      <ErrorState title="Page not found" error={new Error('Not found')} />
-    </main>
-  ),
+  notFoundComponent: NotFound,
 })
 
+function NotFound() {
+  const t = useT()
+  return (
+    <main id="main-content" className="page">
+      <ErrorState title={t('pageNotFound')} error={new Error(t('notFound'))} />
+    </main>
+  )
+}
+
 function RootComponent() {
+  const t = useT()
   const api = useApi()
   const build = useQuery(buildInfoOptions(api))
   const credential = useCredential()
   if (build.isPending)
     return (
       <main id="main-content" className="page">
-        <Loading label="Checking backend compatibility…" />
+        <Loading label={t('checkingBackend')} />
       </main>
     )
   if (build.isError)
     return (
       <main id="main-content" className="page">
         <ErrorState
-          title="Backend unavailable"
+          title={t('backendUnavailable')}
           error={build.error}
           onRetry={() => void build.refetch()}
         />
@@ -55,21 +63,26 @@ function RootComponent() {
     return (
       <main id="main-content" className="page">
         <Card role="alert">
-          <p className="eyebrow">Incompatible deployment</p>
-          <h1 className="mt-3 text-3xl font-semibold">Incompatible backend</h1>
+          <div className="mb-4 flex justify-end">
+            <LanguageSelector />
+          </div>
+          <p className="eyebrow">{t('incompatibleDeployment')}</p>
+          <h1 className="mt-3 text-3xl font-semibold">{t('incompatibleBackend')}</h1>
           <dl className="details">
-            <dt>Expected</dt>
+            <dt>{t('expected')}</dt>
             <dd>{REQUIRED_API_VERSION}</dd>
-            <dt>Actual</dt>
-            <dd>{String(info?.api_version ?? 'unknown')}</dd>
-            <dt>Service</dt>
-            <dd>{String(info?.service_version ?? 'unknown')}</dd>
-            <dt>Commit</dt>
-            <dd className="font-mono text-xs">{String(info?.git_commit ?? 'unknown')}</dd>
-            <dt>Required migration</dt>
-            <dd>{REQUIRED_DATABASE_MIGRATION} or newer</dd>
-            <dt>Actual migration</dt>
-            <dd>{String(info?.required_database_migration ?? 'unknown')}</dd>
+            <dt>{t('actual')}</dt>
+            <dd>{String(info?.api_version ?? t('unknown'))}</dd>
+            <dt>{t('service')}</dt>
+            <dd>{String(info?.service_version ?? t('unknown'))}</dd>
+            <dt>{t('commit')}</dt>
+            <dd className="font-mono text-xs">{String(info?.git_commit ?? t('unknown'))}</dd>
+            <dt>{t('requiredMigration')}</dt>
+            <dd>
+              {REQUIRED_DATABASE_MIGRATION} {t('orNewer')}
+            </dd>
+            <dt>{t('actualMigration')}</dt>
+            <dd>{String(info?.required_database_migration ?? t('unknown'))}</dd>
           </dl>
         </Card>
       </main>
@@ -82,17 +95,18 @@ function RootComponent() {
           <Link to="/" className="text-lg font-bold tracking-tight">
             OKOSCOPE
           </Link>
-          <nav aria-label="Primary">
+          <nav aria-label={t('primaryNavigation')} className="flex items-center gap-2">
             <Link
               to="/projects"
               className="nav-link"
               activeProps={{ className: 'nav-link text-cyan-300' }}
             >
-              Projects
+              {t('projects')}
             </Link>
             <Button variant="ghost" onClick={() => credentialSession.clear()}>
-              End session
+              {t('endSession')}
             </Button>
+            <LanguageSelector />
           </nav>
         </div>
       </header>
@@ -100,13 +114,14 @@ function RootComponent() {
         <Outlet />
       </main>
       <footer className="mx-auto max-w-6xl px-6 pb-8 text-xs text-slate-500">
-        Web {__APP_VERSION__} · {__GIT_COMMIT__}
+        {t('webVersion', { version: __APP_VERSION__, commit: __GIT_COMMIT__ })}
       </footer>
     </div>
   )
 }
 
 function CredentialPrompt() {
+  const t = useT()
   const [value, setValue] = useState('')
   const submit = (event: FormEvent) => {
     event.preventDefault()
@@ -115,14 +130,15 @@ function CredentialPrompt() {
   return (
     <main id="main-content" className="grid min-h-screen place-items-center p-6">
       <Card className="w-full max-w-md">
-        <p className="eyebrow">Compatible API · v1</p>
-        <h1 className="mt-3 text-3xl font-semibold">Connect to Okoscope</h1>
-        <p className="mt-3 text-sm text-slate-400">
-          Your bearer credential stays in this page's memory and disappears on reload.
-        </p>
+        <div className="mb-4 flex justify-end">
+          <LanguageSelector />
+        </div>
+        <p className="eyebrow">{t('compatibleApi')}</p>
+        <h1 className="mt-3 text-3xl font-semibold">{t('connect')}</h1>
+        <p className="mt-3 text-sm text-slate-400">{t('credentialHelp')}</p>
         <form className="mt-6 space-y-4" onSubmit={submit}>
           <label className="block text-sm font-medium" htmlFor="credential">
-            Bearer credential
+            {t('bearerCredential')}
           </label>
           <input
             id="credential"
@@ -135,7 +151,7 @@ function CredentialPrompt() {
             required
           />
           <Button className="w-full" type="submit">
-            Start session
+            {t('startSession')}
           </Button>
         </form>
       </Card>

@@ -7,6 +7,8 @@ import { ApiProvider } from './shared/api/context'
 import { credentialSession } from './shared/auth/session'
 import { ConfigError, loadRuntimeConfig } from './shared/config/runtime-config'
 import { Card } from './shared/ui/card'
+import { LocalizationProvider, useT } from './shared/i18n'
+import { LanguageSelector } from './shared/i18n/language-selector'
 import { routeTree } from './routeTree.gen'
 import './styles.css'
 
@@ -25,26 +27,39 @@ function mount() {
     const router = createRouter({ routeTree, defaultPreload: 'intent' })
     root.render(
       <StrictMode>
-        <QueryClientProvider client={queryClient}>
-          <ApiProvider value={api}>
-            <RouterProvider router={router} />
-          </ApiProvider>
-        </QueryClientProvider>
+        <LocalizationProvider>
+          <QueryClientProvider client={queryClient}>
+            <ApiProvider value={api}>
+              <RouterProvider router={router} />
+            </ApiProvider>
+          </QueryClientProvider>
+        </LocalizationProvider>
       </StrictMode>,
     )
   } catch (error) {
-    const message =
-      error instanceof ConfigError ? error.message : 'Runtime configuration could not be loaded.'
     root.render(
-      <main id="main-content" className="mx-auto max-w-2xl p-8">
-        <Card role="alert" className="border-rose-900">
-          <p className="eyebrow">Configuration error</p>
-          <h1 className="mt-3 text-3xl font-semibold">Okoscope cannot start</h1>
-          <p className="mt-4 text-slate-300">{message}</p>
-        </Card>
-      </main>,
+      <LocalizationProvider>
+        <StartupError error={error} />
+      </LocalizationProvider>,
     )
   }
+}
+
+function StartupError({ error }: { error: unknown }) {
+  const t = useT()
+  const message = error instanceof ConfigError ? error.message : t('runtimeConfigFailed')
+  return (
+    <main id="main-content" className="mx-auto max-w-2xl p-8">
+      <div className="mb-4 flex justify-end">
+        <LanguageSelector />
+      </div>
+      <Card role="alert" className="border-rose-900">
+        <p className="eyebrow">{t('configurationError')}</p>
+        <h1 className="mt-3 text-3xl font-semibold">{t('cannotStart')}</h1>
+        <p className="mt-4 text-slate-300">{message}</p>
+      </Card>
+    </main>
+  )
 }
 
 mount()

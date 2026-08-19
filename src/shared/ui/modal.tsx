@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Button } from './button'
+import { useT } from '../i18n'
 
 export function Modal({
   title,
@@ -14,6 +15,7 @@ export function Modal({
   onClose: () => void
   closeDisabled?: boolean
 }) {
+  const t = useT()
   return (
     <div
       className="fixed inset-0 z-50 grid place-items-center bg-slate-950/80 p-4"
@@ -34,7 +36,7 @@ export function Modal({
         </p>
         <div className="mt-5">{children}</div>
         <Button className="mt-5" variant="ghost" onClick={onClose} disabled={closeDisabled}>
-          Close
+          {t('close')}
         </Button>
       </div>
     </div>

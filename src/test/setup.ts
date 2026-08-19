@@ -4,5 +4,6 @@ import { afterEach } from 'vitest'
 
 afterEach(() => {
   cleanup()
+  localStorage.removeItem('okoscope.locale')
   document.title = 'Okoscope'
 })

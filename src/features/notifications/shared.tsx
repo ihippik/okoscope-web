@@ -1,10 +1,12 @@
 import { Link } from '@tanstack/react-router'
+import { getActiveLocale } from '../../shared/i18n'
 
 export const formatTime = (value: string | null) =>
   value
-    ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'medium' }).format(
-        new Date(value),
-      )
+    ? new Intl.DateTimeFormat(getActiveLocale(), {
+        dateStyle: 'medium',
+        timeStyle: 'medium',
+      }).format(new Date(value))
     : '—'
 
 export function NotificationBreadcrumbs({

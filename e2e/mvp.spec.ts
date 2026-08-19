@@ -2,6 +2,16 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import { authenticate, mockApi } from './fixtures'
 
+test('switches the interface to Russian and persists the choice', async ({ page }) => {
+  await mockApi(page)
+  await page.goto('/')
+  await page.getByLabel('Language').selectOption('ru')
+  await expect(page.getByRole('heading', { name: 'Подключиться к Okoscope' })).toBeVisible()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
+  await page.reload()
+  await expect(page.getByLabel('Язык')).toHaveValue('ru')
+})
+
 test('navigates Organization → Projects → Applications and supports a deep link', async ({
   page,
 }) => {
