@@ -1,5 +1,5 @@
-import { act, renderHook } from '@testing-library/react'
-import type { ReactNode } from 'react'
+import { act, fireEvent, render, renderHook, screen } from '@testing-library/react'
+import { useState, type ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import {
   LocalizationProvider,
@@ -54,5 +54,21 @@ describe('localization', () => {
       }),
     ).toContain('2025')
     expect(pluralCategory('ru', 2)).toBe('few')
+  })
+  it('translates complete dynamic UI states without mixing languages', async () => {
+    function DynamicButton() {
+      const [saving, setSaving] = useState(false)
+      return (
+        <button onClick={() => setSaving(true)}>{saving ? 'Saving…' : 'Create destination'}</button>
+      )
+    }
+    render(
+      <LocalizationProvider initialLocale="ru">
+        <DynamicButton />
+      </LocalizationProvider>,
+    )
+    const button = await screen.findByRole('button', { name: 'Создать назначение' })
+    fireEvent.click(button)
+    expect(await screen.findByRole('button', { name: 'Сохранение…' })).toBeVisible()
   })
 })

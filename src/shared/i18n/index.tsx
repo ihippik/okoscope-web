@@ -78,8 +78,8 @@ export const russianMessages = {
   compatibleApi: 'Совместимый API · v1',
   connect: 'Подключиться к Okoscope',
   credentialHelp:
-    'Учетные данные bearer хранятся только в памяти этой страницы и исчезнут после перезагрузки.',
-  bearerCredential: 'Учетные данные bearer',
+    'Токен доступа хранится только в памяти этой страницы и исчезнет после перезагрузки.',
+  bearerCredential: 'Токен доступа',
   startSession: 'Начать сеанс',
   configurationError: 'Ошибка конфигурации',
   cannotStart: 'Не удалось запустить Okoscope',

@@ -12,6 +12,81 @@ test('switches the interface to Russian and persists the choice', async ({ page 
   await expect(page.getByLabel('Язык')).toHaveValue('ru')
 })
 
+test('renders tenant, runtime, and notification surfaces fully in Russian', async ({ page }) => {
+  test.setTimeout(60_000)
+  const expectNoEnglishUi = async () =>
+    expect(await page.locator('main').innerText()).not.toMatch(
+      /\b(?:Loading|Create|Delivery|Deliveries|Notification|Runtime|Application|Applications|Project|Projects|View|Save|Cancel|Confirm|Could not|Failed|Status|Destination|Observed|Evidence|First|Last|Occurrences|Acknowledge|Resolve|Unavailable|Pending)\b/,
+    )
+  const { project, application, group, releases, destination, delivery, recoveryOperation } =
+    await mockApi(page)
+  const openRussian = async (path: string) => {
+    await page.goto(path)
+    await page.getByLabel('Токен доступа').fill('e2e-secret')
+    await page.getByRole('button', { name: 'Начать сеанс' }).click()
+  }
+  await page.goto(`/projects/${project.id}/applications/${application.id}`)
+  await authenticate(page)
+  await page.getByLabel('Language').selectOption('ru')
+
+  await expect(page.getByText('Приложение', { exact: true })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Открыть группы среды выполнения' })).toBeVisible()
+  await expectNoEnglishUi()
+
+  await openRussian(`/projects/${project.id}/applications/${application.id}/runtime-groups`)
+  await expect(page.getByRole('heading', { name: 'Группы среды выполнения' })).toBeVisible()
+  await expectNoEnglishUi()
+  await openRussian(
+    `/projects/${project.id}/applications/${application.id}/runtime-groups/${group.id}`,
+  )
+  await expect(page.getByRole('heading', { name: 'Репрезентативное событие' })).toBeVisible()
+  await expect(page.getByText('Системный вызов выполнен успешно').first()).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Подтвердить' })).toBeVisible()
+  await expect(page.getByText(/Неоднозначно: для этого IP/).first()).toBeVisible()
+  await expectNoEnglishUi()
+
+  await openRussian(`/projects/${project.id}/applications/${application.id}/runtime-inventory`)
+  await expect(page.getByRole('heading', { name: 'Инвентаризация среды выполнения' })).toBeVisible()
+  await expectNoEnglishUi()
+
+  await openRussian(`/projects/${project.id}/applications/${application.id}/releases`)
+  await expect(page.getByRole('heading', { name: 'Релизы' })).toBeVisible()
+  await expectNoEnglishUi()
+
+  await openRussian(
+    `/projects/${project.id}/applications/${application.id}/releases/${releases[0]!.id}/runtime-diff`,
+  )
+  await expect(page.getByRole('heading', { name: 'Различия среды выполнения' })).toBeVisible()
+  await expectNoEnglishUi()
+
+  await openRussian(`/projects/${project.id}/notifications`)
+  await expect(page.getByRole('heading', { name: 'Уведомления' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Доставка работает нормально' })).toBeVisible()
+  await page.getByRole('button', { name: 'Создать назначение' }).click()
+  await expect(page.getByRole('dialog')).toContainText(
+    'Можно изменять только поля, поддерживаемые опубликованным контрактом OpenAPI.',
+  )
+  await expect(page.getByLabel('URL назначения')).toBeVisible()
+  await expectNoEnglishUi()
+  await page.getByRole('button', { name: 'Закрыть' }).click()
+
+  await openRussian(`/projects/${project.id}/notifications/destinations/${destination.id}`)
+  await expect(page.getByText('Назначение вебхука', { exact: true })).toBeVisible()
+  await expectNoEnglishUi()
+
+  await openRussian(`/projects/${project.id}/notifications/deliveries/${delivery.id}`)
+  await expect(page.getByText('Доставка уведомления', { exact: true })).toBeVisible()
+  await expectNoEnglishUi()
+
+  await openRussian(`/projects/${project.id}/notifications/recovery`)
+  await expect(page.getByRole('heading', { name: 'История восстановления' })).toBeVisible()
+  await expectNoEnglishUi()
+
+  await openRussian(`/projects/${project.id}/notifications/recovery/${recoveryOperation.id}`)
+  await expect(page.getByText('Операция восстановления', { exact: true }).first()).toBeVisible()
+  await expectNoEnglishUi()
+})
+
 test('navigates Organization → Projects → Applications and supports a deep link', async ({
   page,
 }) => {

@@ -10,8 +10,8 @@ export const legacyRussian: Record<string, string> = {
   'Compatible API · v1': 'Совместимый API · v1',
   'Connect to Okoscope': 'Подключиться к Okoscope',
   "Your bearer credential stays in this page's memory and disappears on reload.":
-    'Учетные данные bearer хранятся только в памяти этой страницы и исчезнут после перезагрузки.',
-  'Bearer credential': 'Учетные данные bearer',
+    'Токен доступа хранится только в памяти этой страницы и исчезнет после перезагрузки.',
+  'Bearer credential': 'Токен доступа',
   'Start session': 'Начать сеанс',
   'Checking backend compatibility…': 'Проверяем совместимость сервера…',
   'Backend unavailable': 'Сервер недоступен',
@@ -131,9 +131,9 @@ export const legacyRussian: Record<string, string> = {
   'Notification health': 'Состояние уведомлений',
   'Health data is stale': 'Данные о состоянии устарели',
   'Create destination': 'Создать назначение',
-  'No webhook destinations': 'Нет назначений webhook',
-  'Create webhook destination': 'Создать назначение webhook',
-  'Webhook destination': 'Назначение webhook',
+  'No webhook destinations': 'Нет назначений вебхуков',
+  'Create webhook destination': 'Создать назначение вебхука',
+  'Webhook destination': 'Назначение вебхука',
   Backfill: 'Ретроспективная отправка',
   Revision: 'Ревизия',
   Disabled: 'Отключено',
@@ -160,7 +160,6 @@ export const legacyRussian: Record<string, string> = {
   'Recovery operation': 'Операция восстановления',
   'Recovery actions': 'Действия восстановления',
   'Retry delivery': 'Повторить доставку',
-  'Cancel delivery': 'Отменить доставку',
   'Bulk retry failed deliveries': 'Массово повторить неудачные доставки',
   'All commands': 'Все команды',
   Retry: 'Повторить',
@@ -175,19 +174,359 @@ export const legacyRussian: Record<string, string> = {
   Remaining: 'Осталось',
   Completed: 'Завершено',
   'Affected deliveries': 'Затронутые доставки',
+  Archived: 'В архиве',
+  Attempt: 'Попытка',
+  'Attempt timeline': 'Хронология попыток',
+  'Availability is determined by the latest server response.':
+    'Доступность действий определяется последним ответом сервера.',
+  'Back to Releases': 'Назад к релизам',
+  'Back to Runtime Groups': 'Назад к группам среды выполнения',
+  'Back to Runtime Inventory': 'Назад к инвентаризации среды выполнения',
+  'Baseline occurrences': 'Наблюдения базового релиза',
+  'Baseline release': 'Базовый релиз',
+  'Bulk retry failed': 'Не удалось выполнить массовый повтор',
+  'CNAME chain': 'Цепочка CNAME',
+  'Cancel delivery': 'Отменить доставку',
+  'Clear filters': 'Очистить фильтры',
+  'Command completed:': 'Команда выполнена:',
+  'Command type': 'Тип команды',
+  'Configure delivery receivers and investigate notification attempts.':
+    'Настройте получателей и исследуйте попытки доставки уведомлений.',
+  'Confirm bulk retry?': 'Подтвердить массовый повтор?',
+  'Copy JSON': 'Копировать JSON',
+  'Could not load Runtime Inventory': 'Не удалось загрузить инвентаризацию среды выполнения',
+  'Could not load evidence': 'Не удалось загрузить данные наблюдения',
+  'Could not load inventory summary': 'Не удалось загрузить сводку инвентаризации',
+  'Create a destination to send project notifications to your receiver.':
+    'Создайте назначение для отправки уведомлений проекта вашему получателю.',
+  'Deliver backfilled events': 'Доставлять ретроспективные события',
+  'Deliveries could not be loaded': 'Не удалось загрузить доставки',
+  'Deliveries will appear here after notification events or destination tests.':
+    'Доставки появятся здесь после событий уведомлений или проверки назначения.',
+  Delivery: 'Доставка',
+  'Delivery could not be loaded': 'Не удалось загрузить доставку',
+  'Delivery history': 'История доставки',
+  'Delivery pages': 'Страницы доставок',
+  Deployed: 'Развернуто',
+  'Destination ID': 'ID назначения',
+  'Destination URL': 'URL назначения',
+  'Destination could not be loaded': 'Не удалось загрузить назначение',
+  'Destination could not be saved': 'Не удалось сохранить назначение',
+  'Destinations could not be loaded': 'Не удалось загрузить назначения',
+  Disable: 'Отключить',
+  Errno: 'Код errno',
+  'Error class': 'Класс ошибки',
+  'Event kind': 'Тип события',
+  'Event payload': 'Данные события',
+  'Evidence expires': 'Срок действия данных',
+  'Failed after': 'Сбой после',
+  'Failed before': 'Сбой до',
+  'HTTP status': 'Статус HTTP',
+  'Inventory item not found': 'Элемент инвентаризации не найден',
+  'Last safe error class': 'Последний безопасный класс ошибки',
+  Limit: 'Лимит',
+  'Lifecycle update failed': 'Не удалось обновить жизненный цикл',
+  More: 'Ещё',
+  'Network connection attempt': 'Попытка сетевого подключения',
+  'Network destination summary': 'Сводка сетевого назначения',
+  Next: 'Следующая',
+  'Next occurrence page': 'Следующая страница наблюдений',
+  'Next page': 'Следующая страница',
+  'No comparison baseline': 'Нет базового релиза для сравнения',
+  'No occurrence evidence is available on this page.': 'На этой странице нет данных наблюдений.',
+  'No runtime changes': 'Нет изменений среды выполнения',
+  'Notification health could not be loaded': 'Не удалось загрузить состояние уведомлений',
+  'Observed DNS names': 'Наблюдаемые DNS-имена',
+  'Observed behavior across the active application scope.':
+    'Поведение, наблюдаемое в активной области приложения.',
+  'Observed since': 'Наблюдается с',
+  'Occurrence payload': 'Данные наблюдения',
+  'Occurrences unavailable': 'Наблюдения недоступны',
+  'Only fields supported by the published OpenAPI contract are editable.':
+    'Можно изменять только поля, поддерживаемые опубликованным контрактом OpenAPI.',
+  'Organization could not be loaded': 'Не удалось загрузить организацию',
+  'Plaintext DNS evidence only. Cached or encrypted DNS may be unavailable.':
+    'Показаны только данные незашифрованного DNS. Кэшированные или зашифрованные DNS-запросы могут быть недоступны.',
+  Previous: 'Предыдущая',
+  'Project not found': 'Проект не найден',
+  'Projects could not be loaded': 'Не удалось загрузить проекты',
+  'Projects could not be refreshed': 'Не удалось обновить проекты',
+  'Recently first seen': 'Недавно обнаружено впервые',
+  'Recently observed DNS evidence': 'Недавно полученные данные DNS',
+  'Recovery command failed': 'Не удалось выполнить команду восстановления',
+  'Recovery generation': 'Поколение восстановления',
+  'Recovery history could not be loaded': 'Не удалось загрузить историю восстановления',
+  'Recovery operation could not be loaded': 'Не удалось загрузить операцию восстановления',
+  'Recovery pages': 'Страницы восстановления',
+  'Release ID': 'ID релиза',
+  'Release ownership mismatch': 'Релиз принадлежит другому приложению',
+  'Releases unavailable': 'Релизы недоступны',
+  'Request ID': 'ID запроса',
+  'Resolve marks the current behavior as handled. You can reopen it later.':
+    'После решения текущее поведение будет отмечено как обработанное. Позже его можно открыть снова.',
+  'Resolve this runtime group?': 'Решить эту группу среды выполнения?',
+  'Resource does not belong to this Application': 'Ресурс не принадлежит этому приложению',
+  'Retry health refresh': 'Повторить обновление состояния',
+  'Return to first page': 'Вернуться на первую страницу',
+  'Review bulk retry': 'Проверка массового повтора',
+  'Review failed deliveries': 'Проверить неудачные доставки',
+  'Rotate secret': 'Сменить секрет',
+  'Runtime Diff unavailable': 'Сравнение среды выполнения недоступно',
+  'Runtime Group unavailable': 'Группа среды выполнения недоступна',
+  'Runtime Groups unavailable': 'Группы среды выполнения недоступны',
+  'Runtime Inventory scope not found': 'Область инвентаризации среды выполнения не найдена',
+  'Safe error class': 'Безопасный класс ошибки',
+  'Select only the failed deliveries matching these server-side filters. The command is bounded to 200 deliveries.':
+    'Выберите только неудачные доставки, соответствующие этим серверным фильтрам. Команда обработает не более 200 доставок.',
+  'Semantic summary': 'Семантическая сводка',
+  Status: 'Статус',
+  'Target occurrences': 'Наблюдения целевого релиза',
+  Terminal: 'Завершено',
+  'Test delivery failed': 'Не удалось выполнить тестовую доставку',
+  'The collection scope is preserved. Return to its first page to continue.':
+    'Область коллекции сохранена. Для продолжения вернитесь на первую страницу.',
+  'The last successful snapshot is still shown because the latest refresh failed.':
+    'Показан последний успешный снимок, поскольку последнее обновление завершилось с ошибкой.',
+  'The response was withheld because its ownership does not match this route.':
+    'Ответ скрыт, поскольку ресурс не принадлежит объекту этого маршрута.',
+  'The selected releases have no runtime diff entries.':
+    'Для выбранных релизов нет различий среды выполнения.',
+  'This cursor is no longer valid': 'Этот курсор больше недействителен',
+  'This describes notification delivery, not overall Okoscope availability.':
+    'Это состояние доставки уведомлений, а не общая доступность Okoscope.',
+  'This evidence cursor is no longer valid': 'Этот курсор данных больше недействителен',
+  'This is the first comparable release or no baseline is available.':
+    'Это первый сравнимый релиз либо базовый релиз недоступен.',
+  "This secret is shown once and cannot be retrieved again after this dialog closes. Store it in your receiver's secret manager.":
+    'Этот секрет показывается один раз и будет недоступен после закрытия окна. Сохраните его в менеджере секретов получателя.',
+  'Unsafe evidence link': 'Небезопасная ссылка на данные',
+  'View evidence': 'Открыть данные',
+  'View group': 'Открыть группу',
+  'View releases': 'Открыть релизы',
+  'View runtime diff': 'Открыть сравнение среды выполнения',
+  'View runtime groups': 'Открыть группы среды выполнения',
+  'View runtime inventory': 'Открыть инвентаризацию среды выполнения',
+  'Webhook destinations': 'Назначения вебхуков',
+  'Loading Application…': 'Загрузка приложения…',
+  'Loading Organization…': 'Загрузка организации…',
+  'Loading Project…': 'Загрузка проекта…',
+  'Loading Releases…': 'Загрузка релизов…',
+  'Loading Runtime Diff…': 'Загрузка сравнения среды выполнения…',
+  'Loading Runtime Groups…': 'Загрузка групп среды выполнения…',
+  'Loading Runtime Group…': 'Загрузка группы среды выполнения…',
+  'Loading Runtime Inventory…': 'Загрузка инвентаризации среды выполнения…',
+  'Loading applications…': 'Загрузка приложений…',
+  'Loading delivery…': 'Загрузка доставки…',
+  'Loading destination…': 'Загрузка назначения…',
+  'Loading inventory evidence…': 'Загрузка данных инвентаризации…',
+  'Loading inventory summary…': 'Загрузка сводки инвентаризации…',
+  'Loading notification deliveries…': 'Загрузка доставок уведомлений…',
+  'Loading notification health…': 'Загрузка состояния уведомлений…',
+  'Loading occurrences…': 'Загрузка наблюдений…',
+  'Loading projects…': 'Загрузка проектов…',
+  'Loading recovery history…': 'Загрузка истории восстановления…',
+  'Loading recovery operation…': 'Загрузка операции восстановления…',
+  'Loading webhook destinations…': 'Загрузка назначений вебхуков…',
+  '. Operation': '. Операция',
+  '. The IP remains the canonical destination.': '. IP остаётся каноническим назначением.',
+  '; cancelled': '; отменено',
+  '; remaining': '; осталось',
+  '; retried': '; повторено',
+  '; skipped': '; пропущено',
+  'Action failed': 'Не удалось выполнить действие',
+  'Address family': 'Семейство адресов',
+  'Application not found': 'Приложение не найдено',
+  'Applications could not be loaded': 'Не удалось загрузить приложения',
+  'DNS behavior summary': 'Сводка поведения DNS',
+  'DNS context': 'Контекст DNS',
+  'DNS observation': 'Наблюдение DNS',
+  'Edit webhook destination': 'Изменить назначение вебхука',
+  'Status:': 'Статус:',
+  'due; oldest due delivery is': 'ожидают отправки; самая старая доставка ожидает уже',
+  evidence: 'данные',
+  occurrences: 'наблюдений',
+  'old.': 'назад.',
+  options: 'параметры',
+  retried: 'повторено',
+  '· generation': '· поколение',
+  '… nested value': '… вложенное значение',
+  '… output limited': '… вывод ограничен',
+  ' (idempotent replay)': ' (идемпотентное воспроизведение)',
+  '; idempotent replay': '; идемпотентное воспроизведение',
+  '; more matches remain': '; остались другие совпадения',
+  'Active destinations': 'Активные назначения',
+  'Adjust the filters to broaden this view.': 'Измените фильтры, чтобы расширить выборку.',
+  'Ambiguous: multiple names were observed for this IP.':
+    'Неоднозначно: для этого IP наблюдалось несколько имён.',
+  'Backfill suppressed': 'Ретроспективная отправка подавлена',
+  'Cancel this delivery?': 'Отменить эту доставку?',
+  'Confirm bulk retry': 'Подтвердить массовый повтор',
+  'Confirm resolve': 'Подтвердить решение',
+  'Confirming…': 'Подтверждение…',
+  'Connection attempt continues asynchronously; establishment is not confirmed':
+    'Попытка подключения продолжается асинхронно; установка соединения не подтверждена',
+  'Could not copy JSON': 'Не удалось скопировать JSON',
+  'Deliveries failing': 'Доставки завершаются с ошибкой',
+  'Deliveries retrying': 'Доставки повторяются',
+  'Delivery backlogged': 'Доставка задерживается',
+  'Delivery disabled': 'Доставка отключена',
+  'Delivery enabled': 'Доставка включена',
+  'Delivery failed': 'Доставка не выполнена',
+  'Delivery has not completed. If the delivery worker is disabled, it will remain pending.':
+    'Доставка не завершена. Если обработчик доставки отключён, она останется в ожидании.',
+  'Delivery healthy': 'Доставка работает нормально',
+  'Delivery is currently in progress.': 'Доставка выполняется.',
+  'Delivery is enabled and the notification queue is empty.':
+    'Доставка включена, очередь уведомлений пуста.',
+  'Delivery stopped after a terminal failure.': 'Доставка остановлена после неисправимой ошибки.',
+  'Delivery worker draining': 'Обработчик доставки завершает работу',
+  'Destination disabled.': 'Назначение отключено.',
+  'Disable destination?': 'Отключить назначение?',
+  'End of evidence results': 'Конец списка данных',
+  'End of inventory results': 'Конец списка инвентаризации',
+  'Expired leases': 'Истёкшие аренды',
+  'First seen from': 'Впервые замечено с',
+  'First seen to': 'Впервые замечено до',
+  'In flight': 'В процессе',
+  'JSON copied': 'JSON скопирован',
+  'JSON details': 'Детали JSON',
+  'Last seen to': 'Последнее наблюдение до',
+  'Load more applications': 'Загрузить ещё приложения',
+  'Load more projects': 'Загрузить ещё проекты',
+  'Missing evidence link': 'Отсутствует ссылка на данные',
+  'New notifications will no longer be delivered to this receiver.':
+    'Новые уведомления больше не будут доставляться этому получателю.',
+  'No address answer': 'Нет ответа с адресом',
+  'No baseline available': 'Базовый релиз недоступен',
+  'No description': 'Нет описания',
+  'No evidence available': 'Данные недоступны',
+  'No items match the active application scope and filters.':
+    'Нет элементов, соответствующих активной области приложения и фильтрам.',
+  'No matching runtime groups': 'Нет подходящих групп среды выполнения',
+  'No observed behavior': 'Нет наблюдаемого поведения',
+  'No runtime groups yet': 'Групп среды выполнения пока нет',
+  'No trusted attributed evidence is available for evaluation.':
+    'Для оценки нет достоверных атрибутированных данных.',
+  'No webhook destination is configured for this project.':
+    'Для этого проекта не настроено назначение вебхука.',
+  'Not configured': 'Не настроено',
+  'Not observed in available evidence': 'Не наблюдалось в доступных данных',
+  'Not terminal': 'Не завершено',
+  'Notification delivery is disabled by the server operator.':
+    'Доставка уведомлений отключена оператором сервера.',
+  'Notification was intentionally suppressed for backfilled data.':
+    'Уведомление намеренно подавлено для ретроспективных данных.',
+  'Notifications are waiting longer than expected to be delivered.':
+    'Уведомления ожидают доставки дольше обычного.',
+  'Notifications · Okoscope': 'Уведомления · Okoscope',
+  'Observed behavior will appear here.': 'Здесь появится наблюдаемое поведение.',
+  'Oldest due age': 'Возраст самой старой ожидающей доставки',
+  'One or more notification deliveries reached a terminal failure.':
+    'Одна или несколько доставок уведомлений завершились неисправимой ошибкой.',
+  'Organization · Okoscope': 'Организация · Okoscope',
+  'Pending delivery will stop and become cancelled.':
+    'Ожидающая доставка будет остановлена и отменена.',
+  'Projects · Okoscope': 'Проекты · Okoscope',
+  'Receivers are returning temporary errors and deliveries will be retried.':
+    'Получатели возвращают временные ошибки; доставка будет повторена.',
+  'Recovery history · Okoscope': 'История восстановления · Okoscope',
+  'Resolving…': 'Решение…',
+  'Retry this delivery?': 'Повторить эту доставку?',
+  'Rotate signing secret?': 'Сменить секрет подписи?',
+  'Save changes': 'Сохранить изменения',
+  'Saving…': 'Сохранение…',
+  'Send test delivery': 'Отправить тестовую доставку',
+  'Sending…': 'Отправка…',
+  'Signing secret rotated.': 'Секрет подписи изменён.',
+  'Submitting…': 'Отправка…',
+  'Syscall failed': 'Системный вызов завершился ошибкой',
+  'Syscall succeeded': 'Системный вызов выполнен успешно',
+  'Test delivery failed. See the error details.':
+    'Тестовая доставка не выполнена. Подробности приведены в описании ошибки.',
+  'The delivery becomes pending again with a new recovery generation.':
+    'Доставка снова перейдёт в ожидание с новым поколением восстановления.',
+  'The delivery worker is finishing active work during shutdown or an update.':
+    'Обработчик доставки завершает активную работу перед остановкой или обновлением.',
+  'The response does not belong to this route.': 'Ответ не принадлежит этому маршруту.',
+  'This item was not seen in the release’s available attributed evidence.':
+    'Этот элемент не встречался в доступных атрибутированных данных релиза.',
+  'This terminal cursor page is empty. Use browser Back or return to the first page.':
+    'Последняя страница курсора пуста. Вернитесь назад в браузере или на первую страницу.',
+  'Trusted attributed occurrences support this relation.':
+    'Связь подтверждена достоверными атрибутированными наблюдениями.',
+  'Updating…': 'Обновление…',
+  'Workload kind': 'Тип рабочей нагрузки',
+  'Workload name': 'Имя рабочей нагрузки',
+  pending: 'ожидает',
+  succeeded: 'успешно',
+  failed: 'ошибка',
+  retrying: 'повторяется',
+  cancelled: 'отменено',
+  canceled: 'отменено',
+  completed: 'завершено',
+  acknowledged: 'подтверждено',
+  resolved: 'решено',
+  open: 'открыто',
+  retry: 'повторить',
+  cancel: 'отменить',
+  bulk_retry: 'массовый повтор',
+  enabled: 'включено',
+  disabled: 'отключено',
+  Unavailable: 'Недоступно',
+  Pending: 'Ожидает доставки',
+  Acknowledge: 'Подтвердить',
+  Resolve: 'Решить',
+  Reopen: 'Открыть снова',
+  NEW: 'НОВОЕ',
+  Deployment: 'Развертывание',
 }
 
-let originals = new WeakMap<Node, string>()
-let attributeOriginals = new WeakMap<Element, Map<string, string>>()
+type TranslationRecord = { source: string; rendered: string }
+let originals = new WeakMap<Node, TranslationRecord>()
+let attributeOriginals = new WeakMap<Element, Map<string, TranslationRecord>>()
 const attributes = ['aria-label', 'placeholder', 'title']
-function localize(value: string, locale: Locale) {
+function localize(value: string, locale: Locale): string {
   if (locale === 'en') return value
   const exact = legacyRussian[value.trim()]
   if (exact) return value.replace(value.trim(), exact)
-  let result = value
-  for (const [en, ru] of Object.entries(legacyRussian).sort(([a], [b]) => b.length - a.length))
-    result = result.replaceAll(en, ru)
-  return result
+  const copyMatch = value.match(/^Copy (.+)$/)
+  if (copyMatch) return `Копировать ${localize(copyMatch[1]!, locale)}`
+  const confirmMatch = value.match(/^Confirm (.+)$/)
+  if (confirmMatch) return `Подтвердить: ${localize(confirmMatch[1]!, locale)}`
+  const loadingEvidence = value.match(/^Loading (.+) evidence…$/)
+  if (loadingEvidence) return `Загрузка данных «${localize(loadingEvidence[1]!, locale)}»…`
+  const loadingInventory = value.match(/^Loading (.+) inventory…$/)
+  if (loadingInventory)
+    return `Загрузка инвентаризации «${localize(loadingInventory[1]!, locale)}»…`
+  const noEvidence = value.match(/^No (.+) evidence is available for this item\.$/)
+  if (noEvidence) return `Для этого элемента нет данных типа «${localize(noEvidence[1]!, locale)}».`
+  const retryAtMost = value.match(
+    /^Retry at most (\d+) failed deliveries matching the supplied filters\.$/,
+  )
+  if (retryAtMost)
+    return `Повторить не более ${retryAtMost[1]} неудачных доставок, соответствующих фильтрам.`
+  const testQueued = value.match(/^Test delivery queued with status (.+)\.$/)
+  if (testQueued)
+    return `Тестовая доставка поставлена в очередь со статусом «${localize(testQueued[1]!, locale)}».`
+  const ambiguousDns = value.match(
+    /^Ambiguous: multiple names were observed for this IP\. Evidence expires (.+)\. The IP remains the canonical destination\.$/,
+  )
+  if (ambiguousDns)
+    return `Неоднозначно: для этого IP наблюдалось несколько имён. Срок действия данных: ${ambiguousDns[1]}. IP остаётся каноническим назначением.`
+  const titlePatterns: Array<[RegExp, string]> = [
+    [/^Runtime Diff · (.+)$/, 'Различия среды выполнения · $1'],
+    [/^Runtime Groups · (.+)$/, 'Группы среды выполнения · $1'],
+    [/^Runtime Group · (.+)$/, 'Группа среды выполнения · $1'],
+    [/^Runtime inventory · (.+)$/, 'Инвентаризация среды выполнения · $1'],
+    [/^Inventory evidence · (.+)$/, 'Данные инвентаризации · $1'],
+    [/^Releases · (.+)$/, 'Релизы · $1'],
+    [/^Delivery (.+) · Okoscope$/, 'Доставка $1 · Okoscope'],
+    [/^Recovery (.+) · Okoscope$/, 'Восстановление $1 · Okoscope'],
+    [/^(.+) · Notifications · Okoscope$/, '$1 · Уведомления · Okoscope'],
+  ]
+  for (const [pattern, replacement] of titlePatterns)
+    if (pattern.test(value)) return value.replace(pattern, replacement)
+  return value
 }
 
 export function localizeDocument(locale: Locale, root: ParentNode = document) {
@@ -200,8 +539,16 @@ export function localizeDocument(locale: Locale, root: ParentNode = document) {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
     let node: Node | null
     while ((node = walker.nextNode())) {
-      if (!originals.has(node)) originals.set(node, node.textContent ?? '')
-      const next = localize(originals.get(node)!, locale)
+      const current = node.textContent ?? ''
+      let record = originals.get(node)
+      if (!record) {
+        record = { source: current, rendered: current }
+        originals.set(node, record)
+      } else if (current !== record.rendered) {
+        record.source = current
+      }
+      const next = localize(record.source, locale)
+      record.rendered = next
       if (node.textContent !== next) node.textContent = next
     }
     for (const element of root.querySelectorAll('*'))
@@ -213,8 +560,15 @@ export function localizeDocument(locale: Locale, root: ParentNode = document) {
           saved = new Map()
           attributeOriginals.set(element, saved)
         }
-        if (!saved.has(attribute)) saved.set(attribute, current)
-        const next = localize(saved.get(attribute)!, locale)
+        let record = saved.get(attribute)
+        if (!record) {
+          record = { source: current, rendered: current }
+          saved.set(attribute, record)
+        } else if (current !== record.rendered) {
+          record.source = current
+        }
+        const next = localize(record.source, locale)
+        record.rendered = next
         if (next !== current) element.setAttribute(attribute, next)
       }
     if (document.title !== renderedTitle) originalTitle = document.title
@@ -224,8 +578,8 @@ export function localizeDocument(locale: Locale, root: ParentNode = document) {
   }
   apply()
   if (locale === 'en') {
-    originals = new WeakMap<Node, string>()
-    attributeOriginals = new WeakMap<Element, Map<string, string>>()
+    originals = new WeakMap<Node, TranslationRecord>()
+    attributeOriginals = new WeakMap<Element, Map<string, TranslationRecord>>()
     return () => undefined
   }
   const observer = new MutationObserver(apply)

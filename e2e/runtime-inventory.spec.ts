@@ -32,8 +32,10 @@ test('explores Runtime Inventory scope, kinds, cursors, and evidence', async ({ 
   await expect(page.getByText("<script>alert('scope')</script>")).toBeVisible()
   await expect(page.locator('script', { hasText: "alert('scope')" })).toHaveCount(0)
   await expect(page.getByRole('link', { name: /javascript:alert/ })).toHaveCount(0)
-  await page.getByRole('tab', { name: 'Occurrences' }).click()
+  const occurrencesTab = page.getByRole('tab', { name: 'Occurrences' })
+  await occurrencesTab.click()
   await expect(page.getByText('203.0.113.7')).toBeVisible()
+  await expect(occurrencesTab).toHaveCSS('color', 'oklch(0.129 0.042 264.695)')
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
 
   await page.goBack()
