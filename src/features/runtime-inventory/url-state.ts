@@ -1,7 +1,8 @@
-import type { InventoryKind } from '../../shared/api/types'
+import type { FileActivityOperation, InventoryKind } from '../../shared/api/types'
 
 export type InventorySearch = {
   kind: InventoryKind
+  operation?: FileActivityOperation | undefined
   release_id?: string | undefined
   cluster_id?: string | undefined
   namespace?: string | undefined
@@ -11,6 +12,7 @@ export type InventorySearch = {
   observed_from?: string | undefined
   observed_to?: string | undefined
   search?: string | undefined
+  identity_token?: string | undefined
   cursor?: string | undefined
 }
 export type InventoryEvidence = 'releases' | 'sightings' | 'groups' | 'occurrences'
@@ -26,13 +28,21 @@ const compact = <T extends object>(value: T): T =>
   Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as T
 
 export function parseInventorySearch(input: Record<string, unknown>): InventorySearch {
-  const kind: InventoryKind = ['process', 'destination', 'domain', 'syscall'].includes(
-    String(input.kind),
-  )
+  const kind: InventoryKind = [
+    'process',
+    'destination',
+    'domain',
+    'syscall',
+    'inbound_endpoint',
+    'file_activity',
+  ].includes(String(input.kind))
     ? (input.kind as InventoryKind)
     : 'process'
   return compact({
     kind,
+    operation: ['create', 'modify', 'delete', 'rename'].includes(String(input.operation))
+      ? (input.operation as FileActivityOperation)
+      : undefined,
     release_id: text(input.release_id),
     cluster_id: text(input.cluster_id),
     namespace: text(input.namespace),
@@ -42,6 +52,7 @@ export function parseInventorySearch(input: Record<string, unknown>): InventoryS
     observed_from: timestamp(input.observed_from),
     observed_to: timestamp(input.observed_to),
     search: text(input.search, 200),
+    identity_token: text(input.identity_token, 1000),
     cursor: text(input.cursor, 2000),
   })
 }
@@ -61,6 +72,10 @@ export function changeInventoryScope(
 ): InventorySearch {
   const next = { ...current, ...updates }
   delete next.cursor
+  if (updates.kind !== undefined && updates.kind !== current.kind) {
+    delete next.identity_token
+    if (updates.kind !== 'file_activity') delete next.operation
+  }
   return compact(next)
 }
 
@@ -73,7 +88,7 @@ export function changeEvidence(
   return next
 }
 
-export const summarySearch = (search: InventorySearch) => {
+export const summarySearch = (scope: InventorySearch) => {
   const {
     release_id,
     cluster_id,
@@ -83,7 +98,9 @@ export const summarySearch = (search: InventorySearch) => {
     container_name,
     observed_from,
     observed_to,
-  } = search
+    search,
+    operation,
+  } = scope
   return compact({
     release_id,
     cluster_id,
@@ -93,6 +110,7 @@ export const summarySearch = (search: InventorySearch) => {
     container_name,
     observed_from,
     observed_to,
-    search: search.search,
+    search,
+    operation,
   })
 }

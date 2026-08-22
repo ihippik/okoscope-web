@@ -30,23 +30,34 @@ test('renders tenant, runtime, and notification surfaces fully in Russian', asyn
   await page.getByLabel('Language').selectOption('ru')
 
   await expect(page.getByText('Приложение', { exact: true })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Открыть группы среды выполнения' })).toBeVisible()
+  await expect(page.getByText('Никогда не наблюдалось')).toBeVisible()
+  await expect(page.getByRole('link', { name: /Новые обнаружения/ })).toBeVisible()
+  await expect(page.getByRole('link', { name: /Релизы и изменения/ })).toBeVisible()
+  await expect(page.getByRole('link', { name: /Активность приложения/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Рекомендации/ })).toBeDisabled()
   await expectNoEnglishUi()
 
   await openRussian(`/projects/${project.id}/applications/${application.id}/runtime-groups`)
-  await expect(page.getByRole('heading', { name: 'Группы среды выполнения' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Новые обнаружения' })).toBeVisible()
   await expectNoEnglishUi()
   await openRussian(
     `/projects/${project.id}/applications/${application.id}/runtime-groups/${group.id}`,
   )
-  await expect(page.getByRole('heading', { name: 'Репрезентативное событие' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'История наблюдений' })).toBeVisible()
+  await page.getByText('Технические данные').nth(1).click()
   await expect(page.getByText('Системный вызов выполнен успешно').first()).toBeVisible()
   await expect(page.getByRole('button', { name: 'Подтвердить' })).toBeVisible()
   await expect(page.getByText(/Неоднозначно: для этого IP/).first()).toBeVisible()
   await expectNoEnglishUi()
 
   await openRussian(`/projects/${project.id}/applications/${application.id}/runtime-inventory`)
-  await expect(page.getByRole('heading', { name: 'Инвентаризация среды выполнения' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Активность приложения' })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Запуски процессов/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Исходящие соединения/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Входящие соединения/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Домены/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Системные вызовы/ })).toBeVisible()
+  await expect(page.getByText('Расширенные фильтры')).toBeVisible()
   await expectNoEnglishUi()
 
   await openRussian(`/projects/${project.id}/applications/${application.id}/releases`)
@@ -56,7 +67,7 @@ test('renders tenant, runtime, and notification surfaces fully in Russian', asyn
   await openRussian(
     `/projects/${project.id}/applications/${application.id}/releases/${releases[0]!.id}/runtime-diff`,
   )
-  await expect(page.getByRole('heading', { name: 'Различия среды выполнения' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Изменения после релиза' })).toBeVisible()
   await expectNoEnglishUi()
 
   await openRussian(`/projects/${project.id}/notifications`)
@@ -105,6 +116,22 @@ test('navigates Organization → Projects → Applications and supports a deep l
   await authenticate(page)
   await expect(page).toHaveURL(`/projects/${project.id}/applications/${application.id}`)
   await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toContainText('Platform')
+})
+
+test('shows heterogeneous worker kernels on the Application overview at a narrow viewport', async ({
+  page,
+}) => {
+  const { project, application } = await mockApi(page)
+  await page.setViewportSize({ width: 375, height: 812 })
+  await page.goto(`/projects/${project.id}/applications/${application.id}`)
+  await authenticate(page)
+  await expect(page.getByRole('heading', { name: 'Worker nodes' })).toBeVisible()
+  await expect(page.getByText('worker-amd64-01')).toBeVisible()
+  await expect(page.getByText('6.9.2')).toBeVisible()
+  await expect(page.getByText('worker-legacy-02')).toBeVisible()
+  await expect(page.getByText('Not reported')).toHaveCount(2)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375)
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
 })
 
 test('credential flow and primary navigation have no detectable accessibility violations', async ({
@@ -156,7 +183,7 @@ test('shows correlated API errors and clears a rejected credential', async ({ pa
           service_version: '0.1.0',
           git_commit: 'abc',
           api_version: 'v1',
-          required_database_migration: 7,
+          required_database_migration: 12,
         }),
       })
     return route.fulfill({

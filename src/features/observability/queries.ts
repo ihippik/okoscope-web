@@ -5,6 +5,7 @@ import type {
   OccurrencePage,
   RuntimeGroup,
   RuntimeDiff,
+  RuntimeDiffSummary,
   RuntimeGroupDetail,
   RuntimeGroupPage,
 } from '../../shared/api/types'
@@ -57,8 +58,23 @@ export const observabilityKeys = {
       search.baseline ?? null,
       search.cursor ?? null,
     ] as const,
+  runtimeDiffSummary: (
+    projectId: string,
+    applicationId: string,
+    targetReleaseId: string,
+    baseline?: string,
+  ) =>
+    [
+      'runtime-diff-summary',
+      projectId,
+      applicationId,
+      targetReleaseId,
+      baseline ?? null,
+      RUNTIME_DIFF_SUMMARY_SIZE,
+    ] as const,
 }
 export const OCCURRENCE_PAGE_SIZE = 25
+export const RUNTIME_DIFF_SUMMARY_SIZE = 5
 export const runtimeGroupOccurrencesPath = (groupId: string, cursor?: string) =>
   `/api/v1/runtime-groups/${encodeURIComponent(groupId)}/occurrences${params({ cursor, limit: OCCURRENCE_PAGE_SIZE })}`
 export const runtimeGroupsOptions = (
@@ -151,6 +167,27 @@ export const runtimeDiffOptions = (
     queryFn: () =>
       api.get<RuntimeDiff>(
         `/api/v1/projects/${encodeURIComponent(projectId)}/applications/${encodeURIComponent(applicationId)}/releases/${encodeURIComponent(targetReleaseId)}/runtime-diff${params({ baseline_id: search.baseline, cursor: search.cursor, limit: 50 })}`,
+        { protected: true },
+      ),
+  })
+
+export const runtimeDiffSummaryOptions = (
+  api: ApiClient,
+  projectId: string,
+  applicationId: string,
+  targetReleaseId: string,
+  baseline?: string,
+) =>
+  queryOptions({
+    queryKey: observabilityKeys.runtimeDiffSummary(
+      projectId,
+      applicationId,
+      targetReleaseId,
+      baseline,
+    ),
+    queryFn: () =>
+      api.get<RuntimeDiffSummary>(
+        `/api/v1/projects/${encodeURIComponent(projectId)}/applications/${encodeURIComponent(applicationId)}/releases/${encodeURIComponent(targetReleaseId)}/runtime-diff/summary${params({ baseline_id: baseline, limit: RUNTIME_DIFF_SUMMARY_SIZE })}`,
         { protected: true },
       ),
   })

@@ -1,7 +1,13 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import fixture from './runtime-inventory.fixture.json'
-import { EvidenceList, InventoryIdentity, InventorySummaryCards } from './components'
+import {
+  EvidenceList,
+  InboundEndpointEvidence,
+  InventoryIdentity,
+  InventorySummaryCards,
+  inventoryKinds,
+} from './components'
 import {
   expectedEvidencePath,
   inventoryFacetPath,
@@ -123,6 +129,17 @@ describe('runtime inventory query boundary', () => {
 })
 
 describe('runtime inventory safe presentation', () => {
+  it('keeps inbound and outbound connections adjacent in the activity order', () => {
+    expect(inventoryKinds.map(({ kind }) => kind)).toEqual([
+      'process',
+      'destination',
+      'inbound_endpoint',
+      'domain',
+      'syscall',
+      'file_activity',
+    ])
+  })
+
   it('uses summary response values and a zero fallback', () => {
     const onKind = vi.fn()
     render(
@@ -135,10 +152,82 @@ describe('runtime inventory safe presentation', () => {
         onKind={onKind}
       />,
     )
-    expect(screen.getByRole('button', { name: /Processes/ })).toHaveTextContent('1')
+    expect(screen.getByRole('button', { name: /Process launches/ })).toHaveTextContent('1')
     expect(screen.getByRole('button', { name: /Domains/ })).toHaveTextContent('0')
-    fireEvent.click(screen.getByRole('button', { name: /Syscalls/ }))
+    fireEvent.click(screen.getByRole('button', { name: /System calls/ }))
     expect(onKind).toHaveBeenCalledWith('syscall')
+  })
+
+  it('accepts the inbound endpoint kind in URL state', () => {
+    expect(parseInventorySearch({ kind: 'inbound_endpoint', search: '8080' })).toEqual({
+      kind: 'inbound_endpoint',
+      search: '8080',
+    })
+  })
+
+  it('accepts file activity search and operation filters', () => {
+    expect(
+      parseInventorySearch({ kind: 'file_activity', operation: 'rename', search: '/next' }),
+    ).toEqual({
+      kind: 'file_activity',
+      operation: 'rename',
+      search: '/next',
+    })
+    expect(parseInventorySearch({ kind: 'file_activity', operation: 'unknown' })).toEqual({
+      kind: 'file_activity',
+    })
+    expect(
+      changeInventoryScope({ kind: 'file_activity', operation: 'modify' }, { kind: 'process' }),
+    ).toEqual({ kind: 'process' })
+  })
+
+  it.each(['create', 'modify', 'delete'] as const)(
+    'renders file %s inventory identity',
+    (operation) => {
+      const path = `/tmp/${operation}-<script>.txt`
+      const { container } = render(
+        <InventoryIdentity
+          item={{
+            ...contractFixture.inventoryItemDetail,
+            inventory_kind: 'file_activity',
+            semantic_summary: { operation, process_command: 'worker', path },
+          }}
+        />,
+      )
+      expect(
+        screen.getByLabelText(new RegExp(path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))),
+      ).toBeVisible()
+      expect(container.querySelector('script')).toBeNull()
+    },
+  )
+
+  it.each([
+    [false, false, 0],
+    [true, false, 1],
+    [false, true, 1],
+    [true, true, 2],
+  ] as const)('renders independent inbound evidence %s/%s', (listener, accept, count) => {
+    render(
+      <InboundEndpointEvidence value={{ listener_observed: listener, accept_observed: accept }} />,
+    )
+    expect(screen.queryAllByText(/observed/i)).toHaveLength(count)
+    if (count === 0) expect(screen.getByText('No positive endpoint evidence')).toBeVisible()
+  })
+
+  it('renders inbound identity without contributing client or deployment data', () => {
+    render(
+      <InventoryIdentity
+        item={{
+          ...contractFixture.inventoryItemDetail,
+          inventory_kind: 'inbound_endpoint',
+          semantic_summary: contractFixture.inboundInventoryEvidence[3]!,
+        }}
+      />,
+    )
+    expect(screen.getByText('[::]:8080')).toBeVisible()
+    expect(screen.getByText('Port observed listening')).toBeVisible()
+    expect(screen.getByText('Accepted connections observed')).toBeVisible()
+    expect(screen.queryByText(/remote|client|workload/i)).not.toBeInTheDocument()
   })
 
   it('renders the prepared unsafe identity as inert text', () => {

@@ -18,6 +18,14 @@ describe('localization', () => {
   it('keeps dictionary keys aligned and interpolates values', () => {
     expect(Object.keys(russianMessages).sort()).toEqual(Object.keys(englishMessages).sort())
     expect(translate('ru', 'errorCode', { code: 'E_42' })).toBe('Код ошибки: E_42')
+    expect(translate('ru', 'neverObserved')).toBe('Никогда не наблюдалось')
+    expect(translate('ru', 'applicationActivity')).toBe('Активность приложения')
+    expect(translate('ru', 'processLaunches')).toBe('Запуски процессов')
+    expect(translate('ru', 'networkActivity')).toBe('Сетевая активность')
+    expect(translate('ru', 'recommendations')).toBe('Рекомендации')
+    expect(translate('ru', 'comingSoon')).toBe('Скоро')
+    expect(translate('ru', 'newDiscoveries')).toBe('Новые обнаружения')
+    expect(translate('ru', 'changesAfterRelease')).toBe('Изменения после релиза')
   })
   it('resolves saved, browser, and fallback locales', () => {
     expect(resolveLocale({ getItem: () => 'ru' }, ['en-US'])).toBe('ru')
@@ -70,5 +78,20 @@ describe('localization', () => {
     const button = await screen.findByRole('button', { name: 'Создать назначение' })
     fireEvent.click(button)
     expect(await screen.findByRole('button', { name: 'Сохранение…' })).toBeVisible()
+  })
+  it('translates dynamic runtime inventory labels and count forms', async () => {
+    render(
+      <LocalizationProvider initialLocale="ru">
+        <section aria-label="Most observed dns request">
+          <p>18 unique behaviors</p>
+          <p>1 unique identities</p>
+          <p>Other observed dns request</p>
+        </section>
+      </LocalizationProvider>,
+    )
+    expect(await screen.findByText('18 уникальных вариантов поведения')).toBeVisible()
+    expect(screen.getByText('1 уникальная идентичность')).toBeVisible()
+    expect(screen.getByText('Прочие наблюдаемые DNS-запрос')).toBeVisible()
+    expect(screen.getByRole('region', { name: 'Наиболее наблюдаемые DNS-запрос' })).toBeVisible()
   })
 })

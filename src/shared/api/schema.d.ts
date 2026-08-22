@@ -107,6 +107,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/applications/{application_id}/workers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        get: operations["listApplicationWorkers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/applications/{application_id}/runtime-inventory": {
         parameters: {
             query?: never;
@@ -137,6 +156,26 @@ export interface paths {
             cookie?: never;
         };
         get: operations["getApplicationRuntimeInventorySummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/runtime-inventory/distribution": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        /** @description Returns a complete-scope bounded distribution ordered by occurrence_count descending and identity_token ascending. Top entries plus other account for the full totals. */
+        get: operations["getApplicationRuntimeInventoryDistribution"];
         put?: never;
         post?: never;
         delete?: never;
@@ -431,6 +470,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/applications/{application_id}/releases/{target_id}/runtime-diff/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                target_id: components["parameters"]["TargetId"];
+            };
+            cookie?: never;
+        };
+        /** @description Returns complete comparison classification totals and the largest absolute occurrence-count changes independent of Runtime Diff pagination. */
+        get: operations["getRuntimeDiffSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/webhook-destinations": {
         parameters: {
             query?: never;
@@ -694,7 +754,7 @@ export interface components {
             api_version: "v1";
             /**
              * Format: int64
-             * @example 7
+             * @example 12
              */
             required_database_migration: number;
         };
@@ -734,6 +794,22 @@ export interface components {
         ApplicationPage: {
             items: components["schemas"]["Application"][];
             next_cursor: components["schemas"]["NullableUuid"];
+        };
+        ApplicationWorker: {
+            agent_id: components["schemas"]["Uuid"];
+            cluster_id: components["schemas"]["Uuid"];
+            cluster_name: string;
+            node_name: string;
+            agent_version: string;
+            architecture: string | null;
+            kernel_release: string | null;
+            first_observed_at: components["schemas"]["Timestamp"];
+            last_observed_at: components["schemas"]["Timestamp"];
+            agent_last_seen_at: components["schemas"]["Timestamp"];
+        };
+        ApplicationWorkerPage: {
+            items: components["schemas"]["ApplicationWorker"][];
+            next_cursor: components["schemas"]["NullableOpaqueCursor"];
         };
         RuntimeGroup: {
             id: components["schemas"]["Uuid"];
@@ -779,7 +855,7 @@ export interface components {
             items: components["schemas"]["EventOccurrence"][];
             next_cursor: components["schemas"]["NullableUuid"];
         };
-        RuntimeEventSemanticSummary: components["schemas"]["ProcessExecSemanticSummary"] | components["schemas"]["SyscallSemanticSummary"] | components["schemas"]["NetworkConnectSemanticSummary"] | components["schemas"]["NetworkDnsQuerySemanticSummary"] | components["schemas"]["NetworkDnsResponseSemanticSummary"];
+        RuntimeEventSemanticSummary: components["schemas"]["ProcessExecSemanticSummary"] | components["schemas"]["SyscallSemanticSummary"] | components["schemas"]["NetworkConnectSemanticSummary"] | components["schemas"]["InboundNetworkSemanticSummary"] | components["schemas"]["NetworkDnsQuerySemanticSummary"] | components["schemas"]["NetworkDnsResponseSemanticSummary"] | components["schemas"]["FileActivitySemanticSummary"];
         ProcessExecSemanticSummary: {
             executable: string;
         };
@@ -801,6 +877,21 @@ export interface components {
             destination_port: number;
             dns_context?: components["schemas"]["DnsContext"];
         };
+        InboundNetworkSemanticSummary: {
+            /** @example payments */
+            process_command: string;
+            /** @constant */
+            transport: "tcp";
+            /** @enum {string} */
+            address_family: "ipv4" | "ipv6";
+            /**
+             * Format: ip
+             * @example 0.0.0.0
+             */
+            local_address: string;
+            /** @example 8080 */
+            local_port: number;
+        };
         NetworkDnsQuerySemanticSummary: {
             process_command: string;
             name: components["schemas"]["DnsName"];
@@ -816,7 +907,19 @@ export interface components {
             transport: components["schemas"]["DnsTransport"];
             direction: components["schemas"]["DnsDirection"];
         };
-        RuntimeEventPayload: components["schemas"]["ProcessExecPayload"] | components["schemas"]["SyscallPayload"] | components["schemas"]["NetworkConnectPayload"] | components["schemas"]["NetworkDnsQueryPayload"] | components["schemas"]["NetworkDnsResponsePayload"];
+        FileActivitySemanticSummary: {
+            operation: components["schemas"]["FileActivityOperation"];
+            process_command: string;
+            /** @description Path reported by the process syscall. */
+            path: string;
+            /** @description Rename destination path reported by the process syscall. */
+            new_path?: string;
+            /** @description Whether rename replaced an existing destination; null means unknown. */
+            replaced?: boolean | null;
+        };
+        /** @enum {string} */
+        FileActivityOperation: "create" | "modify" | "delete" | "rename";
+        RuntimeEventPayload: components["schemas"]["ProcessExecPayload"] | components["schemas"]["SyscallPayload"] | components["schemas"]["NetworkConnectPayload"] | components["schemas"]["NetworkListenPayload"] | components["schemas"]["NetworkAcceptPayload"] | components["schemas"]["NetworkDnsQueryPayload"] | components["schemas"]["NetworkDnsResponsePayload"] | components["schemas"]["FileCreatePayload"] | components["schemas"]["FileModifyPayload"] | components["schemas"]["FileDeletePayload"] | components["schemas"]["FileRenamePayload"];
         ProcessExecPayload: {
             /** @constant */
             type: "ProcessExec";
@@ -852,6 +955,38 @@ export interface components {
                 dns_context?: components["schemas"]["DnsContext"];
             };
         };
+        NetworkListenPayload: {
+            /** @constant */
+            type: "NetworkListen";
+            data: {
+                /** @constant */
+                transport: "tcp";
+                /** @enum {string} */
+                address_family: "ipv4" | "ipv6";
+                /** Format: ip */
+                local_address: string;
+                local_port: number;
+            };
+        };
+        NetworkAcceptPayload: {
+            /** @constant */
+            type: "NetworkAccept";
+            data: {
+                /** @constant */
+                transport: "tcp";
+                /** @enum {string} */
+                address_family: "ipv4" | "ipv6";
+                /** Format: ip */
+                local_address: string;
+                local_port: number;
+                /**
+                 * Format: ip
+                 * @description Sensitive client evidence exposed only in authorized bounded occurrence detail.
+                 */
+                remote_address: string;
+                remote_port: number;
+            };
+        };
         NetworkDnsQueryPayload: {
             /** @constant */
             type: "NetworkDnsQuery";
@@ -881,6 +1016,36 @@ export interface components {
                 answers: components["schemas"]["DnsAddressAnswer"][];
                 cname_chain: components["schemas"]["DnsCname"][];
                 effective_ttl_seconds: number | null;
+            };
+        };
+        FileCreatePayload: {
+            /** @constant */
+            type: "file.create";
+            data: {
+                path: string;
+            };
+        };
+        FileModifyPayload: {
+            /** @constant */
+            type: "file.modify";
+            data: {
+                path: string;
+            };
+        };
+        FileDeletePayload: {
+            /** @constant */
+            type: "file.delete";
+            data: {
+                path: string;
+            };
+        };
+        FileRenamePayload: {
+            /** @constant */
+            type: "file.rename";
+            data: {
+                path: string;
+                new_path: string;
+                replaced?: boolean | null;
             };
         };
         /** @example api.example.com */
@@ -965,6 +1130,33 @@ export interface components {
             target: components["schemas"]["Release"];
             items: components["schemas"]["RuntimeDiffEntry"][];
             next_cursor: components["schemas"]["NullableUuid"];
+        };
+        RuntimeDiffClassificationCount: {
+            /** @enum {string} */
+            classification: "new" | "disappeared" | "unchanged";
+            /** Format: int64 */
+            item_count: number;
+        };
+        RuntimeDiffChangeEntry: {
+            group_id: components["schemas"]["Uuid"];
+            /** @enum {string} */
+            classification: "new" | "disappeared" | "unchanged";
+            event_kind: string;
+            semantic_summary: components["schemas"]["RuntimeEventSemanticSummary"];
+            /** Format: int64 */
+            baseline_occurrence_count: number;
+            /** Format: int64 */
+            target_occurrence_count: number;
+            /** Format: int64 */
+            occurrence_delta: number;
+        };
+        RuntimeDiffSummary: {
+            baseline: components["schemas"]["Release"] | null;
+            target: components["schemas"]["Release"];
+            /** Format: int64 */
+            total_item_count: number;
+            classifications: components["schemas"]["RuntimeDiffClassificationCount"][];
+            largest_changes: components["schemas"]["RuntimeDiffChangeEntry"][];
         };
         WebhookDestination: {
             id: components["schemas"]["Uuid"];
@@ -1170,13 +1362,13 @@ export interface components {
             affected_deliveries: components["schemas"]["RecoveryOperationDelivery"][];
         };
         /** @enum {string} */
-        InventoryKind: "process" | "destination" | "domain" | "syscall";
+        InventoryKind: "process" | "destination" | "domain" | "syscall" | "inbound_endpoint" | "file_activity";
         /**
          * @description Evidence-qualified state; not_observed does not prove behavior cannot occur.
          * @enum {string}
          */
         InventoryReleasePresence: "observed" | "not_observed" | "unknown";
-        InventorySemanticSummary: components["schemas"]["InventoryProcessIdentity"] | components["schemas"]["InventoryDestinationIdentity"] | components["schemas"]["InventoryDomainIdentity"] | components["schemas"]["InventorySyscallIdentity"];
+        InventorySemanticSummary: components["schemas"]["InventoryProcessIdentity"] | components["schemas"]["InventoryDestinationIdentity"] | components["schemas"]["InventoryDomainIdentity"] | components["schemas"]["InventorySyscallIdentity"] | components["schemas"]["InventoryInboundEndpointIdentity"] | components["schemas"]["FileActivitySemanticSummary"];
         InventoryProcessIdentity: {
             /** @example /app/payments */
             executable: string;
@@ -1207,6 +1399,21 @@ export interface components {
             process_command: string;
             /** @example epoll_wait */
             syscall: string;
+        };
+        InventoryInboundEndpointIdentity: {
+            /** @constant */
+            transport: "tcp";
+            /** @enum {string} */
+            address_family: "ipv4" | "ipv6";
+            /**
+             * Format: ip
+             * @example 0.0.0.0
+             */
+            local_address: string;
+            /** @example 8080 */
+            local_port: number;
+            listener_observed: boolean;
+            accept_observed: boolean;
         };
         InventoryItem: {
             id: components["schemas"]["Uuid"];
@@ -1259,6 +1466,31 @@ export interface components {
             first_seen_at: components["schemas"]["NullableTimestamp"];
             last_seen_at: components["schemas"]["NullableTimestamp"];
             kinds: components["schemas"]["InventoryKindCount"][];
+        };
+        InventoryDistributionEntry: {
+            identity_token: string;
+            semantic_summary: components["schemas"]["InventorySemanticSummary"];
+            /** Format: int64 */
+            item_count: number;
+            /** Format: int64 */
+            occurrence_count: number;
+        };
+        InventoryDistributionOther: {
+            /** Format: int64 */
+            item_count: number;
+            /** Format: int64 */
+            occurrence_count: number;
+        };
+        InventoryDistribution: {
+            /** Format: int32 */
+            identity_version: number;
+            kind: components["schemas"]["InventoryKind"];
+            /** Format: int64 */
+            total_item_count: number;
+            /** Format: int64 */
+            total_occurrence_count: number;
+            entries: components["schemas"]["InventoryDistributionEntry"][];
+            other: components["schemas"]["InventoryDistributionOther"] | null;
         };
         /** @enum {string} */
         InventoryFacet: "cluster" | "namespace" | "workload_kind" | "workload_name" | "container_name";
@@ -1429,6 +1661,16 @@ export interface components {
                 "application/json": components["schemas"]["ApplicationPage"];
             };
         };
+        /** @description Application worker platform metadata page */
+        ApplicationWorkerPage: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ApplicationWorkerPage"];
+            };
+        };
         /** @description Application runtime inventory aggregate */
         InventorySummary: {
             headers: {
@@ -1437,6 +1679,16 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["InventorySummary"];
+            };
+        };
+        /** @description Complete-scope bounded runtime inventory distribution */
+        InventoryDistribution: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["InventoryDistribution"];
             };
         };
         /** @description Bounded runtime inventory facet options */
@@ -1577,6 +1829,16 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["RuntimeDiff"];
+            };
+        };
+        /** @description Complete runtime comparison aggregate */
+        RuntimeDiffSummary: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["RuntimeDiffSummary"];
             };
         };
         /** @description Webhook destination */
@@ -1839,10 +2101,33 @@ export interface operations {
             404: components["responses"]["Error"];
         };
     };
+    listApplicationWorkers: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor scoped to the authenticated collection; clients must not parse it. */
+                cursor?: components["parameters"]["OpaqueCursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ApplicationWorkerPage"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
     listApplicationRuntimeInventory: {
         parameters: {
             query?: {
                 kind?: components["schemas"]["InventoryKind"];
+                operation?: components["schemas"]["FileActivityOperation"];
                 release_id?: string;
                 cluster_id?: string;
                 namespace?: string;
@@ -1853,6 +2138,8 @@ export interface operations {
                 observed_to?: string;
                 /** @description Case-insensitive search over allowlisted safe semantic identity fields only. */
                 search?: string;
+                /** @description Opaque server-issued token selecting one typed inventory identity. */
+                identity_token?: string;
                 /** @description Opaque cursor scoped to the authenticated collection. */
                 cursor?: components["parameters"]["Cursor"];
                 limit?: components["parameters"]["Limit"];
@@ -1875,6 +2162,7 @@ export interface operations {
     getApplicationRuntimeInventorySummary: {
         parameters: {
             query?: {
+                operation?: components["schemas"]["FileActivityOperation"];
                 release_id?: string;
                 cluster_id?: string;
                 namespace?: string;
@@ -1900,10 +2188,42 @@ export interface operations {
             404: components["responses"]["Error"];
         };
     };
+    getApplicationRuntimeInventoryDistribution: {
+        parameters: {
+            query: {
+                kind: components["schemas"]["InventoryKind"];
+                operation?: components["schemas"]["FileActivityOperation"];
+                release_id?: string;
+                cluster_id?: string;
+                namespace?: string;
+                workload_kind?: string;
+                workload_name?: string;
+                container_name?: string;
+                observed_from?: string;
+                observed_to?: string;
+                search?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["InventoryDistribution"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
     listApplicationRuntimeInventoryFacetOptions: {
         parameters: {
             query?: {
                 kind?: components["schemas"]["InventoryKind"];
+                operation?: components["schemas"]["FileActivityOperation"];
                 release_id?: string;
                 cluster_id?: string;
                 namespace?: string;
@@ -2223,6 +2543,28 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["RuntimeDiff"];
+        };
+    };
+    getRuntimeDiffSummary: {
+        parameters: {
+            query?: {
+                baseline_id?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                target_id: components["parameters"]["TargetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["RuntimeDiffSummary"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
         };
     };
     listWebhookDestinations: {

@@ -3,6 +3,7 @@ import type { ApiClient } from './client'
 import type {
   Application,
   ApplicationPage,
+  ApplicationWorkerPage,
   BuildInfo,
   Organization,
   Project,
@@ -27,6 +28,8 @@ export const queryKeys = {
   applications: (projectId: string) => ['projects', projectId, 'applications'] as const,
   application: (projectId: string, applicationId: string) =>
     ['projects', projectId, 'applications', applicationId] as const,
+  applicationWorkers: (projectId: string, applicationId: string) =>
+    ['projects', projectId, 'applications', applicationId, 'workers'] as const,
   notificationHealth: (projectId: string) =>
     ['projects', projectId, 'notification-health'] as const,
   destinations: (projectId: string) => ['projects', projectId, 'destinations'] as const,
@@ -73,6 +76,24 @@ export const applicationOptions = (api: ApiClient, projectId: string, applicatio
         `/api/v1/projects/${encodeURIComponent(projectId)}/applications/${encodeURIComponent(applicationId)}`,
         { protected: true },
       ),
+  })
+export const applicationWorkersOptions = (
+  api: ApiClient,
+  projectId: string,
+  applicationId: string,
+) =>
+  infiniteQueryOptions({
+    queryKey: queryKeys.applicationWorkers(projectId, applicationId),
+    initialPageParam: null as string | null,
+    queryFn: ({ pageParam }) =>
+      api.get<ApplicationWorkerPage>(
+        withCursor(
+          `/api/v1/projects/${encodeURIComponent(projectId)}/applications/${encodeURIComponent(applicationId)}/workers`,
+          pageParam,
+        ),
+        { protected: true },
+      ),
+    getNextPageParam: (page) => page.next_cursor ?? undefined,
   })
 export const projectsOptions = (api: ApiClient) =>
   infiniteQueryOptions({

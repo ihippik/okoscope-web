@@ -1,4 +1,4 @@
-import { getActiveLocale } from '../../shared/i18n'
+import { getActiveLocale, translate } from '../../shared/i18n'
 
 export const formatCount = (value: number) => new Intl.NumberFormat(getActiveLocale()).format(value)
 export const formatTimestamp = (value: string | null) =>
@@ -7,4 +7,4 @@ export const formatTimestamp = (value: string | null) =>
         dateStyle: 'medium',
         timeStyle: 'short',
       }).format(new Date(value))
-    : 'Never observed'
+    : translate(getActiveLocale(), 'neverObserved')

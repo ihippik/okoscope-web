@@ -12,6 +12,9 @@ import {
   getNotificationPresentation,
   validLifecycleActions,
   isRecentlyFirstSeen,
+  getNetworkScope,
+  NetworkScopeBadge,
+  FileActivitySummary,
 } from './components'
 import {
   invalidateRuntimeGroupLifecycle,
@@ -26,8 +29,49 @@ import {
   parseRuntimeGroupSearch,
 } from './url-state'
 import { formatCount } from '../tenant/format'
+import {
+  directionLabel,
+  formatEndpoint,
+  getActivityPresentation,
+  getEventKindLabel,
+  getWildcardEndpointLabel,
+} from './presentation'
 
 afterEach(cleanup)
+
+describe('network destination scope', () => {
+  it('formats IPv4, IPv6, and wildcard endpoints without conflating families', () => {
+    expect(formatEndpoint('ipv4', '0.0.0.0', 8080)).toBe('0.0.0.0:8080')
+    expect(formatEndpoint('ipv6', '::', 8080)).toBe('[::]:8080')
+    expect(formatEndpoint('ipv6', '2001:db8::1', 51234)).toBe('[2001:db8::1]:51234')
+    expect(getWildcardEndpointLabel('ipv4', '0.0.0.0')).toBe('All IPv4 interfaces')
+    expect(getWildcardEndpointLabel('ipv6', '::')).toBe('All IPv6 interfaces')
+  })
+
+  it('labels inbound event kinds distinctly and keeps unknown fallback', () => {
+    expect(getEventKindLabel('network.listen')).toBe('Opened port')
+    expect(getEventKindLabel('network.accept')).toBe('Accepted inbound connection')
+    expect(getEventKindLabel('future.event')).toBe('Observed activity')
+  })
+
+  it('classifies local, private, public, and unknown destinations', () => {
+    expect(getNetworkScope('127.0.0.1')).toBe('local')
+    expect(getNetworkScope('::1')).toBe('local')
+    expect(getNetworkScope('192.168.1.5')).toBe('private')
+    expect(getNetworkScope('fd00::1')).toBe('private')
+    expect(getNetworkScope('8.8.8.8')).toBe('internet')
+    expect(getNetworkScope('2001:4860:4860::8888')).toBe('internet')
+    expect(getNetworkScope('not-an-address')).toBe('unknown')
+  })
+
+  it('explains that an internet destination is not necessarily unsafe', () => {
+    render(<NetworkScopeBadge address="8.8.8.8" />)
+    expect(screen.getByText('Internet')).toHaveAttribute(
+      'title',
+      expect.stringContaining('does not necessarily mean unsafe'),
+    )
+  })
+})
 
 describe('observability URL state', () => {
   it('parses, trims and rejects invalid values', () => {
@@ -67,6 +111,71 @@ describe('observability URL state', () => {
       namespace: 'prod',
       cursor: 'next',
     }))
+})
+
+describe('inbound network privacy', () => {
+  it('renders a safe inbound group summary using only the local endpoint', () => {
+    render(
+      <SemanticSummary
+        value={{
+          process_command: 'payments',
+          transport: 'tcp',
+          address_family: 'ipv4',
+          local_address: '0.0.0.0',
+          local_port: 8080,
+        }}
+      />,
+    )
+    expect(screen.getByText('0.0.0.0:8080')).toBeVisible()
+    expect(screen.getByText('All IPv4 interfaces')).toBeVisible()
+    expect(screen.queryByText(/remote|51234|203\.0\.113\.9/i)).not.toBeInTheDocument()
+  })
+
+  it('uses a neutral fallback for future release classifications', () => {
+    render(<RuntimeDiffClassificationBadge classification="future" />)
+    expect(screen.getByText('Unknown')).toBeVisible()
+  })
+
+  it('keeps the remote endpoint inside expanded accept technical details', async () => {
+    const remote = '2001:db8::feed'
+    render(
+      <OccurrenceTimeline
+        occurrences={[
+          {
+            id: 'accept',
+            event_id: 'event-accept',
+            observed_at: '2026-08-21T10:00:00Z',
+            node_name: 'node',
+            namespace: 'prod',
+            pod_name: 'api-1',
+            container_name: 'api',
+            process_command: '<img src=x onerror=alert(1)>',
+            event_kind: 'network.accept',
+            payload: {
+              type: 'NetworkAccept',
+              data: {
+                transport: 'tcp',
+                address_family: 'ipv6',
+                local_address: '::',
+                local_port: 8080,
+                remote_address: remote,
+                remote_port: 51234,
+              },
+            },
+            release_id: null,
+            release_version: null,
+          },
+        ]}
+      />,
+    )
+    expect(screen.getByText('<img src=x onerror=alert(1)>')).toBeInTheDocument()
+    expect(document.querySelector('img')).toBeNull()
+    const details = screen.getByText('Technical details').closest('details')
+    expect(details).not.toHaveAttribute('open')
+    await userEvent.click(screen.getByText('Technical details'))
+    expect(screen.getByText(`[${remote}]:51234`)).toBeVisible()
+    expect(screen.getByText('[::]:8080')).toBeVisible()
+  })
 })
 
 describe('observability query keys', () => {
@@ -116,6 +225,114 @@ describe('observability query keys', () => {
 })
 
 describe('observability presentation', () => {
+  it('renders rename replacement states, long paths, and generic copy failures', async () => {
+    const longPath = `/tmp/${'very-long/'.repeat(30)}<img src=x onerror=alert(1)>`
+    const writeText = vi.fn().mockRejectedValue(new Error('clipboard unavailable'))
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
+    const { container } = render(
+      <>
+        <FileActivitySummary
+          value={{
+            operation: 'rename',
+            process_command: 'mv',
+            path: longPath,
+            new_path: '/new',
+            replaced: true,
+          }}
+        />
+        <FileActivitySummary
+          value={{
+            operation: 'rename',
+            process_command: 'mv',
+            path: '/old-2',
+            new_path: '/new-2',
+            replaced: false,
+          }}
+        />
+        <FileActivitySummary
+          value={{ operation: 'rename', process_command: 'mv', path: '/old-3', new_path: '/new-3' }}
+        />
+      </>,
+    )
+    expect(screen.getByText('Replaced')).toBeVisible()
+    expect(screen.getByText('Not replaced')).toBeVisible()
+    expect(screen.getByText('Unknown')).toBeVisible()
+    expect(screen.getAllByText(/not a canonical filesystem path/)).not.toHaveLength(0)
+    expect(container.querySelector('img')).toBeNull()
+    await userEvent.click(screen.getAllByRole('button', { name: 'Copy Old syscall path' })[0]!)
+    expect(writeText).toHaveBeenCalledWith(longPath)
+    expect(screen.getByText('Could not copy path')).not.toHaveTextContent(longPath)
+  })
+
+  it('renders every file occurrence and safely falls back for an unknown kind', async () => {
+    const base = {
+      observed_at: '2026-08-21T10:00:00Z',
+      node_name: '',
+      namespace: '',
+      pod_name: '',
+      container_name: '',
+      process_command: 'worker',
+      release_id: null,
+      release_version: null,
+    }
+    render(
+      <OccurrenceTimeline
+        occurrences={[
+          {
+            ...base,
+            id: '1',
+            event_id: 'e1',
+            event_kind: 'file.create',
+            payload: { type: 'file.create', data: { path: '/create' } },
+          },
+          {
+            ...base,
+            id: '2',
+            event_id: 'e2',
+            event_kind: 'file.modify',
+            payload: { type: 'file.modify', data: { path: '/modify' } },
+          },
+          {
+            ...base,
+            id: '3',
+            event_id: 'e3',
+            event_kind: 'file.delete',
+            payload: { type: 'file.delete', data: { path: '/delete' } },
+          },
+          {
+            ...base,
+            id: '4',
+            event_id: 'e4',
+            event_kind: 'file.rename',
+            payload: { type: 'file.rename', data: { path: '/old', new_path: '/new' } },
+          },
+          {
+            ...base,
+            id: '5',
+            event_id: 'e5',
+            event_kind: 'future.file',
+            payload: { type: 'ProcessExec', data: { executable: '/safe', parent_command: null } },
+          },
+        ]}
+      />,
+    )
+    for (const summary of screen.getAllByText('Technical details')) await userEvent.click(summary)
+    for (const operation of ['create', 'modify', 'delete', 'rename'])
+      expect(screen.getByText(operation)).toBeVisible()
+    expect(screen.getAllByText('Unknown')).not.toHaveLength(0)
+    expect(screen.getByText(/fixed five-second windows/)).toBeVisible()
+    expect(screen.getByText('Observed activity')).toBeVisible()
+  })
+  it('maps API kinds to user-facing activity vocabulary with safe fallbacks', () => {
+    expect(getActivityPresentation('process').countLabel).toBe('launches')
+    expect(getActivityPresentation('process').behaviorLabel).toBe('Process launch')
+    expect(getActivityPresentation('destination').itemLabel).toBe('Outbound connections')
+    expect(getActivityPresentation('destination').behaviorLabel).toBe('Outbound connection')
+    expect(getActivityPresentation('domain').behaviorLabel).toBe('DNS request')
+    expect(getEventKindLabel('NetworkConnect')).toBe('Outbound connection')
+    expect(getEventKindLabel('future-kind')).toBe('Observed activity')
+    expect(directionLabel('egress')).toBe('Outgoing')
+  })
   it('renders status and every diff label', () => {
     render(
       <>
@@ -125,7 +342,7 @@ describe('observability presentation', () => {
         <RuntimeDiffClassificationBadge classification="unchanged" />
       </>,
     )
-    for (const label of ['open', 'NEW', 'DISAPPEARED', 'UNCHANGED'])
+    for (const label of ['open', 'New', 'No longer observed', 'Still observed'])
       expect(screen.getByText(label)).toBeInTheDocument()
   })
   it('uses an injectable clock for recency', () => {

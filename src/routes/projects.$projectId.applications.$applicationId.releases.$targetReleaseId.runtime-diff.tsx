@@ -8,7 +8,12 @@ import {
   PaginationControls,
   RuntimeDiffList,
 } from '../features/observability/components'
-import { releasesOptions, runtimeDiffOptions } from '../features/observability/queries'
+import {
+  releasesOptions,
+  runtimeDiffOptions,
+  runtimeDiffSummaryOptions,
+} from '../features/observability/queries'
+import { RuntimeDiffVisualization } from '../features/observability/visualization'
 import { changeBaseline, parseRuntimeDiffSearch } from '../features/observability/url-state'
 import { applicationOptions, projectOptions } from '../shared/api/queries'
 import { useApi } from '../shared/api/context'
@@ -28,15 +33,18 @@ function RuntimeDiffPage() {
   const application = useQuery(applicationOptions(api, projectId, applicationId))
   const releaseChoices = useQuery(releasesOptions(api, projectId, applicationId, {}))
   const diff = useQuery(runtimeDiffOptions(api, projectId, applicationId, targetReleaseId, search))
+  const diffSummary = useQuery(
+    runtimeDiffSummaryOptions(api, projectId, applicationId, targetReleaseId, search.baseline),
+  )
   useEffect(() => {
-    document.title = `Runtime Diff · ${application.data?.name ?? 'Okoscope'}`
+    document.title = `Changes after release · ${application.data?.name ?? 'Okoscope'}`
   }, [application.data])
   if (project.isPending || application.isPending || diff.isPending || releaseChoices.isPending)
-    return <Loading label="Loading Runtime Diff…" />
+    return <Loading label="Loading Changes after release…" />
   if (project.isError || application.isError || diff.isError || releaseChoices.isError)
     return (
       <ApiErrorPanel
-        title="Runtime Diff unavailable"
+        title="Changes after release unavailable"
         error={diff.error ?? releaseChoices.error ?? application.error ?? project.error}
         onRetry={() => void diff.refetch()}
       />
@@ -48,6 +56,25 @@ function RuntimeDiffPage() {
     diff.data.target.id !== targetReleaseId ||
     (diff.data.baseline && !owned(diff.data.baseline))
   )
+    return (
+      <OwnershipError
+        parent={
+          <Link
+            className="underline"
+            to="/projects/$projectId/applications/$applicationId/releases"
+            params={{ projectId, applicationId }}
+          >
+            Back to Releases
+          </Link>
+        }
+      />
+    )
+  const summaryOwned = diffSummary.data
+    ? owned(diffSummary.data.target) &&
+      diffSummary.data.target.id === targetReleaseId &&
+      (!diffSummary.data.baseline || owned(diffSummary.data.baseline))
+    : true
+  if (!summaryOwned)
     return (
       <OwnershipError
         parent={
@@ -84,11 +111,15 @@ function RuntimeDiffPage() {
           Releases
         </Link>
         <span>/</span>
-        <span aria-current="page">Runtime Diff</span>
+        <span aria-current="page">Changes after release</span>
       </nav>
       <div>
         <p className="eyebrow">Release comparison</p>
-        <h1 className="mt-2 text-4xl font-semibold">Runtime Diff</h1>
+        <h1 className="mt-2 text-4xl font-semibold">Changes after release</h1>
+        <p className="mt-2 max-w-3xl text-slate-400">
+          Compare observed application activity between releases. A change is not automatically a
+          problem, and “no longer observed” does not prove that behavior is absent.
+        </p>
       </div>
       <Card>
         <label className="block text-sm font-medium" htmlFor="baseline">
@@ -124,6 +155,27 @@ function RuntimeDiffPage() {
           </dd>
         </dl>
       </Card>
+      {diff.data.baseline &&
+        (diffSummary.isPending ? (
+          <Loading label="Loading complete comparison summary…" />
+        ) : diffSummary.isError && !diffSummary.data ? (
+          <ApiErrorPanel
+            title="Comparison summary unavailable"
+            error={diffSummary.error}
+            onRetry={() => void diffSummary.refetch()}
+          />
+        ) : diffSummary.data ? (
+          <>
+            {diffSummary.isError && (
+              <ApiErrorPanel
+                title="Comparison summary may be stale"
+                error={diffSummary.error}
+                onRetry={() => void diffSummary.refetch()}
+              />
+            )}
+            <RuntimeDiffVisualization summary={diffSummary.data} />
+          </>
+        ) : null)}
       {!diff.data.baseline ? (
         <EmptyState
           title="No comparison baseline"
@@ -137,8 +189,8 @@ function RuntimeDiffPage() {
         />
       ) : (
         <EmptyState
-          title="No runtime changes"
-          description="The selected releases have no runtime diff entries."
+          title="No observed changes"
+          description="The selected releases have no observed activity changes on this page."
         />
       )}
       <PaginationControls

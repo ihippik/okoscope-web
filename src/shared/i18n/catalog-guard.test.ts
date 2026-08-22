@@ -34,6 +34,12 @@ function jsxInterfaceLiterals(): Set<string> {
         )
       )
         literals.add(node.initializer.text)
+      if (
+        ts.isPropertyAssignment(node) &&
+        node.name.getText() === 'label' &&
+        ts.isStringLiteral(node.initializer)
+      )
+        literals.add(node.initializer.text)
       ts.forEachChild(node, visit)
     }
     visit(source)
@@ -44,6 +50,8 @@ function jsxInterfaceLiterals(): Set<string> {
 describe('translation catalog guardrails', () => {
   it('keeps translations centralized and covers the established UI vocabulary', () => {
     expect(Object.keys(legacyRussian).length).toBeGreaterThan(100)
+    expect(legacyRussian['No activity observed']).toBe('Активность не наблюдалась')
+    expect(legacyRussian['End of activity results']).toBe('Конец списка активности')
     expect(new Set(Object.keys(legacyRussian)).size).toBe(Object.keys(legacyRussian).length)
     for (const [english, russian] of Object.entries(legacyRussian)) {
       expect(english.trim()).not.toBe('')

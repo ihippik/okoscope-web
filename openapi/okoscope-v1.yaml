@@ -64,6 +64,26 @@ paths:
           '200': { $ref: '#/components/responses/Application' },
           '404': { $ref: '#/components/responses/Error' },
         }
+  /api/v1/projects/{project_id}/applications/{application_id}/workers:
+    parameters:
+      [
+        { $ref: '#/components/parameters/ProjectId' },
+        { $ref: '#/components/parameters/ApplicationId' },
+      ]
+    get:
+      operationId: listApplicationWorkers
+      parameters:
+        [
+          { $ref: '#/components/parameters/OpaqueCursor' },
+          { $ref: '#/components/parameters/Limit' },
+        ]
+      responses:
+        {
+          '200': { $ref: '#/components/responses/ApplicationWorkerPage' },
+          '400': { $ref: '#/components/responses/Error' },
+          '401': { $ref: '#/components/responses/Error' },
+          '404': { $ref: '#/components/responses/Error' },
+        }
   /api/v1/projects/{project_id}/applications/{application_id}/runtime-inventory:
     parameters:
       [
@@ -74,6 +94,11 @@ paths:
       operationId: listApplicationRuntimeInventory
       parameters:
         - { name: kind, in: query, schema: { $ref: '#/components/schemas/InventoryKind' } }
+        - {
+            name: operation,
+            in: query,
+            schema: { $ref: '#/components/schemas/FileActivityOperation' },
+          }
         - { name: release_id, in: query, schema: { type: string, format: uuid } }
         - { name: cluster_id, in: query, schema: { type: string, format: uuid } }
         - { name: namespace, in: query, schema: { type: string } }
@@ -87,6 +112,12 @@ paths:
             in: query,
             schema: { type: string, minLength: 1, maxLength: 200 },
             description: Case-insensitive search over allowlisted safe semantic identity fields only.,
+          }
+        - {
+            name: identity_token,
+            in: query,
+            schema: { type: string, minLength: 1, maxLength: 1000 },
+            description: Opaque server-issued token selecting one typed inventory identity.,
           }
         - { $ref: '#/components/parameters/Cursor' }
         - { $ref: '#/components/parameters/Limit' }
@@ -106,6 +137,11 @@ paths:
     get:
       operationId: getApplicationRuntimeInventorySummary
       parameters:
+        - {
+            name: operation,
+            in: query,
+            schema: { $ref: '#/components/schemas/FileActivityOperation' },
+          }
         - { name: release_id, in: query, schema: { type: string, format: uuid } }
         - { name: cluster_id, in: query, schema: { type: string, format: uuid } }
         - { name: namespace, in: query, schema: { type: string, minLength: 1, maxLength: 253 } }
@@ -122,6 +158,48 @@ paths:
       responses:
         {
           '200': { $ref: '#/components/responses/InventorySummary' },
+          '400': { $ref: '#/components/responses/Error' },
+          '401': { $ref: '#/components/responses/Error' },
+          '404': { $ref: '#/components/responses/Error' },
+        }
+  /api/v1/projects/{project_id}/applications/{application_id}/runtime-inventory/distribution:
+    parameters:
+      [
+        { $ref: '#/components/parameters/ProjectId' },
+        { $ref: '#/components/parameters/ApplicationId' },
+      ]
+    get:
+      operationId: getApplicationRuntimeInventoryDistribution
+      description: Returns a complete-scope bounded distribution ordered by occurrence_count descending and identity_token ascending. Top entries plus other account for the full totals.
+      parameters:
+        - {
+            name: kind,
+            in: query,
+            required: true,
+            schema: { $ref: '#/components/schemas/InventoryKind' },
+          }
+        - {
+            name: operation,
+            in: query,
+            schema: { $ref: '#/components/schemas/FileActivityOperation' },
+          }
+        - { name: release_id, in: query, schema: { type: string, format: uuid } }
+        - { name: cluster_id, in: query, schema: { type: string, format: uuid } }
+        - { name: namespace, in: query, schema: { type: string, minLength: 1, maxLength: 253 } }
+        - { name: workload_kind, in: query, schema: { type: string, minLength: 1, maxLength: 253 } }
+        - { name: workload_name, in: query, schema: { type: string, minLength: 1, maxLength: 253 } }
+        - {
+            name: container_name,
+            in: query,
+            schema: { type: string, minLength: 1, maxLength: 253 },
+          }
+        - { name: observed_from, in: query, schema: { type: string, format: date-time } }
+        - { name: observed_to, in: query, schema: { type: string, format: date-time } }
+        - { name: search, in: query, schema: { type: string, minLength: 1, maxLength: 200 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 10, default: 5 } }
+      responses:
+        {
+          '200': { $ref: '#/components/responses/InventoryDistribution' },
           '400': { $ref: '#/components/responses/Error' },
           '401': { $ref: '#/components/responses/Error' },
           '404': { $ref: '#/components/responses/Error' },
@@ -143,6 +221,11 @@ paths:
       description: Returns bounded dependent options. Every active filter except the requested facet's own value is applied. Cursors are opaque and valid only for the exact Application, facet, and normalized filter scope.
       parameters:
         - { name: kind, in: query, schema: { $ref: '#/components/schemas/InventoryKind' } }
+        - {
+            name: operation,
+            in: query,
+            schema: { $ref: '#/components/schemas/FileActivityOperation' },
+          }
         - { name: release_id, in: query, schema: { type: string, format: uuid } }
         - { name: cluster_id, in: query, schema: { type: string, format: uuid } }
         - { name: namespace, in: query, schema: { type: string, minLength: 1, maxLength: 253 } }
@@ -370,6 +453,26 @@ paths:
         - { $ref: '#/components/parameters/Cursor' }
         - { $ref: '#/components/parameters/Limit' }
       responses: { '200': { $ref: '#/components/responses/RuntimeDiff' } }
+  /api/v1/projects/{project_id}/applications/{application_id}/releases/{target_id}/runtime-diff/summary:
+    parameters:
+      [
+        { $ref: '#/components/parameters/ProjectId' },
+        { $ref: '#/components/parameters/ApplicationId' },
+        { $ref: '#/components/parameters/TargetId' },
+      ]
+    get:
+      operationId: getRuntimeDiffSummary
+      description: Returns complete comparison classification totals and the largest absolute occurrence-count changes independent of Runtime Diff pagination.
+      parameters:
+        - { name: baseline_id, in: query, schema: { type: string, format: uuid } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 10, default: 5 } }
+      responses:
+        {
+          '200': { $ref: '#/components/responses/RuntimeDiffSummary' },
+          '400': { $ref: '#/components/responses/Error' },
+          '401': { $ref: '#/components/responses/Error' },
+          '404': { $ref: '#/components/responses/Error' },
+        }
   /api/v1/projects/{project_id}/webhook-destinations:
     parameters: [{ $ref: '#/components/parameters/ProjectId' }]
     get:
@@ -570,7 +673,7 @@ components:
         service_version: { type: string, example: 0.1.0 }
         git_commit: { type: string, example: ac23c0b4d042e8d430ea6880f6b66ed1a9d4580a }
         api_version: { type: string, const: v1 }
-        required_database_migration: { type: integer, format: int64, example: 7 }
+        required_database_migration: { type: integer, format: int64, example: 12 }
     Organization:
       type: object
       additionalProperties: false
@@ -629,6 +732,41 @@ components:
       properties:
         items: { type: array, items: { $ref: '#/components/schemas/Application' } }
         next_cursor: { $ref: '#/components/schemas/NullableUuid' }
+    ApplicationWorker:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          agent_id,
+          cluster_id,
+          cluster_name,
+          node_name,
+          agent_version,
+          architecture,
+          kernel_release,
+          first_observed_at,
+          last_observed_at,
+          agent_last_seen_at,
+        ]
+      properties:
+        agent_id: { $ref: '#/components/schemas/Uuid' }
+        cluster_id: { $ref: '#/components/schemas/Uuid' }
+        cluster_name: { type: string, minLength: 1, maxLength: 200 }
+        node_name: { type: string, minLength: 1, maxLength: 253 }
+        agent_version: { type: string, minLength: 1, maxLength: 200 }
+        architecture: { type: [string, 'null'], minLength: 1, maxLength: 64 }
+        kernel_release: { type: [string, 'null'], minLength: 1, maxLength: 255 }
+        first_observed_at: { $ref: '#/components/schemas/Timestamp' }
+        last_observed_at: { $ref: '#/components/schemas/Timestamp' }
+        agent_last_seen_at: { $ref: '#/components/schemas/Timestamp' }
+    ApplicationWorkerPage:
+      type: object
+      additionalProperties: false
+      required: [items, next_cursor]
+      properties:
+        items:
+          { type: array, maxItems: 200, items: { $ref: '#/components/schemas/ApplicationWorker' } }
+        next_cursor: { $ref: '#/components/schemas/NullableOpaqueCursor' }
     RuntimeGroup:
       type: object
       additionalProperties: false
@@ -722,8 +860,10 @@ components:
         - { $ref: '#/components/schemas/ProcessExecSemanticSummary' }
         - { $ref: '#/components/schemas/SyscallSemanticSummary' }
         - { $ref: '#/components/schemas/NetworkConnectSemanticSummary' }
+        - { $ref: '#/components/schemas/InboundNetworkSemanticSummary' }
         - { $ref: '#/components/schemas/NetworkDnsQuerySemanticSummary' }
         - { $ref: '#/components/schemas/NetworkDnsResponseSemanticSummary' }
+        - { $ref: '#/components/schemas/FileActivitySemanticSummary' }
     ProcessExecSemanticSummary:
       type: object
       additionalProperties: false
@@ -747,6 +887,16 @@ components:
         destination_address: { type: string, format: ip, example: 203.0.113.7 }
         destination_port: { type: integer, minimum: 1, maximum: 65535, example: 443 }
         dns_context: { $ref: '#/components/schemas/DnsContext' }
+    InboundNetworkSemanticSummary:
+      type: object
+      additionalProperties: false
+      required: [process_command, transport, address_family, local_address, local_port]
+      properties:
+        process_command: { type: string, minLength: 1, example: payments }
+        transport: { type: string, const: tcp }
+        address_family: { type: string, enum: [ipv4, ipv6] }
+        local_address: { type: string, format: ip, example: 0.0.0.0 }
+        local_port: { type: integer, minimum: 1, maximum: 65535, example: 8080 }
     NetworkDnsQuerySemanticSummary:
       type: object
       additionalProperties: false
@@ -768,13 +918,39 @@ components:
         response_code: { $ref: '#/components/schemas/DnsResponseCode' }
         transport: { $ref: '#/components/schemas/DnsTransport' }
         direction: { $ref: '#/components/schemas/DnsDirection' }
+    FileActivitySemanticSummary:
+      type: object
+      additionalProperties: false
+      required: [operation, process_command, path]
+      properties:
+        operation: { $ref: '#/components/schemas/FileActivityOperation' }
+        process_command: { type: string, minLength: 1 }
+        path: { type: string, minLength: 1, description: Path reported by the process syscall. }
+        new_path:
+          {
+            type: string,
+            minLength: 1,
+            description: Rename destination path reported by the process syscall.,
+          }
+        replaced:
+          {
+            type: [boolean, 'null'],
+            description: Whether rename replaced an existing destination; null means unknown.,
+          }
+    FileActivityOperation: { type: string, enum: [create, modify, delete, rename] }
     RuntimeEventPayload:
       oneOf:
         - { $ref: '#/components/schemas/ProcessExecPayload' }
         - { $ref: '#/components/schemas/SyscallPayload' }
         - { $ref: '#/components/schemas/NetworkConnectPayload' }
+        - { $ref: '#/components/schemas/NetworkListenPayload' }
+        - { $ref: '#/components/schemas/NetworkAcceptPayload' }
         - { $ref: '#/components/schemas/NetworkDnsQueryPayload' }
         - { $ref: '#/components/schemas/NetworkDnsResponsePayload' }
+        - { $ref: '#/components/schemas/FileCreatePayload' }
+        - { $ref: '#/components/schemas/FileModifyPayload' }
+        - { $ref: '#/components/schemas/FileDeletePayload' }
+        - { $ref: '#/components/schemas/FileRenamePayload' }
     ProcessExecPayload:
       type: object
       additionalProperties: false
@@ -817,6 +993,44 @@ components:
             outcome: { type: string, enum: [succeeded, in_progress, failed] }
             errno: { type: integer, minimum: 1, maximum: 4095, example: 111 }
             dns_context: { $ref: '#/components/schemas/DnsContext' }
+    NetworkListenPayload:
+      type: object
+      additionalProperties: false
+      required: [type, data]
+      properties:
+        type: { type: string, const: NetworkListen }
+        data:
+          type: object
+          additionalProperties: false
+          required: [transport, address_family, local_address, local_port]
+          properties:
+            transport: { type: string, const: tcp }
+            address_family: { type: string, enum: [ipv4, ipv6] }
+            local_address: { type: string, format: ip }
+            local_port: { type: integer, minimum: 1, maximum: 65535 }
+    NetworkAcceptPayload:
+      type: object
+      additionalProperties: false
+      required: [type, data]
+      properties:
+        type: { type: string, const: NetworkAccept }
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            [transport, address_family, local_address, local_port, remote_address, remote_port]
+          properties:
+            transport: { type: string, const: tcp }
+            address_family: { type: string, enum: [ipv4, ipv6] }
+            local_address: { type: string, format: ip }
+            local_port: { type: integer, minimum: 1, maximum: 65535 }
+            remote_address:
+              {
+                type: string,
+                format: ip,
+                description: Sensitive client evidence exposed only in authorized bounded occurrence detail.,
+              }
+            remote_port: { type: integer, minimum: 1, maximum: 65535 }
     NetworkDnsQueryPayload:
       type: object
       additionalProperties: false
@@ -875,6 +1089,56 @@ components:
             cname_chain:
               { type: array, maxItems: 8, items: { $ref: '#/components/schemas/DnsCname' } }
             effective_ttl_seconds: { type: [integer, 'null'], minimum: 1, maximum: 86400 }
+    FileCreatePayload:
+      type: object
+      additionalProperties: false
+      required: [type, data]
+      properties:
+        type: { type: string, const: file.create }
+        data:
+          type: object
+          additionalProperties: false
+          required: [path]
+          properties:
+            path: { type: string, minLength: 1 }
+    FileModifyPayload:
+      type: object
+      additionalProperties: false
+      required: [type, data]
+      properties:
+        type: { type: string, const: file.modify }
+        data:
+          type: object
+          additionalProperties: false
+          required: [path]
+          properties:
+            path: { type: string, minLength: 1 }
+    FileDeletePayload:
+      type: object
+      additionalProperties: false
+      required: [type, data]
+      properties:
+        type: { type: string, const: file.delete }
+        data:
+          type: object
+          additionalProperties: false
+          required: [path]
+          properties:
+            path: { type: string, minLength: 1 }
+    FileRenamePayload:
+      type: object
+      additionalProperties: false
+      required: [type, data]
+      properties:
+        type: { type: string, const: file.rename }
+        data:
+          type: object
+          additionalProperties: false
+          required: [path, new_path]
+          properties:
+            path: { type: string, minLength: 1 }
+            new_path: { type: string, minLength: 1 }
+            replaced: { type: [boolean, 'null'] }
     DnsName:
       type: string
       minLength: 1
@@ -1013,6 +1277,54 @@ components:
         target: { $ref: '#/components/schemas/Release' }
         items: { type: array, items: { $ref: '#/components/schemas/RuntimeDiffEntry' } }
         next_cursor: { $ref: '#/components/schemas/NullableUuid' }
+    RuntimeDiffClassificationCount:
+      type: object
+      additionalProperties: false
+      required: [classification, item_count]
+      properties:
+        classification: { type: string, enum: [new, disappeared, unchanged] }
+        item_count: { type: integer, format: int64, minimum: 0 }
+    RuntimeDiffChangeEntry:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          group_id,
+          classification,
+          event_kind,
+          semantic_summary,
+          baseline_occurrence_count,
+          target_occurrence_count,
+          occurrence_delta,
+        ]
+      properties:
+        group_id: { $ref: '#/components/schemas/Uuid' }
+        classification: { type: string, enum: [new, disappeared, unchanged] }
+        event_kind: { type: string }
+        semantic_summary: { $ref: '#/components/schemas/RuntimeEventSemanticSummary' }
+        baseline_occurrence_count: { type: integer, format: int64, minimum: 0 }
+        target_occurrence_count: { type: integer, format: int64, minimum: 0 }
+        occurrence_delta: { type: integer, format: int64 }
+    RuntimeDiffSummary:
+      type: object
+      additionalProperties: false
+      required: [baseline, target, total_item_count, classifications, largest_changes]
+      properties:
+        baseline: { oneOf: [{ $ref: '#/components/schemas/Release' }, { type: 'null' }] }
+        target: { $ref: '#/components/schemas/Release' }
+        total_item_count: { type: integer, format: int64, minimum: 0 }
+        classifications:
+          {
+            type: array,
+            maxItems: 3,
+            items: { $ref: '#/components/schemas/RuntimeDiffClassificationCount' },
+          }
+        largest_changes:
+          {
+            type: array,
+            maxItems: 10,
+            items: { $ref: '#/components/schemas/RuntimeDiffChangeEntry' },
+          }
     WebhookDestination:
       type: object
       additionalProperties: false
@@ -1347,7 +1659,11 @@ components:
                 maxItems: 200,
                 items: { $ref: '#/components/schemas/RecoveryOperationDelivery' },
               }
-    InventoryKind: { type: string, enum: [process, destination, domain, syscall] }
+    InventoryKind:
+      {
+        type: string,
+        enum: [process, destination, domain, syscall, inbound_endpoint, file_activity],
+      }
     InventoryReleasePresence:
       {
         type: string,
@@ -1360,6 +1676,8 @@ components:
         - { $ref: '#/components/schemas/InventoryDestinationIdentity' }
         - { $ref: '#/components/schemas/InventoryDomainIdentity' }
         - { $ref: '#/components/schemas/InventorySyscallIdentity' }
+        - { $ref: '#/components/schemas/InventoryInboundEndpointIdentity' }
+        - { $ref: '#/components/schemas/FileActivitySemanticSummary' }
     InventoryProcessIdentity:
       type: object
       additionalProperties: false
@@ -1389,6 +1707,18 @@ components:
       properties:
         process_command: { type: string, minLength: 1, example: payments }
         syscall: { type: string, minLength: 1, example: epoll_wait }
+    InventoryInboundEndpointIdentity:
+      type: object
+      additionalProperties: false
+      required:
+        [transport, address_family, local_address, local_port, listener_observed, accept_observed]
+      properties:
+        transport: { type: string, const: tcp }
+        address_family: { type: string, enum: [ipv4, ipv6] }
+        local_address: { type: string, format: ip, example: 0.0.0.0 }
+        local_port: { type: integer, minimum: 1, maximum: 65535, example: 8080 }
+        listener_observed: { type: boolean }
+        accept_observed: { type: boolean }
     InventoryItem:
       type: object
       additionalProperties: false
@@ -1454,7 +1784,42 @@ components:
         first_seen_at: { $ref: '#/components/schemas/NullableTimestamp' }
         last_seen_at: { $ref: '#/components/schemas/NullableTimestamp' }
         kinds:
-          { type: array, maxItems: 4, items: { $ref: '#/components/schemas/InventoryKindCount' } }
+          { type: array, maxItems: 6, items: { $ref: '#/components/schemas/InventoryKindCount' } }
+    InventoryDistributionEntry:
+      type: object
+      additionalProperties: false
+      required: [identity_token, semantic_summary, item_count, occurrence_count]
+      properties:
+        identity_token: { type: string, minLength: 1, maxLength: 1000 }
+        semantic_summary: { $ref: '#/components/schemas/InventorySemanticSummary' }
+        item_count: { type: integer, format: int64, minimum: 1 }
+        occurrence_count: { type: integer, format: int64, minimum: 1 }
+    InventoryDistributionOther:
+      type: object
+      additionalProperties: false
+      required: [item_count, occurrence_count]
+      properties:
+        item_count: { type: integer, format: int64, minimum: 1 }
+        occurrence_count: { type: integer, format: int64, minimum: 1 }
+    InventoryDistribution:
+      type: object
+      additionalProperties: false
+      required: [identity_version, kind, total_item_count, total_occurrence_count, entries, other]
+      properties:
+        identity_version: { type: integer, format: int32, minimum: 1 }
+        kind: { $ref: '#/components/schemas/InventoryKind' }
+        total_item_count: { type: integer, format: int64, minimum: 0 }
+        total_occurrence_count: { type: integer, format: int64, minimum: 0 }
+        entries:
+          {
+            type: array,
+            maxItems: 10,
+            items: { $ref: '#/components/schemas/InventoryDistributionEntry' },
+          }
+        other:
+          oneOf:
+            - { $ref: '#/components/schemas/InventoryDistributionOther' }
+            - { type: 'null' }
     InventoryFacet:
       type: string
       enum: [cluster, namespace, workload_kind, workload_name, container_name]
@@ -1726,12 +2091,26 @@ components:
         headers: { X-Request-Id: { $ref: '#/components/headers/RequestId' } },
         content: { application/json: { schema: { $ref: '#/components/schemas/ApplicationPage' } } },
       }
+    ApplicationWorkerPage:
+      {
+        description: Application worker platform metadata page,
+        headers: { X-Request-Id: { $ref: '#/components/headers/RequestId' } },
+        content:
+          { application/json: { schema: { $ref: '#/components/schemas/ApplicationWorkerPage' } } },
+      }
     InventorySummary:
       {
         description: Application runtime inventory aggregate,
         headers: { X-Request-Id: { $ref: '#/components/headers/RequestId' } },
         content:
           { application/json: { schema: { $ref: '#/components/schemas/InventorySummary' } } },
+      }
+    InventoryDistribution:
+      {
+        description: Complete-scope bounded runtime inventory distribution,
+        headers: { X-Request-Id: { $ref: '#/components/headers/RequestId' } },
+        content:
+          { application/json: { schema: { $ref: '#/components/schemas/InventoryDistribution' } } },
       }
     InventoryFacetPage:
       {
@@ -1830,6 +2209,13 @@ components:
         description: Runtime behavior diff,
         headers: { X-Request-Id: { $ref: '#/components/headers/RequestId' } },
         content: { application/json: { schema: { $ref: '#/components/schemas/RuntimeDiff' } } },
+      }
+    RuntimeDiffSummary:
+      {
+        description: Complete runtime comparison aggregate,
+        headers: { X-Request-Id: { $ref: '#/components/headers/RequestId' } },
+        content:
+          { application/json: { schema: { $ref: '#/components/schemas/RuntimeDiffSummary' } } },
       }
     WebhookDestination:
       {

@@ -6,18 +6,32 @@ export type Project = components['schemas']['Project']
 export type ProjectPage = components['schemas']['ProjectPage']
 export type Application = components['schemas']['Application']
 export type ApplicationPage = components['schemas']['ApplicationPage']
+export type ApplicationWorker = components['schemas']['ApplicationWorker']
+export type ApplicationWorkerPage = components['schemas']['ApplicationWorkerPage']
+export type ApplicationWorkerQuery = NonNullable<
+  operations['listApplicationWorkers']['parameters']['query']
+>
 export type ErrorEnvelope = components['schemas']['Error']
 export type RuntimeGroup = components['schemas']['RuntimeGroup']
 export type RuntimeGroupPage = components['schemas']['RuntimeGroupPage']
 export type RuntimeGroupDetail = components['schemas']['RuntimeGroupDetail']
 export type EventOccurrence = components['schemas']['EventOccurrence']
 export type NetworkConnectSemanticSummary = components['schemas']['NetworkConnectSemanticSummary']
+export type InboundNetworkSemanticSummary = components['schemas']['InboundNetworkSemanticSummary']
+export type FileActivitySemanticSummary = components['schemas']['FileActivitySemanticSummary']
+export type FileActivityOperation = components['schemas']['FileActivityOperation']
 export type NetworkDnsQuerySemanticSummary = components['schemas']['NetworkDnsQuerySemanticSummary']
 export type NetworkDnsResponseSemanticSummary =
   components['schemas']['NetworkDnsResponseSemanticSummary']
 export type NetworkConnectPayload = components['schemas']['NetworkConnectPayload']
+export type NetworkListenPayload = components['schemas']['NetworkListenPayload']
+export type NetworkAcceptPayload = components['schemas']['NetworkAcceptPayload']
 export type NetworkDnsQueryPayload = components['schemas']['NetworkDnsQueryPayload']
 export type NetworkDnsResponsePayload = components['schemas']['NetworkDnsResponsePayload']
+export type FileCreatePayload = components['schemas']['FileCreatePayload']
+export type FileModifyPayload = components['schemas']['FileModifyPayload']
+export type FileDeletePayload = components['schemas']['FileDeletePayload']
+export type FileRenamePayload = components['schemas']['FileRenamePayload']
 export type DnsContext = components['schemas']['DnsContext']
 export type OccurrencePage = components['schemas']['OccurrencePage']
 export type FirstSeenNotificationSummary = components['schemas']['FirstSeenNotificationSummary']
@@ -25,11 +39,17 @@ export type Release = components['schemas']['Release']
 export type ReleasePage = components['schemas']['ReleasePage']
 export type RuntimeDiff = components['schemas']['RuntimeDiff']
 export type RuntimeDiffEntry = components['schemas']['RuntimeDiffEntry']
+export type RuntimeDiffSummary = components['schemas']['RuntimeDiffSummary']
+export type RuntimeDiffChangeEntry = components['schemas']['RuntimeDiffChangeEntry']
 export type InventoryKind = components['schemas']['InventoryKind']
+export type InventoryInboundEndpointIdentity =
+  components['schemas']['InventoryInboundEndpointIdentity']
 export type InventoryFacet = components['schemas']['InventoryFacet']
 export type InventoryItem = components['schemas']['InventoryItem']
 export type InventoryItemPage = components['schemas']['InventoryItemPage']
 export type InventorySummary = components['schemas']['InventorySummary']
+export type InventoryDistribution = components['schemas']['InventoryDistribution']
+export type InventoryDistributionEntry = components['schemas']['InventoryDistributionEntry']
 export type InventoryFacetPage = components['schemas']['InventoryFacetPage']
 export type InventoryItemDetail = components['schemas']['InventoryItemDetail']
 export type InventoryReleaseEvidence = components['schemas']['InventoryReleaseEvidence']
@@ -45,6 +65,9 @@ export type InventoryListQuery = NonNullable<
 >
 export type InventorySummaryQuery = NonNullable<
   operations['getApplicationRuntimeInventorySummary']['parameters']['query']
+>
+export type InventoryDistributionQuery = NonNullable<
+  operations['getApplicationRuntimeInventoryDistribution']['parameters']['query']
 >
 export type InventoryFacetQuery = NonNullable<
   operations['listApplicationRuntimeInventoryFacetOptions']['parameters']['query']
@@ -64,6 +87,9 @@ export type ReopenRuntimeGroupResponse =
   operations['reopenRuntimeGroup']['responses'][200]['content']['application/json']
 export type ReleaseQuery = NonNullable<operations['listReleases']['parameters']['query']>
 export type RuntimeDiffQuery = NonNullable<operations['getRuntimeDiff']['parameters']['query']>
+export type RuntimeDiffSummaryQuery = NonNullable<
+  operations['getRuntimeDiffSummary']['parameters']['query']
+>
 export type WebhookDestination = components['schemas']['WebhookDestination']
 export type DestinationWithSecret = components['schemas']['DestinationWithSecret']
 export type CreateWebhookDestination = components['schemas']['CreateWebhookDestination']
@@ -93,8 +119,37 @@ export const contractFixture = {
     service_version: '0.1.0',
     git_commit: 'unknown',
     api_version: 'v1',
-    required_database_migration: 7,
+    required_database_migration: 12,
   } satisfies BuildInfo,
+  applicationWorkerPage: {
+    items: [
+      {
+        agent_id: '10000000-0000-4000-8000-000000000001',
+        cluster_id: '20000000-0000-4000-8000-000000000001',
+        cluster_name: 'Production',
+        node_name: 'worker-amd64-01',
+        agent_version: '0.1.0',
+        architecture: 'x86_64',
+        kernel_release: '6.9.2',
+        first_observed_at: '2026-08-20T10:00:00Z',
+        last_observed_at: '2026-08-22T09:30:00Z',
+        agent_last_seen_at: '2026-08-22T09:30:12Z',
+      },
+      {
+        agent_id: '10000000-0000-4000-8000-000000000002',
+        cluster_id: '20000000-0000-4000-8000-000000000001',
+        cluster_name: 'Production',
+        node_name: 'worker-legacy-02',
+        agent_version: '0.0.9',
+        architecture: null,
+        kernel_release: null,
+        first_observed_at: '2026-08-19T10:00:00Z',
+        last_observed_at: '2026-08-21T09:30:00Z',
+        agent_last_seen_at: '2026-08-21T09:30:12Z',
+      },
+    ],
+    next_cursor: 'opaque-next-page',
+  } satisfies ApplicationWorkerPage,
   nullableProjectArchive: null satisfies Project['archived_at'],
   nullableApplicationObservation: null satisfies Application['latest_observed_at'],
   error: {
@@ -144,6 +199,67 @@ export const contractFixture = {
       errno: 115,
     },
   } satisfies NetworkConnectPayload,
+  inboundSemanticSummary: {
+    process_command: 'payments',
+    transport: 'tcp',
+    address_family: 'ipv6',
+    local_address: '::',
+    local_port: 8080,
+  } satisfies InboundNetworkSemanticSummary,
+  networkListenPayload: {
+    type: 'NetworkListen',
+    data: {
+      transport: 'tcp',
+      address_family: 'ipv4',
+      local_address: '0.0.0.0',
+      local_port: 8080,
+    },
+  } satisfies NetworkListenPayload,
+  networkAcceptPayload: {
+    type: 'NetworkAccept',
+    data: {
+      transport: 'tcp',
+      address_family: 'ipv6',
+      local_address: '::',
+      local_port: 8080,
+      remote_address: '2001:db8::1',
+      remote_port: 51234,
+    },
+  } satisfies NetworkAcceptPayload,
+  inboundInventoryEvidence: [
+    {
+      transport: 'tcp',
+      address_family: 'ipv4',
+      local_address: '0.0.0.0',
+      local_port: 8080,
+      listener_observed: false,
+      accept_observed: false,
+    },
+    {
+      transport: 'tcp',
+      address_family: 'ipv4',
+      local_address: '0.0.0.0',
+      local_port: 8080,
+      listener_observed: true,
+      accept_observed: false,
+    },
+    {
+      transport: 'tcp',
+      address_family: 'ipv6',
+      local_address: '::',
+      local_port: 8080,
+      listener_observed: false,
+      accept_observed: true,
+    },
+    {
+      transport: 'tcp',
+      address_family: 'ipv6',
+      local_address: '::',
+      local_port: 8080,
+      listener_observed: true,
+      accept_observed: true,
+    },
+  ] satisfies InventoryInboundEndpointIdentity[],
   dnsQueryPayload: {
     type: 'NetworkDnsQuery',
     data: {
@@ -301,5 +417,130 @@ export const contractFixture = {
     ],
     next_cursor: null,
   } satisfies InventoryOccurrencePage,
+  inventoryDistributions: [
+    {
+      identity_version: 1,
+      kind: 'process',
+      total_item_count: 2,
+      total_occurrence_count: 12,
+      entries: [
+        {
+          identity_token: 'process-token',
+          semantic_summary: { executable: '/app/payments' },
+          item_count: 1,
+          occurrence_count: 8,
+        },
+      ],
+      other: { item_count: 1, occurrence_count: 4 },
+    },
+    {
+      identity_version: 1,
+      kind: 'destination',
+      total_item_count: 1,
+      total_occurrence_count: 6,
+      entries: [
+        {
+          identity_token: 'destination-token',
+          semantic_summary: {
+            process_command: 'payments',
+            address_family: 'ipv4',
+            destination_address: '203.0.113.7',
+            destination_port: 443,
+          },
+          item_count: 1,
+          occurrence_count: 6,
+        },
+      ],
+      other: null,
+    },
+    {
+      identity_version: 1,
+      kind: 'domain',
+      total_item_count: 1,
+      total_occurrence_count: 5,
+      entries: [
+        {
+          identity_token: 'domain-token',
+          semantic_summary: {
+            process_command: 'payments',
+            name: 'api.example.com',
+            query_type: 'A',
+          },
+          item_count: 1,
+          occurrence_count: 5,
+        },
+      ],
+      other: null,
+    },
+    {
+      identity_version: 1,
+      kind: 'syscall',
+      total_item_count: 1,
+      total_occurrence_count: 9,
+      entries: [
+        {
+          identity_token: 'syscall-token',
+          semantic_summary: { process_command: 'payments', syscall: 'epoll_wait' },
+          item_count: 1,
+          occurrence_count: 9,
+        },
+      ],
+      other: null,
+    },
+    {
+      identity_version: 1,
+      kind: 'process',
+      total_item_count: 0,
+      total_occurrence_count: 0,
+      entries: [],
+      other: null,
+    },
+  ] satisfies InventoryDistribution[],
+  runtimeDiffSummary: {
+    baseline: {
+      id: '40000000-0000-4000-8000-000000000001',
+      project_id: '20000000-0000-4000-8000-000000000001',
+      application_id: '30000000-0000-4000-8000-000000000001',
+      version: '2.13.0',
+      description: null,
+      deployed_at: '2026-08-17T00:00:00Z',
+      created_at: '2026-08-17T00:00:00Z',
+    },
+    target: {
+      id: '40000000-0000-4000-8000-000000000002',
+      project_id: '20000000-0000-4000-8000-000000000001',
+      application_id: '30000000-0000-4000-8000-000000000001',
+      version: '2.14.0',
+      description: null,
+      deployed_at: '2026-08-18T00:00:00Z',
+      created_at: '2026-08-18T00:00:00Z',
+    },
+    total_item_count: 2,
+    classifications: [
+      { classification: 'new', item_count: 1 },
+      { classification: 'disappeared', item_count: 1 },
+      { classification: 'unchanged', item_count: 0 },
+    ],
+    largest_changes: [
+      {
+        group_id: '60000000-0000-4000-8000-000000000001',
+        classification: 'new',
+        event_kind: 'exec',
+        semantic_summary: { executable: '/app/new-worker' },
+        baseline_occurrence_count: 0,
+        target_occurrence_count: 20,
+        occurrence_delta: 20,
+      },
+      {
+        group_id: '60000000-0000-4000-8000-000000000002',
+        classification: 'disappeared',
+        event_kind: 'exec',
+        semantic_summary: { executable: '/app/legacy-worker' },
+        baseline_occurrence_count: 12,
+        target_occurrence_count: 0,
+        occurrence_delta: -12,
+      },
+    ],
+  } satisfies RuntimeDiffSummary,
   deliveryQuery: { cursor: 'cursor', limit: 50 } satisfies DeliveryQuery,
 }

@@ -216,7 +216,7 @@ export async function mockApi(page: Page) {
         service_version: '0.1.0',
         git_commit: 'abcdef',
         api_version: 'v1',
-        required_database_migration: 7,
+        required_database_migration: 12,
       })
     if (!route.request().headers().authorization)
       return json(
@@ -350,13 +350,43 @@ export async function mockApi(page: Page) {
       })
     if (path === `/api/v1/projects/${project.id}/applications`)
       return json(route, { items: [application], next_cursor: null })
+    if (path === `/api/v1/projects/${project.id}/applications/${application.id}/workers`)
+      return json(route, {
+        items: [
+          {
+            agent_id: '00000000-0000-4000-8000-000000000021',
+            cluster_id: group.cluster_id,
+            cluster_name: 'Production',
+            node_name: 'worker-amd64-01',
+            agent_version: '0.1.0',
+            architecture: 'x86_64',
+            kernel_release: '6.9.2',
+            first_observed_at: '2026-08-17T10:00:00Z',
+            last_observed_at: '2026-08-17T12:00:00Z',
+            agent_last_seen_at: '2026-08-17T12:00:12Z',
+          },
+          {
+            agent_id: '00000000-0000-4000-8000-000000000022',
+            cluster_id: group.cluster_id,
+            cluster_name: 'Production',
+            node_name: 'worker-legacy-02',
+            agent_version: '0.0.9',
+            architecture: null,
+            kernel_release: null,
+            first_observed_at: '2026-08-16T10:00:00Z',
+            last_observed_at: '2026-08-16T12:00:00Z',
+            agent_last_seen_at: '2026-08-16T12:00:12Z',
+          },
+        ],
+        next_cursor: null,
+      })
     if (path === `/api/v1/projects/${project.id}/applications/${application.id}`)
       return json(route, application)
     if (path === `${inventoryBase}/summary`)
       return json(route, {
         identity_version: 1,
-        item_count: 4,
-        occurrence_count: 126,
+        item_count: 5,
+        occurrence_count: 144,
         first_seen_at: inventoryItem.first_seen_at,
         last_seen_at: inventoryItem.last_seen_at,
         kinds: [
@@ -364,8 +394,57 @@ export async function mockApi(page: Page) {
           { kind: 'destination', item_count: 1, occurrence_count: 24 },
           { kind: 'domain', item_count: 1, occurrence_count: 30 },
           { kind: 'syscall', item_count: 1, occurrence_count: 60 },
+          { kind: 'inbound_endpoint', item_count: 1, occurrence_count: 18 },
         ],
       })
+    if (path === `${inventoryBase}/distribution`) {
+      const kind = url.searchParams.get('kind') ?? 'process'
+      const identity =
+        kind === 'file_activity'
+          ? {
+              operation: 'rename',
+              process_command: 'mv',
+              path: '/tmp/old-<script>.txt',
+              new_path: '/tmp/new.txt',
+              replaced: null,
+            }
+          : kind === 'inbound_endpoint'
+            ? {
+                transport: 'tcp',
+                address_family: 'ipv6',
+                local_address: '::',
+                local_port: 8080,
+                listener_observed: true,
+                accept_observed: true,
+              }
+            : kind === 'destination'
+              ? {
+                  process_command: 'gateway',
+                  address_family: 'ipv4',
+                  destination_address: '203.0.113.7',
+                  destination_port: 443,
+                }
+              : kind === 'domain'
+                ? { process_command: 'gateway', name: 'api.example.com', query_type: 'A' }
+                : kind === 'syscall'
+                  ? { process_command: 'gateway', syscall: 'epoll_wait' }
+                  : inventoryItem.semantic_summary
+      return json(route, {
+        identity_version: 1,
+        kind,
+        total_item_count: 2,
+        total_occurrence_count: 20,
+        entries: [
+          {
+            identity_token: `${kind}-identity`,
+            semantic_summary: identity,
+            item_count: 1,
+            occurrence_count: 16,
+          },
+        ],
+        other: { item_count: 1, occurrence_count: 4 },
+      })
+    }
     if (path.startsWith(`${inventoryBase}/facets/`)) {
       const facet = path.split('/').at(-1) ?? 'scope'
       const values: Record<string, [string, string]> = {
@@ -386,18 +465,35 @@ export async function mockApi(page: Page) {
         return json(route, { items: [], next_cursor: null })
       const kind = url.searchParams.get('kind') ?? 'process'
       const identity =
-        kind === 'destination'
+        kind === 'file_activity'
           ? {
-              process_command: 'gateway',
-              address_family: 'ipv4',
-              destination_address: '203.0.113.7',
-              destination_port: 443,
+              operation: 'rename',
+              process_command: 'mv',
+              path: '/tmp/old-<script>.txt',
+              new_path: '/tmp/new.txt',
+              replaced: null,
             }
-          : kind === 'domain'
-            ? { process_command: 'gateway', name: 'api.example.com', query_type: 'A' }
-            : kind === 'syscall'
-              ? { process_command: 'gateway', syscall: 'epoll_wait' }
-              : inventoryItem.semantic_summary
+          : kind === 'inbound_endpoint'
+            ? {
+                transport: 'tcp',
+                address_family: 'ipv6',
+                local_address: '::',
+                local_port: 8080,
+                listener_observed: true,
+                accept_observed: true,
+              }
+            : kind === 'destination'
+              ? {
+                  process_command: 'gateway',
+                  address_family: 'ipv4',
+                  destination_address: '203.0.113.7',
+                  destination_port: 443,
+                }
+              : kind === 'domain'
+                ? { process_command: 'gateway', name: 'api.example.com', query_type: 'A' }
+                : kind === 'syscall'
+                  ? { process_command: 'gateway', syscall: 'epoll_wait' }
+                  : inventoryItem.semantic_summary
       return json(route, {
         items: [{ ...inventoryItem, inventory_kind: kind, semantic_summary: identity }],
         next_cursor: 'terminal',
@@ -518,6 +614,31 @@ export async function mockApi(page: Page) {
           },
         ],
         next_cursor: null,
+      })
+    if (
+      path ===
+      `/api/v1/projects/${project.id}/applications/${application.id}/releases/${targetRelease.id}/runtime-diff/summary`
+    )
+      return json(route, {
+        baseline: baselineRelease,
+        target: targetRelease,
+        total_item_count: 1,
+        classifications: [
+          { classification: 'new', item_count: 1 },
+          { classification: 'disappeared', item_count: 0 },
+          { classification: 'unchanged', item_count: 0 },
+        ],
+        largest_changes: [
+          {
+            group_id: group.id,
+            classification: 'new',
+            event_kind: group.event_kind,
+            semantic_summary: group.semantic_summary,
+            baseline_occurrence_count: 0,
+            target_occurrence_count: 12,
+            occurrence_delta: 12,
+          },
+        ],
       })
     return json(
       route,

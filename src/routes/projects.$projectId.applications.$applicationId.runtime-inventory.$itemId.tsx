@@ -31,6 +31,7 @@ import { Button } from '../shared/ui/button'
 import { Card } from '../shared/ui/card'
 import { Loading } from '../shared/ui/loading'
 import { formatCount, formatTimestamp } from '../features/tenant/format'
+import { getActivityPresentation } from '../features/observability/presentation'
 
 export const Route = createFileRoute(
   '/projects/$projectId/applications/$applicationId/runtime-inventory/$itemId',
@@ -100,14 +101,14 @@ function RuntimeInventoryDetailPage() {
 
   useEffect(() => {
     if (application.data)
-      document.title = `Inventory evidence · ${application.data.name} · Okoscope`
+      document.title = `Observation history · ${application.data.name} · Okoscope`
   }, [application.data])
   if (project.isPending || application.isPending || item.isPending)
     return <Loading label="Loading inventory evidence…" />
   if (project.isError || application.isError || item.isError)
     return (
       <ApiErrorPanel
-        title="Inventory item not found"
+        title="Activity item not found"
         error={item.error ?? application.error ?? project.error}
         onRetry={() => {
           void project.refetch()
@@ -130,7 +131,7 @@ function RuntimeInventoryDetailPage() {
             params={{ projectId, applicationId }}
             search={{ kind: item.data.inventory_kind }}
           >
-            Back to Runtime Inventory
+            Back to Application Activity
           </Link>
         }
       />
@@ -138,9 +139,9 @@ function RuntimeInventoryDetailPage() {
 
   const evidenceTabs: { kind: InventoryEvidence; label: string }[] = [
     { kind: 'releases', label: 'Releases' },
-    { kind: 'sightings', label: 'Sightings' },
-    { kind: 'groups', label: 'Groups' },
-    { kind: 'occurrences', label: 'Occurrences' },
+    { kind: 'sightings', label: 'Where observed' },
+    { kind: 'groups', label: 'Discoveries' },
+    { kind: 'occurrences', label: 'Observation history' },
   ]
   const clearCursor = () => void navigate({ search: { evidence: search.evidence }, replace: true })
   const invalidCursor = isInvalidCursorError(active.error)
@@ -163,18 +164,18 @@ function RuntimeInventoryDetailPage() {
           params={{ projectId, applicationId }}
           search={{ kind: item.data.inventory_kind }}
         >
-          Runtime Inventory
+          Application Activity
         </Link>
         <span>/</span>
-        <span aria-current="page">Evidence</span>
+        <span aria-current="page">Observation history</span>
       </nav>
       <Card>
-        <p className="eyebrow">{item.data.inventory_kind} evidence</p>
+        <p className="eyebrow">{getActivityPresentation(item.data.inventory_kind).itemLabel}</p>
         <h1 className="mt-2 text-2xl font-semibold">
           <InventoryIdentity item={item.data} />
         </h1>
         <dl className="details mt-5">
-          <dt>Occurrences</dt>
+          <dt>{getActivityPresentation(item.data.inventory_kind).countLabel}</dt>
           <dd>{formatCount(item.data.occurrence_count)}</dd>
           <dt>First observed</dt>
           <dd>{formatTimestamp(item.data.first_seen_at)}</dd>
@@ -182,7 +183,7 @@ function RuntimeInventoryDetailPage() {
           <dd>{formatTimestamp(item.data.last_seen_at)}</dd>
         </dl>
       </Card>
-      <div role="tablist" aria-label="Inventory evidence" className="flex flex-wrap gap-2">
+      <div role="tablist" aria-label="Observation details" className="flex flex-wrap gap-2">
         {evidenceTabs.map(({ kind, label }) => (
           <Button
             key={kind}
@@ -196,31 +197,34 @@ function RuntimeInventoryDetailPage() {
         ))}
       </div>
       {!evidencePath ? (
-        <ApiErrorPanel title="Unsafe evidence link" error={new Error('Missing evidence link')} />
+        <ApiErrorPanel
+          title="Unsafe observation link"
+          error={new Error('Missing observation link')}
+        />
       ) : active.isPending ? (
-        <Loading label={`Loading ${search.evidence} evidence…`} />
+        <Loading label={`Loading ${search.evidence} observations…`} />
       ) : active.isError ? (
         invalidCursor ? (
           <Card role="alert" className="border-amber-700">
-            <h2 className="text-xl font-semibold">This evidence cursor is no longer valid</h2>
+            <h2 className="text-xl font-semibold">This observation page is no longer valid</h2>
             <Button className="mt-4" onClick={clearCursor}>
               Return to first page
             </Button>
           </Card>
         ) : (
           <ApiErrorPanel
-            title="Could not load evidence"
+            title="Could not load observations"
             error={active.error}
             onRetry={() => void active.refetch()}
           />
         )
       ) : active.data.items.length === 0 ? (
         <EmptyState
-          title={search.cursor ? 'End of evidence results' : 'No evidence available'}
+          title={search.cursor ? 'End of observation results' : 'No observations available'}
           description={
             search.cursor
               ? 'This terminal cursor page is empty. Use browser Back or return to the first page.'
-              : `No ${search.evidence} evidence is available for this item.`
+              : `No ${search.evidence} observations are available for this item.`
           }
         />
       ) : search.evidence === 'releases' ? (
@@ -228,7 +232,12 @@ function RuntimeInventoryDetailPage() {
       ) : search.evidence === 'sightings' ? (
         <EvidenceList kind="sightings" page={sightings.data!} />
       ) : search.evidence === 'groups' ? (
-        <EvidenceList kind="groups" page={groups.data!} />
+        <EvidenceList
+          kind="groups"
+          page={groups.data!}
+          projectId={projectId}
+          applicationId={applicationId}
+        />
       ) : (
         <EvidenceList kind="occurrences" page={occurrences.data!} />
       )}

@@ -1,7 +1,12 @@
 import { Link } from '@tanstack/react-router'
 import type { ChangeEvent } from 'react'
 import { formatCount, formatTimestamp } from '../tenant/format'
-import { JsonDetailsViewer } from '../observability/components'
+import {
+  EndpointValue,
+  FileActivitySummary,
+  JsonDetailsViewer,
+  NetworkScopeBadge,
+} from '../observability/components'
 import type {
   InventoryFacet,
   InventoryFacetPage,
@@ -18,12 +23,15 @@ import type {
 import { Button } from '../../shared/ui/button'
 import { Card } from '../../shared/ui/card'
 import type { InventorySearch } from './url-state'
+import { getActivityPresentation, getEventKindLabel } from '../observability/presentation'
 
 export const inventoryKinds: { kind: InventoryKind; label: string }[] = [
-  { kind: 'process', label: 'Processes' },
-  { kind: 'destination', label: 'Destinations' },
+  { kind: 'process', label: 'Process launches' },
+  { kind: 'destination', label: 'Outbound connections' },
+  { kind: 'inbound_endpoint', label: 'Inbound connections' },
   { kind: 'domain', label: 'Domains' },
-  { kind: 'syscall', label: 'Syscalls' },
+  { kind: 'syscall', label: 'System calls' },
+  { kind: 'file_activity', label: 'File Activity' },
 ]
 
 export function InventorySummaryCards({
@@ -38,54 +46,31 @@ export function InventorySummaryCards({
   const counts = new Map(summary.kinds.map((entry) => [entry.kind, entry]))
   return (
     <section
-      aria-label="Runtime inventory summary"
-      className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+      aria-label="Application activity summary"
+      className="grid grid-cols-2 gap-2 xl:grid-cols-4"
     >
       {inventoryKinds.map(({ kind, label }) => {
         const value = counts.get(kind)
+        const copy = getActivityPresentation(kind)
         return (
           <button
             key={kind}
             type="button"
             aria-pressed={activeKind === kind}
             onClick={() => onKind(kind)}
-            className={`rounded-xl border p-4 text-left ${activeKind === kind ? 'border-cyan-300 bg-cyan-950/50' : 'border-slate-700 bg-slate-900/80'}`}
+            className={`rounded-lg border px-3 py-2 text-left ${activeKind === kind ? 'border-cyan-300 bg-cyan-950/50' : 'border-slate-700 bg-slate-900/80'}`}
           >
-            <span className="font-semibold">{label}</span>
-            <span className="mt-2 block text-2xl font-bold">
-              {formatCount(value?.item_count ?? 0)}
+            <span className="flex items-center justify-between gap-3">
+              <span className="font-semibold">{label}</span>
+              <strong className="text-lg">{formatCount(value?.item_count ?? 0)}</strong>
             </span>
-            <span className="text-xs text-slate-400">
-              {formatCount(value?.occurrence_count ?? 0)} occurrences
+            <span className="block truncate text-xs text-slate-400">
+              {formatCount(value?.occurrence_count ?? 0)} {copy.countLabel}
             </span>
           </button>
         )
       })}
     </section>
-  )
-}
-
-export function InventoryTabs({
-  activeKind,
-  onKind,
-}: {
-  activeKind: InventoryKind
-  onKind: (kind: InventoryKind) => void
-}) {
-  return (
-    <div role="tablist" aria-label="Inventory behavior kind" className="flex flex-wrap gap-2">
-      {inventoryKinds.map(({ kind, label }) => (
-        <Button
-          key={kind}
-          role="tab"
-          aria-selected={activeKind === kind}
-          variant={activeKind === kind ? 'default' : 'outline'}
-          onClick={() => onKind(kind)}
-        >
-          {label}
-        </Button>
-      ))}
-    </div>
   )
 }
 
@@ -95,9 +80,12 @@ export function InventoryIdentity({ item }: { item: InventoryItem }) {
     return <span className="break-all font-mono">{value.executable}</span>
   if (item.inventory_kind === 'destination' && 'destination_address' in value)
     return (
-      <span className="break-all font-mono">
-        {value.process_command} → {value.destination_address}:{value.destination_port} (
-        {value.address_family})
+      <span className="inline-flex flex-wrap items-center gap-2 break-all font-mono">
+        <span>
+          {value.process_command} → {value.destination_address}:{value.destination_port} (
+          {value.address_family})
+        </span>
+        <NetworkScopeBadge address={value.destination_address} />
       </span>
     )
   if (item.inventory_kind === 'domain' && 'name' in value && 'query_type' in value)
@@ -112,25 +100,69 @@ export function InventoryIdentity({ item }: { item: InventoryItem }) {
         {value.process_command} → {value.syscall}
       </span>
     )
+  if (item.inventory_kind === 'inbound_endpoint' && 'local_address' in value)
+    return (
+      <span className="inline-flex min-w-0 flex-col gap-2">
+        <span className="inline-flex flex-wrap items-center gap-2">
+          <span>{value.transport.toUpperCase()}</span>
+          <span>{value.address_family === 'ipv4' ? 'IPv4' : 'IPv6'}</span>
+          <EndpointValue
+            addressFamily={value.address_family}
+            address={value.local_address}
+            port={value.local_port}
+          />
+        </span>
+        <InboundEndpointEvidence value={value} />
+      </span>
+    )
+  if (item.inventory_kind === 'file_activity' && 'operation' in value && 'path' in value)
+    return <FileActivitySummary value={value} />
   return <span className="text-rose-200">Unsupported identity</span>
+}
+
+export function InboundEndpointEvidence({ value }: { value: Record<string, unknown> }) {
+  const listener = value.listener_observed
+  const accept = value.accept_observed
+  if (typeof listener !== 'boolean' || typeof accept !== 'boolean')
+    return <span className="text-sm text-slate-400">Endpoint evidence unavailable</span>
+  if (!listener && !accept)
+    return <span className="text-sm text-slate-400">No positive endpoint evidence</span>
+  return (
+    <span className="flex flex-wrap gap-2 text-sm">
+      {listener && (
+        <span className="rounded-full border border-emerald-700 px-2 py-0.5 text-emerald-200">
+          Port observed listening
+        </span>
+      )}
+      {accept && (
+        <span className="rounded-full border border-violet-700 px-2 py-0.5 text-violet-200">
+          Accepted connections observed
+        </span>
+      )}
+    </span>
+  )
 }
 
 export function InventoryList({
   items,
   projectId,
   applicationId,
+  view = 'list',
 }: {
   items: InventoryItem[]
   projectId: string
   applicationId: string
+  view?: 'grid' | 'list'
 }) {
   return (
-    <div className="space-y-4">
+    <div data-view={view} className={view === 'grid' ? 'grid gap-4 lg:grid-cols-2' : 'space-y-4'}>
       {items.map((item) => (
         <Card key={item.id}>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0">
-              <p className="eyebrow">{item.inventory_kind}</p>
+              <p className="eyebrow">
+                {getActivityPresentation(item.inventory_kind).behaviorLabel}
+              </p>
               <h2 className="mt-2 text-lg font-semibold">
                 <InventoryIdentity item={item} />
               </h2>
@@ -141,7 +173,7 @@ export function InventoryList({
                 params={{ projectId, applicationId, itemId: item.id }}
                 search={{ evidence: 'releases' }}
               >
-                View evidence
+                View observation history
               </Link>
             </Button>
           </div>
@@ -150,7 +182,7 @@ export function InventoryList({
             <dd>{formatTimestamp(item.first_seen_at)}</dd>
             <dt>Last observed</dt>
             <dd>{formatTimestamp(item.last_seen_at)}</dd>
-            <dt>Occurrences</dt>
+            <dt>{getActivityPresentation(item.inventory_kind).countLabel}</dt>
             <dd>{formatCount(item.occurrence_count)}</dd>
           </dl>
           <div className="mt-5 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4 lg:grid-cols-7">
@@ -161,7 +193,7 @@ export function InventoryList({
               ['Workloads', item.workload_count],
               ['Pods', item.pod_count],
               ['Containers', item.container_count],
-              ['Groups', item.group_count],
+              ['Discoveries', item.group_count],
             ].map(([label, value]) => (
               <div key={String(label)} className="rounded-lg bg-slate-950 p-2">
                 <span className="block text-xs text-slate-400">{label}</span>
@@ -260,64 +292,87 @@ export function InventoryFilterFields({
       onField(field, event.target.value || undefined)
   return (
     <Card>
-      <h2 className="text-lg font-semibold">Scope and filters</h2>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <label className="text-sm">
-          <span className="mb-1 block text-slate-300">Release</span>
-          <select
-            className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2"
-            value={search.release_id ?? ''}
-            onChange={change('release_id')}
-          >
-            <option value="">All releases</option>
-            {releases.map((release) => (
-              <option key={release.id} value={release.id}>
-                {release.version}
-              </option>
-            ))}
-          </select>
-        </label>
-        {facetDefinitions.map(({ facet, field, label }) => (
-          <FacetInput
-            key={facet}
-            label={label}
-            field={field}
-            value={search[field]}
-            page={facets[facet]}
-            onChange={(value) => onField(field, value)}
-            onNext={(cursor) => onFacetNext?.(facet, cursor)}
-            onSearch={(value) => onFacetSearch?.(facet, value)}
-          />
-        ))}
-        <label className="text-sm">
-          <span className="mb-1 block text-slate-300">Observed from</span>
-          <input
-            type="datetime-local"
-            className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2"
-            value={search.observed_from?.slice(0, 16) ?? ''}
-            onChange={(event) =>
-              onField(
-                'observed_from',
-                event.target.value ? new Date(event.target.value).toISOString() : undefined,
-              )
-            }
-          />
-        </label>
-        <label className="text-sm">
-          <span className="mb-1 block text-slate-300">Observed to</span>
-          <input
-            type="datetime-local"
-            className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2"
-            value={search.observed_to?.slice(0, 16) ?? ''}
-            onChange={(event) =>
-              onField(
-                'observed_to',
-                event.target.value ? new Date(event.target.value).toISOString() : undefined,
-              )
-            }
-          />
-        </label>
-      </div>
+      <details>
+        <summary className="cursor-pointer text-lg font-semibold text-slate-200 marker:text-cyan-300">
+          Advanced filters
+        </summary>
+        <p className="mt-2 text-sm text-slate-400">
+          Narrow results by release, Kubernetes location, or observation time.
+        </p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {search.kind === 'file_activity' && (
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-300">Operation</span>
+              <select
+                className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2"
+                value={search.operation ?? ''}
+                onChange={change('operation')}
+              >
+                <option value="">All operations</option>
+                <option value="create">Create</option>
+                <option value="modify">Modify</option>
+                <option value="delete">Delete</option>
+                <option value="rename">Rename</option>
+              </select>
+            </label>
+          )}
+          <label className="text-sm">
+            <span className="mb-1 block text-slate-300">Release</span>
+            <select
+              className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2"
+              value={search.release_id ?? ''}
+              onChange={change('release_id')}
+            >
+              <option value="">All releases</option>
+              {releases.map((release) => (
+                <option key={release.id} value={release.id}>
+                  {release.version}
+                </option>
+              ))}
+            </select>
+          </label>
+          {facetDefinitions.map(({ facet, field, label }) => (
+            <FacetInput
+              key={facet}
+              label={label}
+              field={field}
+              value={search[field]}
+              page={facets[facet]}
+              onChange={(value) => onField(field, value)}
+              onNext={(cursor) => onFacetNext?.(facet, cursor)}
+              onSearch={(value) => onFacetSearch?.(facet, value)}
+            />
+          ))}
+          <label className="text-sm">
+            <span className="mb-1 block text-slate-300">Observed from</span>
+            <input
+              type="datetime-local"
+              className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2"
+              value={search.observed_from?.slice(0, 16) ?? ''}
+              onChange={(event) =>
+                onField(
+                  'observed_from',
+                  event.target.value ? new Date(event.target.value).toISOString() : undefined,
+                )
+              }
+            />
+          </label>
+          <label className="text-sm">
+            <span className="mb-1 block text-slate-300">Observed to</span>
+            <input
+              type="datetime-local"
+              className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2"
+              value={search.observed_to?.slice(0, 16) ?? ''}
+              onChange={(event) =>
+                onField(
+                  'observed_to',
+                  event.target.value ? new Date(event.target.value).toISOString() : undefined,
+                )
+              }
+            />
+          </label>
+        </div>
+      </details>
     </Card>
   )
 }
@@ -346,7 +401,7 @@ const presenceCopy: Record<
 type EvidenceProps =
   | { kind: 'releases'; page: InventoryReleasePresencePage }
   | { kind: 'sightings'; page: InventorySightingPage }
-  | { kind: 'groups'; page: InventoryGroupPage }
+  | { kind: 'groups'; page: InventoryGroupPage; projectId?: string; applicationId?: string }
   | { kind: 'occurrences'; page: InventoryOccurrencePage }
 
 export function EvidenceList(props: EvidenceProps) {
@@ -363,7 +418,7 @@ export function EvidenceList(props: EvidenceProps) {
               <dl className="details mt-3">
                 <dt>Release evidence</dt>
                 <dd>{formatCount(item.release_evidence_count)}</dd>
-                <dt>Occurrences</dt>
+                <dt>Observations</dt>
                 <dd>
                   {item.occurrence_count === null
                     ? 'Unavailable'
@@ -396,7 +451,7 @@ export function EvidenceList(props: EvidenceProps) {
               <dd className="break-all">{item.pod_name}</dd>
               <dt>Container</dt>
               <dd className="break-all">{item.container_name}</dd>
-              <dt>Occurrences</dt>
+              <dt>Observations</dt>
               <dd>{formatCount(item.occurrence_count)}</dd>
               <dt>Observed</dt>
               <dd>
@@ -413,8 +468,23 @@ export function EvidenceList(props: EvidenceProps) {
         {props.page.items.map((item) => (
           <Card key={item.id}>
             <div className="flex flex-wrap justify-between gap-3">
-              <h2 className="break-all font-semibold">{item.event_kind}</h2>
-              <span>{item.status}</span>
+              <h2 className="break-all font-semibold">{getEventKindLabel(item.event_kind)}</h2>
+              <span className="flex items-center gap-3">
+                <span>{item.status}</span>
+                {props.projectId && props.applicationId && (
+                  <Link
+                    className="text-cyan-200 underline"
+                    to="/projects/$projectId/applications/$applicationId/runtime-groups/$groupId"
+                    params={{
+                      projectId: props.projectId,
+                      applicationId: props.applicationId,
+                      groupId: item.id,
+                    }}
+                  >
+                    View discovery
+                  </Link>
+                )}
+              </span>
             </div>
             <dl className="details mt-3">
               <dt>Workload</dt>
@@ -423,7 +493,7 @@ export function EvidenceList(props: EvidenceProps) {
               </dd>
               <dt>Namespace</dt>
               <dd className="break-all">{item.namespace}</dd>
-              <dt>Occurrences</dt>
+              <dt>Observations</dt>
               <dd>{formatCount(item.occurrence_count)}</dd>
               <dt>Observed</dt>
               <dd>
@@ -439,7 +509,7 @@ export function EvidenceList(props: EvidenceProps) {
       {props.page.items.map((item) => (
         <Card key={item.id}>
           <h2 className="break-all font-semibold">
-            {item.event_kind} · {formatTimestamp(item.observed_at)}
+            {getEventKindLabel(item.event_kind)} · {formatTimestamp(item.observed_at)}
           </h2>
           <dl className="details mt-3">
             <dt>Command</dt>
@@ -455,9 +525,13 @@ export function EvidenceList(props: EvidenceProps) {
             <dt>Release</dt>
             <dd className="break-all">{item.release_version ?? 'Unavailable'}</dd>
           </dl>
-          <div className="mt-4">
-            <JsonDetailsViewer value={item.payload} label="Occurrence payload" />
-          </div>
+          <details className="mt-4 rounded-lg border border-slate-700 p-3">
+            <summary className="cursor-pointer font-semibold">Technical details</summary>
+            <p className="mt-3 text-xs text-slate-400">Event kind: {item.event_kind}</p>
+            <div className="mt-3">
+              <JsonDetailsViewer value={item.payload} label="Observation payload" />
+            </div>
+          </details>
         </Card>
       ))}
     </div>

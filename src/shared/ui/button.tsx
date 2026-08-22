@@ -8,9 +8,9 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-cyan-400 px-4 py-2 text-slate-950 hover:bg-cyan-300',
-        outline: 'border border-slate-600 bg-slate-900 px-4 py-2 text-slate-100 hover:bg-slate-800',
-        ghost: 'px-3 py-2 text-slate-200 hover:bg-slate-800',
+        default: 'brand-button px-4 py-2 text-slate-950',
+        outline: 'brand-button-outline border px-4 py-2 text-slate-100',
+        ghost: 'brand-button-ghost px-3 py-2 text-slate-200',
       },
     },
     defaultVariants: { variant: 'default' },

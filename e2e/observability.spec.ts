@@ -2,22 +2,47 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import { authenticate, mockApi } from './fixtures'
 
-test('explores runtime groups and release diff with history and deep links', async ({ page }) => {
+test('explores new discoveries and release changes with history and deep links', async ({
+  page,
+}) => {
   const { project, application, group } = await mockApi(page)
   await page.goto(`/projects/${project.id}/applications/${application.id}`)
   await authenticate(page)
-  await page.getByRole('link', { name: 'View runtime groups' }).click()
-  await expect(page.getByRole('heading', { name: 'Runtime Groups' })).toBeVisible()
+  await page.getByRole('link', { name: /New discoveries/ }).click()
+  await expect(page.getByRole('heading', { name: 'New discoveries' })).toBeVisible()
+  await page.getByLabel('Language').selectOption('ru')
+  await expect(page.getByRole('link', { name: 'Исходящее соединение' })).toBeVisible()
+  await page.getByLabel('Язык').selectOption('en')
+  await expect(page.getByRole('link', { name: 'Outbound connection' })).toBeVisible()
+  await expect(page.getByText('Исходящее соединение', { exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Tile view' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await expect(page.locator('[data-view="grid"]')).toBeVisible()
+  await page.getByRole('button', { name: 'List view' }).click()
+  await expect(page.locator('[data-view="list"]')).toBeVisible()
+  await page.getByRole('button', { name: 'Tile view' }).click()
+  await page.getByText('Advanced filters').click()
   await page.getByLabel('Namespace').fill('production')
   await page.getByRole('button', { name: 'Apply filters' }).click()
   await expect(page).toHaveURL(/namespace=production/)
   await page.getByLabel('Event kind').fill('network.connect')
   await page.getByRole('button', { name: 'Apply filters' }).click()
   await expect(page).toHaveURL(/event_kind=network.connect/)
-  await page.getByRole('link', { name: 'network.connect' }).click()
-  await expect(page.getByRole('heading', { name: 'Representative event' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Occurrences' })).toBeVisible()
+  await page.getByRole('link', { name: 'Outbound connection' }).click()
+  await expect(page.getByRole('heading', { name: 'Observation history' })).toBeVisible()
+  const observationHistory = page.getByRole('region', { name: 'Observation history' })
+  await expect(page.getByRole('button', { name: 'Tile view' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await expect(observationHistory.locator('[data-view="grid"]')).toBeVisible()
+  await page.getByRole('button', { name: 'List view' }).click()
+  await expect(observationHistory.locator('[data-view="list"]')).toBeVisible()
+  await page.getByRole('button', { name: 'Tile view' }).click()
   await expect(page.getByText('node-1').first()).toBeVisible()
+  await page.getByText('Technical details').nth(1).click()
   await expect(page.getByText('203.0.113.7').first()).toBeVisible()
   await expect(page.getByText('Syscall succeeded').first()).toBeVisible()
   await expect(page.getByText('Recently observed DNS evidence').first()).toBeVisible()
@@ -41,12 +66,16 @@ test('explores runtime groups and release diff with history and deep links', asy
     .getByRole('navigation', { name: 'Breadcrumb' })
     .getByRole('link', { name: 'Gateway' })
     .click()
-  await page.getByRole('link', { name: 'View releases' }).click()
-  await page.getByRole('link', { name: 'View runtime diff' }).first().click()
-  await expect(page.getByText('NEW')).toBeVisible()
+  await page.getByRole('link', { name: 'Releases' }).click()
+  await page.getByRole('link', { name: 'View changes' }).first().click()
+  await expect(
+    page.getByRole('region', { name: 'Complete release comparison summary' }),
+  ).toBeVisible()
+  await expect(page.getByText('Largest observation-count changes')).toBeVisible()
+  await expect(page.getByText('New', { exact: true }).last()).toBeVisible()
   await page.getByLabel('Baseline release').selectOption({ label: 'v1' })
   await expect(page).toHaveURL(/baseline=/)
-  await page.getByRole('link', { name: 'View group' }).click()
+  await page.getByRole('link', { name: 'View discovery' }).click()
   await expect(page).toHaveURL(new RegExp(`${group.id}$`))
   await page.goBack()
   await page.goForward()
@@ -61,7 +90,7 @@ test('observability routes are keyboard accessible at a narrow viewport and axe-
   await authenticate(page)
   await page.keyboard.press('Tab')
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
-  await expect(page.getByRole('heading', { name: 'Runtime Groups' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'New discoveries' })).toBeVisible()
 })
 
 test('restores all first-seen filters and cursor through detail navigation', async ({ page }) => {
@@ -77,7 +106,7 @@ test('restores all first-seen filters and cursor through detail navigation', asy
   })
   await page.goto(`/projects/${project.id}/applications/${application.id}/runtime-groups?${search}`)
   await authenticate(page)
-  await page.getByRole('link', { name: 'network.connect' }).click()
+  await page.getByRole('link', { name: 'Outbound connection' }).click()
   await page.goBack()
   await expect(page).toHaveURL(/status=acknowledged/)
   await expect(page).toHaveURL(/cursor=opaque-cursor/)

@@ -10,9 +10,10 @@ import { ErrorState } from '../shared/ui/error-state'
 import { Loading } from '../shared/ui/loading'
 import { useT } from '../shared/i18n'
 import { LanguageSelector } from '../shared/i18n/language-selector'
+import { Brand, BrandMark } from '../shared/ui/brand'
 
 export const REQUIRED_API_VERSION = 'v1'
-export const REQUIRED_DATABASE_MIGRATION = 7
+export const REQUIRED_DATABASE_MIGRATION = 12
 export const isBuildCompatible = (info: unknown): boolean => {
   if (!info || typeof info !== 'object') return false
   const value = info as { api_version?: unknown; required_database_migration?: unknown }
@@ -90,12 +91,15 @@ function RootComponent() {
   if (!credential) return <CredentialPrompt />
   return (
     <div className="min-h-screen">
-      <header className="border-b border-slate-800 bg-slate-950/90">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link to="/" className="text-lg font-bold tracking-tight">
-            OKOSCOPE
+      <header className="app-header">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-3 sm:px-6">
+          <Link to="/" className="brand-link" aria-label="OKOSCOPE">
+            <Brand />
           </Link>
-          <nav aria-label={t('primaryNavigation')} className="flex items-center gap-2">
+          <nav
+            aria-label={t('primaryNavigation')}
+            className="flex flex-wrap items-center justify-end gap-2"
+          >
             <Link
               to="/projects"
               className="nav-link"
@@ -129,7 +133,8 @@ function CredentialPrompt() {
   }
   return (
     <main id="main-content" className="grid min-h-screen place-items-center p-6">
-      <Card className="w-full max-w-md">
+      <Card className="credential-card w-full max-w-md">
+        <BrandMark className="mx-auto mb-3 h-24 w-32" />
         <div className="mb-4 flex justify-end">
           <LanguageSelector />
         </div>

@@ -3,14 +3,31 @@
 :root {
   color-scheme: dark;
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-  background: #07101e;
-  color: #e2e8f0;
+  background: #06111f;
+  color: #edf5ff;
 }
 body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  background: radial-gradient(circle at 75% 0%, #123047 0, transparent 35rem), #07101e;
+  background:
+    radial-gradient(circle at 82% -8%, rgb(0 240 190 / 12%) 0, transparent 28rem),
+    radial-gradient(circle at 8% 15%, rgb(52 88 255 / 14%) 0, transparent 32rem),
+    linear-gradient(145deg, #071425 0%, #06111f 48%, #040c17 100%);
+  background-attachment: fixed;
+}
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  content: '';
+  pointer-events: none;
+  opacity: 0.18;
+  background-image:
+    linear-gradient(rgb(91 139 191 / 10%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(91 139 191 / 10%) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, black, transparent 75%);
 }
 button,
 input,
@@ -42,8 +59,85 @@ select:focus-visible {
   padding: 3rem 1.5rem;
   min-height: calc(100vh - 8rem);
 }
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  border-bottom: 1px solid rgb(50 112 168 / 30%);
+  background: rgb(4 14 27 / 82%);
+  box-shadow: 0 12px 36px rgb(0 0 0 / 24%);
+  backdrop-filter: blur(18px);
+}
+.brand-link {
+  display: inline-flex;
+  color: white;
+  text-decoration: none;
+}
+.brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+.brand-mark {
+  flex: none;
+  overflow: visible;
+  filter: drop-shadow(0 0 8px rgb(10 203 234 / 36%));
+}
+.brand-copy {
+  display: grid;
+  line-height: 1;
+}
+.brand-name {
+  font-size: 1.05rem;
+  font-weight: 300;
+  letter-spacing: 0.08em;
+}
+.brand-name strong {
+  font-weight: 850;
+}
+.brand-tagline {
+  margin-top: 0.36rem;
+  color: #8ba8cf;
+  font-size: 0.52rem;
+  font-weight: 650;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+}
+.app-card {
+  border-color: rgb(53 110 163 / 38%);
+  background: linear-gradient(145deg, rgb(11 29 51 / 88%), rgb(5 17 32 / 92%));
+  box-shadow:
+    0 18px 55px rgb(0 0 0 / 25%),
+    inset 0 1px rgb(137 210 255 / 6%);
+  backdrop-filter: blur(12px);
+}
+.app-card:hover {
+  border-color: rgb(22 211 208 / 34%);
+}
+.credential-card {
+  box-shadow:
+    0 25px 80px rgb(0 0 0 / 42%),
+    0 0 55px rgb(20 168 238 / 9%);
+}
+.brand-button {
+  border: 1px solid rgb(124 255 233 / 28%);
+  background: linear-gradient(110deg, #2e69ff, #08c9e8 58%, #12e6b5);
+  box-shadow: 0 7px 24px rgb(8 185 255 / 18%);
+}
+.brand-button:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 9px 30px rgb(8 210 222 / 28%);
+}
+.brand-button-outline {
+  border-color: rgb(73 137 190 / 48%);
+  background: rgb(8 26 47 / 72%);
+}
+.brand-button-outline:hover,
+.brand-button-ghost:hover {
+  background: rgb(18 49 77 / 78%);
+}
 .eyebrow {
-  color: #67e8f9;
+  color: #31e6d0;
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.18em;
@@ -52,8 +146,15 @@ select:focus-visible {
 .nav-link {
   display: inline-flex;
   padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
-  color: #cbd5e1;
+  border: 1px solid transparent;
+  border-radius: 0.65rem;
+  color: #b8cbe2;
+  transition: 160ms ease;
+}
+.nav-link:hover {
+  border-color: rgb(54 127 181 / 28%);
+  color: white;
+  background: rgb(14 43 70 / 58%);
 }
 nav {
   display: flex;
@@ -95,6 +196,24 @@ nav {
   top: 1rem;
 }
 ::selection {
-  background: #155e75;
+  background: #126d87;
   color: white;
+}
+
+input,
+select {
+  border-color: rgb(63 123 174 / 48%) !important;
+  background-color: rgb(4 16 30 / 84%) !important;
+}
+
+@media (max-width: 640px) {
+  .brand-tagline {
+    display: none;
+  }
+  .brand-name {
+    font-size: 0.9rem;
+  }
+  .page {
+    padding: 2rem 1rem;
+  }
 }

@@ -9,5 +9,13 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version ?? 'unknown'),
     __GIT_COMMIT__: JSON.stringify(process.env.OKOSCOPE_WEB_GIT_COMMIT ?? 'unknown'),
   },
-  server: { port: 4173 },
+  server: {
+    port: 4173,
+    proxy: {
+      '/api': {
+        target: 'https://okoscope.com',
+        changeOrigin: true,
+      },
+    },
+  },
 })

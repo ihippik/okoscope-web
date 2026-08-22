@@ -1,13 +1,21 @@
 import { Link } from '@tanstack/react-router'
-import { CircleAlert, Copy, Sparkles } from 'lucide-react'
+import { CircleAlert, Copy, DoorOpen, Network, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import type React from 'react'
 import type {
   EventOccurrence,
   DnsContext,
   FirstSeenNotificationSummary,
+  FileActivitySemanticSummary,
+  FileCreatePayload,
+  FileModifyPayload,
+  FileDeletePayload,
+  FileRenamePayload,
   NetworkConnectPayload,
   NetworkConnectSemanticSummary,
+  InboundNetworkSemanticSummary,
+  NetworkAcceptPayload,
+  NetworkListenPayload,
   NetworkDnsQueryPayload,
   NetworkDnsResponsePayload,
   Release,
@@ -19,6 +27,12 @@ import { Button } from '../../shared/ui/button'
 import { Card } from '../../shared/ui/card'
 import { ErrorState } from '../../shared/ui/error-state'
 import { formatCount, formatTimestamp } from '../tenant/format'
+import {
+  directionLabel,
+  formatEndpoint,
+  getEventKindLabel,
+  getWildcardEndpointLabel,
+} from './presentation'
 
 export const RECENT_WINDOW_MS = 24 * 60 * 60 * 1000
 export const isRecentlyFirstSeen = (value: string, now = Date.now()) => {
@@ -116,12 +130,15 @@ export function RuntimeGroupStatusBadge({ status }: { status: string }) {
     </span>
   )
 }
-export function RuntimeDiffClassificationBadge({
-  classification,
-}: {
-  classification: RuntimeDiffEntry['classification']
-}) {
-  const label = classification.toUpperCase()
+export function RuntimeDiffClassificationBadge({ classification }: { classification: string }) {
+  const label =
+    (
+      {
+        new: 'New',
+        disappeared: 'No longer observed',
+        unchanged: 'Still observed',
+      } as Record<string, string>
+    )[classification] ?? 'Unknown'
   return (
     <span
       className={
@@ -199,6 +216,213 @@ const isNetworkSummary = (
 ): value is NetworkConnectSemanticSummary => 'destination_address' in value
 const isDnsSummary = (value: RuntimeGroup['semantic_summary']) =>
   'query_type' in value && 'name' in value
+const isInboundSummary = (
+  value: RuntimeGroup['semantic_summary'],
+): value is InboundNetworkSemanticSummary => 'local_address' in value && 'local_port' in value
+const isFileActivitySummary = (
+  value: RuntimeGroup['semantic_summary'],
+): value is FileActivitySemanticSummary => 'operation' in value && 'path' in value
+
+export const FILE_PATH_HELP =
+  'Path reported by the process. It may contain symlinks and is not a canonical filesystem path.'
+
+export function FilePathValue({ path, label = 'Syscall path' }: { path: string; label?: string }) {
+  const [message, setMessage] = useState('')
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(path)
+      setMessage('Path copied')
+    } catch {
+      setMessage('Could not copy path')
+    }
+  }
+  return (
+    <span className="inline-flex min-w-0 max-w-full items-center gap-2">
+      <span
+        className="block max-w-[42rem] truncate font-mono"
+        title={`${path}\n\n${FILE_PATH_HELP}`}
+        aria-label={`${label}: ${path}. ${FILE_PATH_HELP}`}
+      >
+        {path}
+      </span>
+      <Button variant="ghost" onClick={() => void copy()} aria-label={`Copy ${label}`}>
+        <Copy size={14} aria-hidden="true" /> Copy
+      </Button>
+      <span className="sr-only" aria-live="polite">
+        {message}
+      </span>
+    </span>
+  )
+}
+
+export const replacementLabel = (value: boolean | null | undefined) =>
+  value === true ? 'Replaced' : value === false ? 'Not replaced' : 'Unknown'
+
+export function FileActivitySummary({ value }: { value: FileActivitySemanticSummary }) {
+  const rename = value.operation === 'rename'
+  return (
+    <dl
+      className="details rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm"
+      aria-label="File activity summary"
+    >
+      <dt>Operation</dt>
+      <dd className="capitalize">{value.operation}</dd>
+      <dt>Process</dt>
+      <dd className="break-all font-mono">{value.process_command}</dd>
+      <dt>{rename ? 'Old syscall path' : 'Syscall path'}</dt>
+      <dd className="min-w-0">
+        <FilePathValue path={value.path} label={rename ? 'Old syscall path' : 'Syscall path'} />
+      </dd>
+      {rename && value.new_path && (
+        <>
+          <dt>New syscall path</dt>
+          <dd className="min-w-0">
+            <FilePathValue path={value.new_path} label="New syscall path" />
+          </dd>
+        </>
+      )}
+      {rename && (
+        <>
+          <dt>Replacement</dt>
+          <dd>{replacementLabel(value.replaced)}</dd>
+        </>
+      )}
+      <dt className="sr-only">Path semantics</dt>
+      <dd className="col-span-2 text-xs text-slate-400" title={FILE_PATH_HELP}>
+        {FILE_PATH_HELP}
+      </dd>
+      {value.operation === 'modify' && (
+        <>
+          <dt className="sr-only">Collection window</dt>
+          <dd className="col-span-2 text-xs text-slate-400">
+            Modify activity is aggregated in fixed five-second windows. It does not represent every
+            individual write or guarantee instantaneous visibility.
+          </dd>
+        </>
+      )}
+    </dl>
+  )
+}
+
+export function EndpointValue({
+  addressFamily,
+  address,
+  port,
+}: {
+  addressFamily: 'ipv4' | 'ipv6'
+  address: string
+  port: number
+}) {
+  const wildcard = getWildcardEndpointLabel(addressFamily, address)
+  return (
+    <span className="inline-flex min-w-0 flex-wrap items-center gap-2">
+      <span className="break-all font-mono">{formatEndpoint(addressFamily, address, port)}</span>
+      {wildcard && (
+        <span className="rounded-full border border-slate-600 px-2 py-0.5 text-xs text-slate-300">
+          {wildcard}
+        </span>
+      )}
+    </span>
+  )
+}
+
+export function InboundEventBadge({ eventKind }: { eventKind: string }) {
+  if (eventKind !== 'network.listen' && eventKind !== 'network.accept') return null
+  const accept = eventKind === 'network.accept'
+  const Icon = accept ? Network : DoorOpen
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs font-semibold ${accept ? 'border-violet-700 bg-violet-950 text-violet-200' : 'border-emerald-700 bg-emerald-950 text-emerald-200'}`}
+    >
+      <Icon size={13} aria-hidden="true" /> {getEventKindLabel(eventKind)}
+    </span>
+  )
+}
+
+export type NetworkScope = 'local' | 'private' | 'internet' | 'unknown'
+
+export function getNetworkScope(address: string): NetworkScope {
+  const normalized = address
+    .trim()
+    .toLowerCase()
+    .replace(/^\[|\]$/g, '')
+  if (normalized === 'localhost' || normalized === '::1') return 'local'
+
+  const ipv4 = normalized.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
+  if (ipv4) {
+    const octets = ipv4.slice(1).map(Number)
+    if (octets.some((octet) => octet > 255)) return 'unknown'
+    const first = octets[0]!
+    const second = octets[1]!
+    if (first === 127) return 'local'
+    if (
+      first === 10 ||
+      (first === 172 && second >= 16 && second <= 31) ||
+      (first === 192 && second === 168) ||
+      (first === 169 && second === 254)
+    )
+      return 'private'
+    if (first === 0 || first >= 224) return 'unknown'
+    return 'internet'
+  }
+
+  if (normalized.includes(':')) {
+    if (
+      normalized.startsWith('fc') ||
+      normalized.startsWith('fd') ||
+      normalized.startsWith('fe8') ||
+      normalized.startsWith('fe9') ||
+      normalized.startsWith('fea') ||
+      normalized.startsWith('feb')
+    )
+      return 'private'
+    return normalized === '::' || normalized.startsWith('ff') ? 'unknown' : 'internet'
+  }
+
+  return 'unknown'
+}
+
+const networkScopePresentation: Record<
+  NetworkScope,
+  { label: string; tooltip: string; className: string }
+> = {
+  local: {
+    label: 'Local',
+    tooltip: 'Local connection: traffic stays on this computer and does not go to the internet.',
+    className: 'border-emerald-700 bg-emerald-950 text-emerald-200',
+  },
+  private: {
+    label: 'Local network',
+    tooltip:
+      'Private network connection: traffic may reach another device on the local network, but the address is not public.',
+    className: 'border-sky-700 bg-sky-950 text-sky-200',
+  },
+  internet: {
+    label: 'Internet',
+    tooltip:
+      'External connection: this is a public address reachable over the internet. External does not necessarily mean unsafe.',
+    className: 'border-amber-700 bg-amber-950 text-amber-200',
+  },
+  unknown: {
+    label: 'Unknown scope',
+    tooltip: 'The destination scope could not be determined from this address.',
+    className: 'border-slate-600 bg-slate-900 text-slate-300',
+  },
+}
+
+export function NetworkScopeBadge({ address }: { address: string }) {
+  const presentation = networkScopePresentation[getNetworkScope(address)]
+  return (
+    <span
+      className={`inline-flex cursor-help items-center rounded-full border px-2 py-0.5 font-sans text-xs font-semibold ${presentation.className}`}
+      title={presentation.tooltip}
+      aria-label={`${presentation.label}. ${presentation.tooltip}`}
+      tabIndex={0}
+    >
+      {presentation.label}
+    </span>
+  )
+}
 
 function DnsContextView({ context }: { context: DnsContext }) {
   return (
@@ -224,6 +448,7 @@ function DnsContextView({ context }: { context: DnsContext }) {
 }
 
 export function SemanticSummary({ value }: { value: RuntimeGroup['semantic_summary'] }) {
+  if (isFileActivitySummary(value)) return <FileActivitySummary value={value} />
   if (isDnsSummary(value))
     return (
       <dl
@@ -246,6 +471,28 @@ export function SemanticSummary({ value }: { value: RuntimeGroup['semantic_summa
         <dd>{value.transport.toUpperCase()}</dd>
       </dl>
     )
+  if (isInboundSummary(value))
+    return (
+      <dl
+        className="details rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm"
+        aria-label="Inbound connection summary"
+      >
+        <dt>Process</dt>
+        <dd className="min-w-0 break-all font-mono">{value.process_command}</dd>
+        <dt>Transport</dt>
+        <dd>{value.transport.toUpperCase()}</dd>
+        <dt>Address family</dt>
+        <dd>{value.address_family === 'ipv4' ? 'IPv4' : 'IPv6'}</dd>
+        <dt>Local endpoint</dt>
+        <dd className="min-w-0">
+          <EndpointValue
+            addressFamily={value.address_family}
+            address={value.local_address}
+            port={value.local_port}
+          />
+        </dd>
+      </dl>
+    )
   if (!isNetworkSummary(value)) return <JsonDetailsViewer value={value} label="Semantic summary" />
   return (
     <dl
@@ -257,7 +504,10 @@ export function SemanticSummary({ value }: { value: RuntimeGroup['semantic_summa
       <dt className="text-slate-300">Address family</dt>
       <dd>{value.address_family === 'ipv4' ? 'IPv4' : 'IPv6'}</dd>
       <dt className="text-slate-300">Destination</dt>
-      <dd className="break-all font-mono">{value.destination_address}</dd>
+      <dd className="flex flex-wrap items-center gap-2 break-all font-mono">
+        {value.destination_address}
+        <NetworkScopeBadge address={value.destination_address} />
+      </dd>
       <dt className="text-slate-300">Port</dt>
       <dd>{value.destination_port}</dd>
       {value.dns_context && <DnsContextView context={value.dns_context} />}
@@ -280,7 +530,10 @@ function NetworkOccurrence({ payload }: { payload: NetworkConnectPayload }) {
       <dt className="text-slate-300">Address family</dt>
       <dd>{payload.data.address_family === 'ipv4' ? 'IPv4' : 'IPv6'}</dd>
       <dt className="text-slate-300">Destination</dt>
-      <dd className="break-all font-mono">{payload.data.destination_address}</dd>
+      <dd className="flex flex-wrap items-center gap-2 break-all font-mono">
+        {payload.data.destination_address}
+        <NetworkScopeBadge address={payload.data.destination_address} />
+      </dd>
       <dt className="text-slate-300">Port</dt>
       <dd>{payload.data.destination_port}</dd>
       <dt className="text-slate-300">Outcome</dt>
@@ -292,6 +545,45 @@ function NetworkOccurrence({ payload }: { payload: NetworkConnectPayload }) {
         </>
       )}
       {payload.data.dns_context && <DnsContextView context={payload.data.dns_context} />}
+    </dl>
+  )
+}
+
+function InboundNetworkOccurrence({
+  payload,
+}: {
+  payload: NetworkListenPayload | NetworkAcceptPayload
+}) {
+  const data = payload.data
+  return (
+    <dl
+      className="details rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm"
+      aria-label={payload.type === 'NetworkAccept' ? 'Accepted inbound connection' : 'TCP listener'}
+    >
+      <dt>Transport</dt>
+      <dd>{data.transport.toUpperCase()}</dd>
+      <dt>Address family</dt>
+      <dd>{data.address_family === 'ipv4' ? 'IPv4' : 'IPv6'}</dd>
+      <dt>Local endpoint</dt>
+      <dd className="min-w-0">
+        <EndpointValue
+          addressFamily={data.address_family}
+          address={data.local_address}
+          port={data.local_port}
+        />
+      </dd>
+      {payload.type === 'NetworkAccept' && (
+        <>
+          <dt>Remote endpoint</dt>
+          <dd className="min-w-0">
+            <EndpointValue
+              addressFamily={payload.data.address_family}
+              address={payload.data.remote_address}
+              port={payload.data.remote_port}
+            />
+          </dd>
+        </>
+      )}
     </dl>
   )
 }
@@ -313,8 +605,8 @@ function DnsOccurrence({
       <dd>{data.query_type}</dd>
       <dt>Transport</dt>
       <dd>{data.transport.toUpperCase()}</dd>
-      <dt>Direction</dt>
-      <dd>{data.direction}</dd>
+      <dt>Connection flow</dt>
+      <dd>{directionLabel(data.direction)}</dd>
       <dt>Resolver</dt>
       <dd className="font-mono">{data.resolver_address}</dd>
       {'response_code' in data && (
@@ -344,19 +636,67 @@ function DnsOccurrence({
   )
 }
 
+function FileOccurrence({
+  payload,
+}: {
+  payload: FileCreatePayload | FileModifyPayload | FileDeletePayload | FileRenamePayload
+}) {
+  const operation = payload.type.slice('file.'.length)
+  const rename = payload.type === 'file.rename'
+  return (
+    <dl
+      className="details rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm"
+      aria-label="File activity occurrence"
+    >
+      <dt>Operation</dt>
+      <dd className="capitalize">{operation}</dd>
+      <dt>{rename ? 'Old syscall path' : 'Syscall path'}</dt>
+      <dd className="min-w-0">
+        <FilePathValue
+          path={payload.data.path}
+          label={rename ? 'Old syscall path' : 'Syscall path'}
+        />
+      </dd>
+      {rename && (
+        <>
+          <dt>New syscall path</dt>
+          <dd className="min-w-0">
+            <FilePathValue path={payload.data.new_path} label="New syscall path" />
+          </dd>
+          <dt>Replacement</dt>
+          <dd>{replacementLabel(payload.data.replaced)}</dd>
+        </>
+      )}
+      <dt className="sr-only">Path semantics</dt>
+      <dd className="col-span-2 text-xs text-slate-400">{FILE_PATH_HELP}</dd>
+      {payload.type === 'file.modify' && (
+        <>
+          <dt className="sr-only">Collection window</dt>
+          <dd className="col-span-2 text-xs text-slate-400">
+            Modify activity is aggregated in fixed five-second windows; it is not a list of
+            individual writes.
+          </dd>
+        </>
+      )}
+    </dl>
+  )
+}
+
 export function RuntimeGroupList({
   groups,
   projectId,
   applicationId,
   search,
+  view = 'list',
 }: {
   groups: RuntimeGroup[]
   projectId: string
   applicationId: string
   search: RuntimeGroupSearch
+  view?: 'grid' | 'list'
 }) {
   return (
-    <div className="space-y-4">
+    <div data-view={view} className={view === 'grid' ? 'grid gap-4 lg:grid-cols-2' : 'space-y-4'}>
       {groups.map((group) => (
         <Card
           key={group.id}
@@ -371,12 +711,13 @@ export function RuntimeGroupList({
                   params={{ projectId, applicationId, groupId: group.id }}
                   search={search}
                 >
-                  {group.event_kind}
+                  {getEventKindLabel(group.event_kind, group.semantic_summary)}
                 </Link>
+                <InboundEventBadge eventKind={group.event_kind} />
                 <RuntimeGroupStatusBadge status={group.status} />
                 {isRecentlyFirstSeen(group.first_seen_at) && (
                   <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-300">
-                    <Sparkles size={14} aria-hidden="true" /> Recently first seen
+                    <Sparkles size={14} aria-hidden="true" /> Newly observed
                   </span>
                 )}
               </div>
@@ -384,7 +725,7 @@ export function RuntimeGroupList({
                 {group.namespace} · {group.workload_kind}/{group.workload_name}
               </p>
             </div>
-            <p className="text-sm">{formatCount(group.occurrence_count)} occurrences</p>
+            <p className="text-sm">{formatCount(group.occurrence_count)} observations</p>
           </div>
           <div className="mt-4">
             <SemanticSummary value={group.semantic_summary} />
@@ -400,13 +741,20 @@ export function RuntimeGroupList({
     </div>
   )
 }
-export function OccurrenceTimeline({ occurrences }: { occurrences: EventOccurrence[] }) {
+export function OccurrenceTimeline({
+  occurrences,
+  view = 'list',
+}: {
+  occurrences: EventOccurrence[]
+  view?: 'grid' | 'list'
+}) {
   return (
-    <ol className="space-y-4">
+    <ol data-view={view} className={view === 'grid' ? 'grid gap-4 lg:grid-cols-2' : 'space-y-4'}>
       {occurrences.map((item) => (
         <li key={item.id}>
           <Card>
             <p className="font-semibold">{formatTimestamp(item.observed_at)}</p>
+            <p className="mt-2 text-sm font-semibold">{getEventKindLabel(item.event_kind)}</p>
             <dl className="details mt-3">
               <dt>Node</dt>
               <dd>{item.node_name || 'Unavailable'}</dd>
@@ -420,21 +768,31 @@ export function OccurrenceTimeline({ occurrences }: { occurrences: EventOccurren
               <dd className="break-all font-mono text-sm">
                 {item.process_command || 'Unavailable'}
               </dd>
-              <dt>Event kind</dt>
-              <dd>{item.event_kind}</dd>
               <dt>Release</dt>
               <dd>{item.release_version ?? item.release_id ?? 'Unavailable'}</dd>
             </dl>
-            <div className="mt-4">
-              {item.payload.type === 'NetworkConnect' ? (
-                <NetworkOccurrence payload={item.payload} />
-              ) : item.payload.type === 'NetworkDnsQuery' ||
-                item.payload.type === 'NetworkDnsResponse' ? (
-                <DnsOccurrence payload={item.payload} />
-              ) : (
-                <JsonDetailsViewer value={item.payload} label="Event payload" />
-              )}
-            </div>
+            <details className="mt-4 rounded-lg border border-slate-700 p-3">
+              <summary className="cursor-pointer font-semibold">Technical details</summary>
+              <p className="mt-3 text-xs text-slate-400">Event kind: {item.event_kind}</p>
+              <div className="mt-3">
+                {item.payload.type === 'NetworkConnect' ? (
+                  <NetworkOccurrence payload={item.payload} />
+                ) : item.payload.type === 'NetworkListen' ||
+                  item.payload.type === 'NetworkAccept' ? (
+                  <InboundNetworkOccurrence payload={item.payload} />
+                ) : item.payload.type === 'NetworkDnsQuery' ||
+                  item.payload.type === 'NetworkDnsResponse' ? (
+                  <DnsOccurrence payload={item.payload} />
+                ) : item.payload.type === 'file.create' ||
+                  item.payload.type === 'file.modify' ||
+                  item.payload.type === 'file.delete' ||
+                  item.payload.type === 'file.rename' ? (
+                  <FileOccurrence payload={item.payload} />
+                ) : (
+                  <JsonDetailsViewer value={item.payload} label="Event payload" />
+                )}
+              </div>
+            </details>
           </Card>
         </li>
       ))}
@@ -465,7 +823,7 @@ export function ReleaseList({
                 to="/projects/$projectId/applications/$applicationId/releases/$targetReleaseId/runtime-diff"
                 params={{ projectId, applicationId, targetReleaseId: release.id }}
               >
-                View runtime diff
+                View changes
               </Link>
             </Button>
           </div>
@@ -493,24 +851,24 @@ export function RuntimeDiffList({
           <div className="flex flex-wrap justify-between gap-3">
             <div className="flex items-center gap-2">
               <RuntimeDiffClassificationBadge classification={entry.classification} />
-              <strong>{entry.event_kind}</strong>
+              <strong>{getEventKindLabel(entry.event_kind, entry.semantic_summary)}</strong>
             </div>
             <Link
               className="text-cyan-200 underline"
               to="/projects/$projectId/applications/$applicationId/runtime-groups/$groupId"
               params={{ projectId, applicationId, groupId: entry.group_id }}
             >
-              View group
+              View discovery
             </Link>
           </div>
           <dl className="details my-4">
-            <dt>Baseline occurrences</dt>
+            <dt>Baseline observations</dt>
             <dd>
               {entry.baseline_occurrence_count === null
                 ? '—'
                 : formatCount(entry.baseline_occurrence_count)}
             </dd>
-            <dt>Target occurrences</dt>
+            <dt>Target observations</dt>
             <dd>
               {entry.target_occurrence_count === null
                 ? '—'

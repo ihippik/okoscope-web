@@ -2,6 +2,7 @@ import { queryOptions } from '@tanstack/react-query'
 import { ApiClientError, type ApiClient } from '../../shared/api/client'
 import type {
   InventoryFacet,
+  InventoryDistribution,
   InventoryFacetPage,
   InventoryGroupPage,
   InventoryItemDetail,
@@ -15,6 +16,7 @@ import type { InventoryEvidence, InventorySearch } from './url-state'
 import { summarySearch } from './url-state'
 
 export const INVENTORY_PAGE_SIZE = 50
+export const INVENTORY_DISTRIBUTION_SIZE = 5
 const normalized = <T extends object>(value: T) =>
   Object.fromEntries(
     Object.entries(value)
@@ -38,6 +40,15 @@ export const inventoryKeys = {
       projectId,
       applicationId,
       normalized(summarySearch(search)),
+    ] as const,
+  distribution: (projectId: string, applicationId: string, search: InventorySearch) =>
+    [
+      'runtime-inventory-distribution',
+      projectId,
+      applicationId,
+      search.kind,
+      normalized(summarySearch(search)),
+      INVENTORY_DISTRIBUTION_SIZE,
     ] as const,
   list: (projectId: string, applicationId: string, search: InventorySearch) =>
     ['runtime-inventory-list', projectId, applicationId, normalized(search)] as const,
@@ -92,6 +103,21 @@ export const inventorySummaryOptions = (
           protected: true,
           signal,
         },
+      ),
+  })
+
+export const inventoryDistributionOptions = (
+  api: ApiClient,
+  projectId: string,
+  applicationId: string,
+  search: InventorySearch,
+) =>
+  queryOptions({
+    queryKey: inventoryKeys.distribution(projectId, applicationId, search),
+    queryFn: ({ signal }) =>
+      api.get<InventoryDistribution>(
+        `${base(projectId, applicationId)}/distribution${query({ ...summarySearch(search), kind: search.kind, limit: INVENTORY_DISTRIBUTION_SIZE })}`,
+        { protected: true, signal },
       ),
   })
 

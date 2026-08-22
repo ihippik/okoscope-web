@@ -12,7 +12,8 @@
 | Cursor pagination without duplicate items                                                            | query implementation plus Playwright pagination journey                       |
 | Keyboard semantics, focus, labels, and document titles                                               | component semantics plus Playwright and axe checks                            |
 | Immutable runtime-configured image, health, cache policy, SPA fallback, invalid startup              | `scripts/container-smoke.sh`                                                  |
-| Migration 7 compatibility and notification operations                                                | `root-compatibility.test.ts`, compile-time fixtures, `npm run api:check`      |
+| Migration 12 compatibility and notification operations                                               | `root-compatibility.test.ts`, compile-time fixtures, `npm run api:check`      |
+| Heterogeneous and nullable Application worker kernels, isolated failures, localization, and cursors  | `application-workers.test.tsx`, `queries.test.ts`, Playwright narrow journey  |
 | Runtime Group filters, first-seen detail, notification state, and bounded occurrences                | observability unit/component tests and Playwright first-seen journey          |
 | Notification destinations, one-time secrets, delivery history/detail, confirmations, and request IDs | notification component tests and Playwright notification journey with axe     |
 | Acknowledge, resolve confirmation, reopen, and cache invalidation                                    | lifecycle component/integration coverage and Playwright first-seen journey    |

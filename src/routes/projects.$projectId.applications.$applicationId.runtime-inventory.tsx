@@ -1,14 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, Outlet, createFileRoute, useLocation, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
+import { InventoryFilterFields, InventoryList } from '../features/runtime-inventory/components'
 import {
-  InventoryFilterFields,
-  InventoryList,
-  InventorySummaryCards,
-  InventoryTabs,
-} from '../features/runtime-inventory/components'
+  InventoryKindDistribution,
+  TopBehaviorDistribution,
+} from '../features/runtime-inventory/visualization'
 import {
   inventoryFacetOptions,
+  inventoryDistributionOptions,
   inventoryListOptions,
   inventorySummaryOptions,
   isInvalidCursorError,
@@ -16,6 +16,7 @@ import {
 import { changeInventoryScope, parseInventorySearch } from '../features/runtime-inventory/url-state'
 import type { InventorySearch } from '../features/runtime-inventory/url-state'
 import type { InventoryFacet } from '../shared/api/types'
+import { getActivityPresentation } from '../features/observability/presentation'
 import { releasesOptions } from '../features/observability/queries'
 import { applicationOptions, projectOptions } from '../shared/api/queries'
 import { useApi } from '../shared/api/context'
@@ -23,6 +24,7 @@ import { ApiErrorPanel, EmptyState, PaginationControls } from '../features/obser
 import { Button } from '../shared/ui/button'
 import { Card } from '../shared/ui/card'
 import { Loading } from '../shared/ui/loading'
+import { LayoutGrid, List } from 'lucide-react'
 
 export const Route = createFileRoute(
   '/projects/$projectId/applications/$applicationId/runtime-inventory',
@@ -40,9 +42,11 @@ function RuntimeInventoryPage() {
   const [searchText, setSearchText] = useState<string>(search.search ?? '')
   const [facetCursors, setFacetCursors] = useState<Partial<Record<InventoryFacet, string>>>({})
   const [facetSearches, setFacetSearches] = useState<Partial<Record<InventoryFacet, string>>>({})
+  const [activityView, setActivityView] = useState<'grid' | 'list'>('grid')
   const project = useQuery(projectOptions(api, projectId))
   const application = useQuery(applicationOptions(api, projectId, applicationId))
   const summary = useQuery(inventorySummaryOptions(api, projectId, applicationId, search))
+  const distribution = useQuery(inventoryDistributionOptions(api, projectId, applicationId, search))
   const list = useQuery(inventoryListOptions(api, projectId, applicationId, search))
   const releases = useQuery(releasesOptions(api, projectId, applicationId, {}))
   const cluster = useQuery(
@@ -111,7 +115,7 @@ function RuntimeInventoryPage() {
   }, [navigate, search, search.search, searchText])
   useEffect(() => {
     if (application.data && location.pathname.endsWith('/runtime-inventory'))
-      document.title = `Runtime inventory · ${application.data.name} · Okoscope`
+      document.title = `Application Activity · ${application.data.name} · Okoscope`
   }, [application.data, location.pathname])
 
   const path = `/projects/${projectId}/applications/${applicationId}/runtime-inventory`
@@ -126,11 +130,11 @@ function RuntimeInventoryPage() {
     void navigate({ search: next, replace: true })
   }
   if (project.isPending || application.isPending)
-    return <Loading label="Loading Runtime Inventory…" />
+    return <Loading label="Loading Application Activity…" />
   if (project.isError || application.isError)
     return (
       <ApiErrorPanel
-        title="Runtime Inventory scope not found"
+        title="Application Activity not found"
         error={project.error ?? application.error}
         onRetry={() => {
           void project.refetch()
@@ -163,13 +167,14 @@ function RuntimeInventoryPage() {
           {application.data.name}
         </Link>
         <span>/</span>
-        <span aria-current="page">Runtime Inventory</span>
+        <span aria-current="page">Application Activity</span>
       </nav>
       <header>
         <p className="eyebrow">Application</p>
-        <h1 className="mt-2 text-4xl font-semibold">Runtime Inventory</h1>
+        <h1 className="mt-2 text-4xl font-semibold">Application Activity</h1>
         <p className="mt-2 text-slate-400">
-          Observed behavior across the active application scope.
+          See which processes this application starts and which network destinations and domains it
+          uses. Observations describe recorded activity, not configured intent or risk.
         </p>
       </header>
       {summary.isPending ? (
@@ -181,21 +186,50 @@ function RuntimeInventoryPage() {
           onRetry={() => void summary.refetch()}
         />
       ) : (
-        <InventorySummaryCards
+        <InventoryKindDistribution
           summary={summary.data}
           activeKind={search.kind}
           onKind={(kind) => setScope({ kind })}
         />
       )}
+      {distribution.isPending ? (
+        <Loading label="Loading activity distribution…" />
+      ) : distribution.isError && !distribution.data ? (
+        <ApiErrorPanel
+          title="Could not load activity distribution"
+          error={distribution.error}
+          onRetry={() => void distribution.refetch()}
+        />
+      ) : distribution.data.total_occurrence_count === 0 ? (
+        <EmptyState
+          title="No activity to visualize"
+          description="No recorded observations match the selected activity type and filters."
+        />
+      ) : (
+        <>
+          {distribution.isError && (
+            <ApiErrorPanel
+              title="Activity distribution may be stale"
+              error={distribution.error}
+              onRetry={() => void distribution.refetch()}
+            />
+          )}
+          <TopBehaviorDistribution
+            distribution={distribution.data}
+            selectedToken={search.identity_token}
+            onIdentity={(identity_token) => setScope({ identity_token })}
+          />
+        </>
+      )}
       <Card>
         <label className="text-sm">
-          <span className="mb-1 block text-slate-300">Search observed identity</span>
+          <span className="mb-1 block text-slate-300">Search application activity</span>
           <input
             className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2"
             value={searchText}
             maxLength={200}
             onChange={(event) => setSearchText(event.target.value)}
-            placeholder="Executable, command, destination, domain, or syscall"
+            placeholder="Program, command, operation, path, address, domain, or system call"
           />
         </label>
       </Card>
@@ -211,14 +245,39 @@ function RuntimeInventoryPage() {
           setFacetSearches((current) => ({ ...current, [facet]: value }))
         }
       />
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <InventoryTabs activeKind={search.kind} onKind={(kind) => setScope({ kind })} />
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        <div
+          role="group"
+          aria-label="Activity layout"
+          className="inline-flex rounded-lg border border-slate-700 bg-slate-900 p-1"
+        >
+          <Button
+            className="h-8 w-8 p-0"
+            variant={activityView === 'grid' ? 'default' : 'ghost'}
+            aria-label="Tile view"
+            aria-pressed={activityView === 'grid'}
+            title="Tile view"
+            onClick={() => setActivityView('grid')}
+          >
+            <LayoutGrid size={17} aria-hidden="true" />
+          </Button>
+          <Button
+            className="h-8 w-8 p-0"
+            variant={activityView === 'list' ? 'default' : 'ghost'}
+            aria-label="List view"
+            aria-pressed={activityView === 'list'}
+            title="List view"
+            onClick={() => setActivityView('list')}
+          >
+            <List size={17} aria-hidden="true" />
+          </Button>
+        </div>
         <Button variant="ghost" onClick={() => void navigate({ search: { kind: search.kind } })}>
           Clear filters
         </Button>
       </div>
       {list.isPending ? (
-        <Loading label={`Loading ${search.kind} inventory…`} />
+        <Loading label={`Loading ${getActivityPresentation(search.kind).itemLabel}…`} />
       ) : list.isError ? (
         cursorError ? (
           <Card role="alert" className="border-amber-700">
@@ -232,14 +291,14 @@ function RuntimeInventoryPage() {
           </Card>
         ) : (
           <ApiErrorPanel
-            title="Could not load Runtime Inventory"
+            title="Could not load Application Activity"
             error={list.error}
             onRetry={() => void list.refetch()}
           />
         )
       ) : list.data.items.length === 0 ? (
         <EmptyState
-          title={search.cursor ? 'End of inventory results' : 'No observed behavior'}
+          title={search.cursor ? 'End of activity results' : 'No activity observed'}
           description={
             search.cursor
               ? 'This terminal cursor page is empty. Use browser Back or return to the first page.'
@@ -251,6 +310,7 @@ function RuntimeInventoryPage() {
           items={list.data.items}
           projectId={projectId}
           applicationId={applicationId}
+          view={activityView}
         />
       )}
       {list.data && (

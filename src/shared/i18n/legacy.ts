@@ -32,6 +32,7 @@ export const legacyRussian: Record<string, string> = {
   'Runtime configuration could not be loaded.':
     'Не удалось загрузить конфигурацию среды выполнения.',
   'Loading…': 'Загрузка…',
+  'Never observed': 'Никогда не наблюдалось',
   Close: 'Закрыть',
   'Something went wrong': 'Что-то пошло не так',
   'An unexpected error occurred.': 'Произошла непредвиденная ошибка.',
@@ -53,6 +54,174 @@ export const legacyRussian: Record<string, string> = {
   'Runtime Inventory': 'Инвентаризация среды выполнения',
   'Runtime inventory': 'Инвентаризация среды выполнения',
   'Runtime Diff': 'Различия среды выполнения',
+  'Application Activity': 'Активность приложения',
+  Recommendations: 'Рекомендации',
+  'Processes, connections, and domains observed in this application.':
+    'Процессы, подключения и домены, наблюдаемые в этом приложении.',
+  'Coming soon: suggested actions based on observed activity.':
+    'Скоро: рекомендуемые действия на основе наблюдаемой активности.',
+  'Process launches': 'Запуски процессов',
+  'Network activity': 'Сетевая активность',
+  Connections: 'Подключения',
+  'Outbound connections': 'Исходящие соединения',
+  'File Activity': 'Файловая активность',
+  'File activity summary': 'Сводка файловой активности',
+  'File activity occurrence': 'Событие файловой активности',
+  'Program, command, operation, path, address, domain, or system call':
+    'Программа, команда, операция, путь, адрес, домен или системный вызов',
+  Operation: 'Операция',
+  'All operations': 'Все операции',
+  Create: 'Создание',
+  Modify: 'Изменение',
+  Delete: 'Удаление',
+  Rename: 'Переименование',
+  Copy: 'Копировать',
+  'New syscall path': 'Новый путь системного вызова',
+  Replacement: 'Замещение',
+  'Path semantics': 'Семантика пути',
+  'Collection window': 'Окно агрегации',
+  'Modify activity is aggregated in fixed five-second windows. It does not represent every individual write or guarantee instantaneous visibility.':
+    'События изменения агрегируются в фиксированных пятисекундных окнах. Они не отражают каждую отдельную запись и не гарантируют мгновенную видимость.',
+  'Modify activity is aggregated in fixed five-second windows; it is not a list of individual writes.':
+    'События изменения агрегируются в фиксированных пятисекундных окнах; это не список отдельных записей.',
+  'New discoveries': 'Новые обнаружения',
+  'New discovery': 'Новое обнаружение',
+  'Changes after release': 'Изменения после релиза',
+  'Observation history': 'История наблюдений',
+  'Technical details': 'Технические данные',
+  'Newly observed': 'Обнаружено недавно',
+  'View discovery': 'Открыть обнаружение',
+  'View changes': 'Посмотреть изменения',
+  'View observation history': 'Открыть историю наблюдений',
+  'Process launch': 'Запуск процесса',
+  Connection: 'Подключение',
+  'Outbound connection': 'Исходящее соединение',
+  Local: 'Локальный',
+  'Local network': 'Локальная сеть',
+  Internet: 'Интернет',
+  'Unknown scope': 'Неизвестная область',
+  'DNS request': 'DNS-запрос',
+  'dns request': 'DNS-запрос',
+  'DNS response': 'DNS-ответ',
+  'System call': 'Системный вызов',
+  'Observed activity': 'Наблюдаемое действие',
+  'Opened port': 'Открыт порт',
+  'Accepted inbound connection': 'Принято входящее соединение',
+  'Inbound connections': 'Входящие соединения',
+  'Inbound connection': 'Входящее соединение',
+  'inbound observations': 'наблюдений входящих соединений',
+  'All IPv4 interfaces': 'все IPv4-интерфейсы',
+  'All IPv6 interfaces': 'все IPv6-интерфейсы',
+  'Local endpoint': 'Локальный endpoint',
+  'Remote endpoint': 'Удалённый endpoint',
+  'Port observed listening': 'Порт открыт на прослушивание',
+  'Accepted connections observed': 'Наблюдались принятые соединения',
+  'Endpoint evidence unavailable': 'Данные наблюдения endpoint недоступны',
+  'No positive endpoint evidence': 'Положительные признаки endpoint не наблюдались',
+  'Inbound connection summary': 'Сводка входящего соединения',
+  'Share of': 'Доля от',
+  'matching recorded observations. Counts do not represent duration, traffic volume, configured intent, or risk.':
+    'соответствующих зафиксированных наблюдений. Значения не отражают длительность, объем трафика, настройки или риск.',
+  'Other observed': 'Прочие наблюдаемые',
+  'Most observed': 'Наиболее наблюдаемые',
+  'matching recorded observations across the complete filtered result, not only this list page.':
+    'соответствующих зафиксированных наблюдений во всем отфильтрованном результате, а не только на этой странице.',
+  Outgoing: 'Исходящий',
+  Incoming: 'Входящий',
+  New: 'Новое',
+  'No longer observed': 'Больше не наблюдается',
+  'Still observed': 'По-прежнему наблюдается',
+  'Loading Changes after release…': 'Загрузка изменений после релиза…',
+  'Loading complete comparison summary…': 'Загрузка полной сводки сравнения…',
+  'Comparison summary unavailable': 'Сводка сравнения недоступна',
+  'Comparison summary may be stale': 'Сводка сравнения могла устареть',
+  'Complete release comparison summary': 'Полная сводка сравнения релизов',
+  'Largest observation-count changes': 'Наибольшие изменения числа наблюдений',
+  'Ranked across the complete comparison. Counts are recorded observations, not duration, traffic volume, configured intent, or risk.':
+    'Рейтинг построен по полному сравнению. Значения отражают зафиксированные наблюдения, а не длительность, объем трафика, настройки или риск.',
+  '· baseline': '· базовый релиз',
+  '→ target': '→ целевой релиз',
+  'Changes after release unavailable': 'Изменения после релиза недоступны',
+  'Compare observed application activity between releases. A change is not automatically a problem, and “no longer observed” does not prove that behavior is absent.':
+    'Сравните наблюдаемую активность приложения между релизами. Изменение не обязательно является проблемой, а «больше не наблюдается» не доказывает отсутствие поведения.',
+  'No observed changes': 'Нет наблюдаемых изменений',
+  'The selected releases have no observed activity changes on this page.':
+    'Для выбранных релизов на этой странице нет изменений наблюдаемой активности.',
+  'Loading New discovery…': 'Загрузка нового обнаружения…',
+  'New discovery unavailable': 'Новое обнаружение недоступно',
+  'Back to New discoveries': 'Назад к новым обнаружениям',
+  Observations: 'Наблюдения',
+  'First event ID': 'ID первого события',
+  'Example observation': 'Пример наблюдения',
+  'Loading observation history…': 'Загрузка истории наблюдений…',
+  'Observation history unavailable': 'История наблюдений недоступна',
+  'Next observation page': 'Следующая страница наблюдений',
+  'No observations': 'Нет наблюдений',
+  'No observations are available on this page.': 'На этой странице нет наблюдений.',
+  'No activity observed': 'Активность не наблюдалась',
+  'End of activity results': 'Конец списка активности',
+  'Mark this discovery as resolved?': 'Отметить обнаружение как обработанное?',
+  'Loading New discoveries…': 'Загрузка новых обнаружений…',
+  'New discoveries unavailable': 'Новые обнаружения недоступны',
+  'Application activity': 'Активность приложения',
+  'Behavior observed for the first time in this application. A discovery is not automatically a problem or security incident.':
+    'Поведение, впервые наблюдаемое в этом приложении. Обнаружение не обязательно является проблемой или инцидентом безопасности.',
+  'Activity item not found': 'Элемент активности не найден',
+  'Back to Application Activity': 'Назад к активности приложения',
+  'Where observed': 'Где наблюдалось',
+  Discoveries: 'Обнаружения',
+  'Observation details': 'Данные наблюдений',
+  'Unsafe observation link': 'Небезопасная ссылка на наблюдения',
+  'This observation page is no longer valid': 'Эта страница наблюдений больше недействительна',
+  'Could not load observations': 'Не удалось загрузить наблюдения',
+  'Loading Application Activity…': 'Загрузка активности приложения…',
+  'Loading activity distribution…': 'Загрузка распределения активности…',
+  'Could not load activity distribution': 'Не удалось загрузить распределение активности',
+  'No activity to visualize': 'Нет активности для визуализации',
+  'No recorded observations match the selected activity type and filters.':
+    'Нет зафиксированных наблюдений, соответствующих выбранному типу активности и фильтрам.',
+  'Activity distribution may be stale': 'Распределение активности могло устареть',
+  'Application Activity not found': 'Активность приложения не найдена',
+  'See which processes this application starts and which network destinations and domains it uses. Observations describe recorded activity, not configured intent or risk.':
+    'Посмотрите, какие процессы запускает приложение и какие сетевые адреса и домены использует. Наблюдения описывают зафиксированную активность, а не настройки или уровень риска.',
+  'Search application activity': 'Поиск по активности приложения',
+  'Program, command, address, domain, or system call':
+    'Программа, команда, адрес, домен или системный вызов',
+  'Could not load Application Activity': 'Не удалось загрузить активность приложения',
+  'See which processes this application starts, where it connects, and what changes after each release.':
+    'Узнайте, какие процессы запускает приложение, куда оно подключается и что меняется после каждого релиза.',
+  'Programs and commands observed in this application.':
+    'Программы и команды, наблюдаемые в этом приложении.',
+  'Connections and domains observed from this application.':
+    'Подключения и домены, наблюдаемые у этого приложения.',
+  'Newly observed behavior to review. A discovery is not automatically a problem.':
+    'Новое наблюдаемое поведение для проверки. Обнаружение не обязательно является проблемой.',
+  'Releases and changes': 'Релизы и изменения',
+  'Compare observed activity between releases.': 'Сравните наблюдаемую активность между релизами.',
+  'Connection flow': 'Поток соединения',
+  observations: 'наблюдений',
+  launches: 'запусков',
+  'connection observations': 'наблюдений подключений',
+  'DNS observations': 'наблюдений DNS',
+  'Event kind:': 'Тип события:',
+  'Baseline observations': 'Наблюдения базового релиза',
+  'Target observations': 'Наблюдения целевого релиза',
+  'System calls': 'Системные вызовы',
+  'Application activity summary': 'Сводка активности приложения',
+  'Connections and domains are separate observations and are not added into a unique network activity total.':
+    'Подключения и домены являются разными наблюдениями и не складываются в общее число уникальных сетевых действий.',
+  'Application activity view': 'Вид активности приложения',
+  'Observation payload': 'Данные наблюдения',
+  'Advanced filters': 'Расширенные фильтры',
+  'Narrow results by release, Kubernetes location, or observation time.':
+    'Уточните результаты по релизу, расположению в Kubernetes или времени наблюдения.',
+  'Narrow discoveries by behavior, review status, Kubernetes location, release, or time.':
+    'Уточните обнаружения по поведению, статусу проверки, расположению в Kubernetes, релизу или времени.',
+  'Observation layout': 'Режим отображения наблюдений',
+  'Discovery layout': 'Режим отображения обнаружений',
+  'Activity layout': 'Режим отображения активности',
+  'Tile view': 'Плитка',
+  'List view': 'Список',
   'Explore your environment': 'Исследуйте свою среду',
   'Browse Projects and their Applications.': 'Просматривайте проекты и их приложения.',
   'View projects': 'Открыть проекты',
@@ -302,10 +471,7 @@ export const legacyRussian: Record<string, string> = {
   'Unsafe evidence link': 'Небезопасная ссылка на данные',
   'View evidence': 'Открыть данные',
   'View group': 'Открыть группу',
-  'View releases': 'Открыть релизы',
   'View runtime diff': 'Открыть сравнение среды выполнения',
-  'View runtime groups': 'Открыть группы среды выполнения',
-  'View runtime inventory': 'Открыть инвентаризацию среды выполнения',
   'Webhook destinations': 'Назначения вебхуков',
   'Loading Application…': 'Загрузка приложения…',
   'Loading Organization…': 'Загрузка организации…',
@@ -472,6 +638,15 @@ export const legacyRussian: Record<string, string> = {
   bulk_retry: 'массовый повтор',
   enabled: 'включено',
   disabled: 'отключено',
+  Processes: 'Процессы',
+  Destinations: 'Сетевые назначения',
+  Domains: 'Домены',
+  Syscalls: 'Системные вызовы',
+  Sightings: 'Факты обнаружения',
+  Groups: 'Группы',
+  Delivering: 'Доставляется',
+  Delivered: 'Доставлено',
+  Unknown: 'Неизвестно',
   Unavailable: 'Недоступно',
   Pending: 'Ожидает доставки',
   Acknowledge: 'Подтвердить',
@@ -489,6 +664,15 @@ function localize(value: string, locale: Locale): string {
   if (locale === 'en') return value
   const exact = legacyRussian[value.trim()]
   if (exact) return value.replace(value.trim(), exact)
+  const uniqueBehaviors = value.match(/^(\d[\d\s.,]*) unique behaviors$/)
+  if (uniqueBehaviors)
+    return `${uniqueBehaviors[1]} ${russianCountNoun(uniqueBehaviors[1]!, 'уникальный вариант поведения', 'уникальных варианта поведения', 'уникальных вариантов поведения')}`
+  const uniqueIdentities = value.match(/^(\d[\d\s.,]*) unique identities$/)
+  if (uniqueIdentities)
+    return `${uniqueIdentities[1]} ${russianCountNoun(uniqueIdentities[1]!, 'уникальная идентичность', 'уникальные идентичности', 'уникальных идентичностей')}`
+  const observedBehavior = value.match(/^(Most|Other) observed (.+)$/)
+  if (observedBehavior)
+    return `${observedBehavior[1] === 'Most' ? 'Наиболее наблюдаемые' : 'Прочие наблюдаемые'} ${localize(observedBehavior[2]!, locale)}`
   const copyMatch = value.match(/^Copy (.+)$/)
   if (copyMatch) return `Копировать ${localize(copyMatch[1]!, locale)}`
   const confirmMatch = value.match(/^Confirm (.+)$/)
@@ -514,6 +698,11 @@ function localize(value: string, locale: Locale): string {
   if (ambiguousDns)
     return `Неоднозначно: для этого IP наблюдалось несколько имён. Срок действия данных: ${ambiguousDns[1]}. IP остаётся каноническим назначением.`
   const titlePatterns: Array<[RegExp, string]> = [
+    [/^Changes after release · (.+)$/, 'Изменения после релиза · $1'],
+    [/^New discoveries · (.+)$/, 'Новые обнаружения · $1'],
+    [/^New discovery · (.+)$/, 'Новое обнаружение · $1'],
+    [/^Application Activity · (.+)$/, 'Активность приложения · $1'],
+    [/^Observation history · (.+)$/, 'История наблюдений · $1'],
     [/^Runtime Diff · (.+)$/, 'Различия среды выполнения · $1'],
     [/^Runtime Groups · (.+)$/, 'Группы среды выполнения · $1'],
     [/^Runtime Group · (.+)$/, 'Группа среды выполнения · $1'],
@@ -527,6 +716,16 @@ function localize(value: string, locale: Locale): string {
   for (const [pattern, replacement] of titlePatterns)
     if (pattern.test(value)) return value.replace(pattern, replacement)
   return value
+}
+
+function russianCountNoun(value: string, one: string, few: string, many: string): string {
+  const count = Number(value.replace(/[^\d]/g, ''))
+  const mod100 = count % 100
+  if (mod100 >= 11 && mod100 <= 14) return many
+  const mod10 = count % 10
+  if (mod10 === 1) return one
+  if (mod10 >= 2 && mod10 <= 4) return few
+  return many
 }
 
 export function localizeDocument(locale: Locale, root: ParentNode = document) {
