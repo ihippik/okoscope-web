@@ -15,7 +15,23 @@ import type {
   RecoveryOperationPage,
   RecoveryCommandType,
   WebhookDestination,
+  ApplicationAttentionSummary,
+  AttentionWindowKind,
+  OrganizationAttentionSummary,
 } from './types'
+
+export const ORGANIZATION_ATTENTION_LIMIT = 20
+export const CHANGED_APPLICATION_LIMIT = 5
+export const APPLICATION_ATTENTION_LIMIT = 20
+export const ATTENTION_RECOMMENDATION_LIMIT = 5
+export const ATTENTION_LARGEST_CHANGE_LIMIT = 5
+export const ATTENTION_STALE_TIME = 30_000
+
+const attentionParams = (values: Record<string, string | number>) => {
+  const params = new URLSearchParams()
+  Object.entries(values).forEach(([key, value]) => params.set(key, String(value)))
+  return params.toString()
+}
 
 const withCursor = (path: string, cursor: string | null) =>
   `${path}?limit=50${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`
@@ -23,11 +39,15 @@ const withCursor = (path: string, cursor: string | null) =>
 export const queryKeys = {
   buildInfo: ['build-info'] as const,
   organization: ['organization'] as const,
+  organizationAttention: (window: AttentionWindowKind) =>
+    ['organization', 'attention', { window }] as const,
   projects: ['projects'] as const,
   project: (id: string) => ['projects', id] as const,
   applications: (projectId: string) => ['projects', projectId, 'applications'] as const,
   application: (projectId: string, applicationId: string) =>
     ['projects', projectId, 'applications', applicationId] as const,
+  applicationAttention: (projectId: string, applicationId: string, window: AttentionWindowKind) =>
+    ['projects', projectId, 'applications', applicationId, 'attention', { window }] as const,
   applicationWorkers: (projectId: string, applicationId: string) =>
     ['projects', projectId, 'applications', applicationId, 'workers'] as const,
   notificationHealth: (projectId: string) =>
@@ -62,6 +82,22 @@ export const organizationOptions = (api: ApiClient) =>
     queryKey: queryKeys.organization,
     queryFn: () => api.get<Organization>('/api/v1/organization', { protected: true }),
   })
+export const organizationAttentionOptions = (api: ApiClient, window: AttentionWindowKind) =>
+  queryOptions({
+    queryKey: queryKeys.organizationAttention(window),
+    queryFn: () =>
+      api.get<OrganizationAttentionSummary>(
+        `/api/v1/attention-summary?${attentionParams({
+          window,
+          limit: ORGANIZATION_ATTENTION_LIMIT,
+          changed_application_limit: CHANGED_APPLICATION_LIMIT,
+          recommendation_limit: ATTENTION_RECOMMENDATION_LIMIT,
+        })}`,
+        { protected: true },
+      ),
+    staleTime: ATTENTION_STALE_TIME,
+    placeholderData: (previous) => previous,
+  })
 export const projectOptions = (api: ApiClient, id: string) =>
   queryOptions({
     queryKey: queryKeys.project(id),
@@ -76,6 +112,29 @@ export const applicationOptions = (api: ApiClient, projectId: string, applicatio
         `/api/v1/projects/${encodeURIComponent(projectId)}/applications/${encodeURIComponent(applicationId)}`,
         { protected: true },
       ),
+  })
+export const applicationAttentionOptions = (
+  api: ApiClient,
+  projectId: string,
+  applicationId: string,
+  window: AttentionWindowKind,
+) =>
+  queryOptions({
+    queryKey: queryKeys.applicationAttention(projectId, applicationId, window),
+    queryFn: () =>
+      api.get<ApplicationAttentionSummary>(
+        `/api/v1/projects/${encodeURIComponent(projectId)}/applications/${encodeURIComponent(applicationId)}/attention-summary?${attentionParams(
+          {
+            window,
+            limit: APPLICATION_ATTENTION_LIMIT,
+            largest_change_limit: ATTENTION_LARGEST_CHANGE_LIMIT,
+            recommendation_limit: ATTENTION_RECOMMENDATION_LIMIT,
+          },
+        )}`,
+        { protected: true },
+      ),
+    staleTime: ATTENTION_STALE_TIME,
+    placeholderData: (previous) => previous,
   })
 export const applicationWorkersOptions = (
   api: ApiClient,

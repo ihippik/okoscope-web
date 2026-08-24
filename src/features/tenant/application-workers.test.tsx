@@ -6,6 +6,7 @@ import type { ApiClient } from '../../shared/api/client'
 import { ApiProvider } from '../../shared/api/context'
 import { LocalizationProvider } from '../../shared/i18n'
 import { ApplicationWorkers } from './application-workers'
+import { isWorkerInactive } from './application-workers'
 
 const worker = (overrides: Record<string, unknown> = {}) => ({
   agent_id: 'agent-1',
@@ -17,7 +18,7 @@ const worker = (overrides: Record<string, unknown> = {}) => ({
   kernel_release: '6.9.2',
   first_observed_at: '2026-08-20T10:00:00Z',
   last_observed_at: '2026-08-22T09:30:00Z',
-  agent_last_seen_at: '2026-08-22T09:30:12Z',
+  agent_last_seen_at: new Date().toISOString(),
   ...overrides,
 })
 
@@ -36,6 +37,39 @@ function renderWorkers(get: ApiClient['get'], locale: 'en' | 'ru' = 'en') {
 }
 
 describe('ApplicationWorkers', () => {
+  it('moves workers last seen more than 15 minutes ago into a collapsed inactive section', async () => {
+    const now = Date.parse('2026-08-22T10:00:00Z')
+    vi.spyOn(Date, 'now').mockReturnValue(now)
+    renderWorkers(
+      vi.fn().mockResolvedValue({
+        items: [
+          worker({ agent_last_seen_at: '2026-08-22T09:45:00Z' }),
+          worker({
+            agent_id: 'agent-2',
+            node_name: 'inactive-worker',
+            agent_last_seen_at: '2026-08-22T09:44:59Z',
+          }),
+        ],
+        next_cursor: null,
+      }),
+    )
+
+    const summary = await screen.findByText('Inactive (1)')
+    expect(summary.closest('details')).not.toHaveAttribute('open')
+    expect(screen.getByText('worker-amd64-01').closest('details')).toBeNull()
+    expect(screen.getByText('inactive-worker').closest('details')).toBe(summary.closest('details'))
+    vi.restoreAllMocks()
+  })
+
+  it('treats only valid agent signals strictly older than 15 minutes as inactive', () => {
+    const now = Date.parse('2026-08-22T10:00:00Z')
+    expect(isWorkerInactive(worker({ agent_last_seen_at: '2026-08-22T09:45:00Z' }), now)).toBe(
+      false,
+    )
+    expect(isWorkerInactive(worker({ agent_last_seen_at: '2026-08-22T09:44:59Z' }), now)).toBe(true)
+    expect(isWorkerInactive(worker({ agent_last_seen_at: 'invalid' }), now)).toBe(false)
+  })
+
   it('renders heterogeneous and unavailable platform values as inert text', async () => {
     renderWorkers(
       vi.fn().mockResolvedValue({

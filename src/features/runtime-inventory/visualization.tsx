@@ -2,9 +2,21 @@ import type { InventoryDistribution, InventoryKind, InventorySummary } from '../
 import { Card } from '../../shared/ui/card'
 import { HorizontalBars } from '../../shared/ui/horizontal-bars'
 import { formatCount } from '../tenant/format'
-import { getActivityPresentation } from '../observability/presentation'
-import { formatEndpoint } from '../observability/presentation'
-import { inventoryKinds } from './components'
+import {
+  formatEndpoint,
+  getActivityPresentation,
+  getEventKindLabel,
+} from '../observability/presentation'
+import {
+  inventoryKinds,
+  isInventoryDestination,
+  isInventoryDomain,
+  isInventoryFileActivity,
+  isInventoryInboundEndpoint,
+  isInventoryLifecycle,
+  isInventoryProcess,
+  isInventorySyscall,
+} from './components'
 import { useLocalization } from '../../shared/i18n'
 import { legacyRussian } from '../../shared/i18n/legacy'
 
@@ -12,18 +24,21 @@ export function inventoryIdentityText(
   kind: InventoryKind,
   value: InventoryDistribution['entries'][number]['semantic_summary'],
 ) {
-  if (kind === 'process' && 'executable' in value) return value.executable
-  if (kind === 'destination' && 'destination_address' in value)
+  if (kind === 'process' && isInventoryProcess(value)) return value.executable
+  if (kind === 'destination' && isInventoryDestination(value))
     return `${value.process_command} → ${value.destination_address}:${value.destination_port} (${value.address_family})`
-  if (kind === 'domain' && 'name' in value)
+  if (kind === 'domain' && isInventoryDomain(value))
     return `${value.process_command} → ${value.name} (${value.query_type})`
-  if (kind === 'syscall' && 'syscall' in value) return `${value.process_command} → ${value.syscall}`
-  if (kind === 'inbound_endpoint' && 'local_address' in value)
+  if (kind === 'syscall' && isInventorySyscall(value))
+    return `${value.process_command} → ${value.syscall}`
+  if (kind === 'inbound_endpoint' && isInventoryInboundEndpoint(value))
     return `${value.transport.toUpperCase()} ${value.address_family.toUpperCase()} ${formatEndpoint(value.address_family, value.local_address, value.local_port)}`
-  if (kind === 'file_activity' && 'operation' in value && 'path' in value)
+  if (kind === 'file_activity' && isInventoryFileActivity(value))
     return value.operation === 'rename' && value.new_path
       ? `${value.process_command} · rename · ${value.path} → ${value.new_path}`
       : `${value.process_command} · ${value.operation} · ${value.path}`
+  if (kind === 'lifecycle' && isInventoryLifecycle(value))
+    return `${getEventKindLabel(value.event_kind)} · ${value.evidence_source}`
   return 'Unsupported identity'
 }
 
@@ -40,7 +55,7 @@ export function InventoryKindDistribution({
   const localized = (value: string) => (locale === 'ru' ? (legacyRussian[value] ?? value) : value)
   const counts = new Map(summary.kinds.map((entry) => [entry.kind, entry]))
   return (
-    <Card role="region" aria-label="Application activity summary">
+    <Card role="region" aria-label="Application activity summary" className="h-full">
       <div className="mb-4">
         <h2 className="text-xl font-semibold">Observed activity</h2>
         <p className="mt-1 text-sm text-slate-400">
@@ -102,7 +117,7 @@ export function TopBehaviorDistribution({
       onSelect: () => onIdentity(undefined),
     })
   return (
-    <Card>
+    <Card className="h-full">
       <h2 className="text-xl font-semibold">Most observed {copy.behaviorLabel.toLowerCase()}</h2>
       <p className="mt-1 text-sm text-slate-400">
         Share of {formatCount(distribution.total_occurrence_count)} matching recorded observations

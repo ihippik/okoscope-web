@@ -34,7 +34,11 @@ test('renders tenant, runtime, and notification surfaces fully in Russian', asyn
   await expect(page.getByRole('link', { name: /Новые обнаружения/ })).toBeVisible()
   await expect(page.getByRole('link', { name: /Релизы и изменения/ })).toBeVisible()
   await expect(page.getByRole('link', { name: /Активность приложения/ })).toBeVisible()
-  await expect(page.getByRole('button', { name: /Рекомендации/ })).toBeDisabled()
+  await expect(page.getByRole('link', { name: /Требует внимания/ })).toBeVisible()
+  await page.getByRole('link', { name: /Требует внимания/ }).click()
+  await expect(page.getByRole('heading', { name: 'Требует внимания' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Рекомендации для разбора' })).toBeVisible()
+  await expect(page.getByRole('link', { name: /Разобрать новые обнаружения/ })).toBeVisible()
   await expectNoEnglishUi()
 
   await openRussian(`/projects/${project.id}/applications/${application.id}/runtime-groups`)
@@ -104,8 +108,8 @@ test('navigates Organization → Projects → Applications and supports a deep l
   const { project, application } = await mockApi(page)
   await page.goto('/')
   await authenticate(page)
-  await expect(page.getByRole('heading', { name: 'Acme' })).toBeVisible()
-  await page.getByRole('link', { name: 'View projects' }).click()
+  await expect(page.getByRole('heading', { name: 'Requires attention' })).toBeVisible()
+  await page.getByRole('link', { name: 'Browse Projects' }).first().click()
   await expect(page.getByRole('heading', { name: 'Projects', level: 1 })).toBeVisible()
   await page.getByRole('link', { name: /Platform/ }).click()
   await expect(page.getByRole('heading', { name: 'Applications' })).toBeVisible()
@@ -139,10 +143,28 @@ test('credential flow and primary navigation have no detectable accessibility vi
 }) => {
   await mockApi(page)
   await page.goto('/')
+  await expect(page.getByLabel('Bearer credential')).toBeVisible()
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   await authenticate(page)
-  await expect(page.getByRole('heading', { name: 'Acme' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Requires attention' })).toBeVisible()
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+})
+
+test('uses a URL-backed attention window and follows typed investigation actions', async ({
+  page,
+}) => {
+  const { group } = await mockApi(page)
+  await page.setViewportSize({ width: 375, height: 812 })
+  await page.goto('/?window=7d')
+  await authenticate(page)
+  await expect(page.getByLabel('Attention window')).toHaveValue('7d')
+  await page.getByLabel('Attention window').selectOption('24h')
+  await expect(page).toHaveURL('/?window=24h')
+  await page.getByRole('link', { name: 'Review new discoveries', exact: true }).click()
+  await expect(page).toHaveURL(new RegExp(`/runtime-groups/${group.id}`))
+  await page.goBack()
+  await expect(page.getByLabel('Attention window')).toHaveValue('24h')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375)
 })
 
 test('blocks an incompatible backend with diagnostics', async ({ page }) => {

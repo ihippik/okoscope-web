@@ -65,6 +65,12 @@ export const legacyRussian: Record<string, string> = {
   Connections: 'Подключения',
   'Outbound connections': 'Исходящие соединения',
   'File Activity': 'Файловая активность',
+  Lifecycle: 'Жизненный цикл',
+  'Lifecycle event': 'Событие жизненного цикла',
+  'Lifecycle events': 'События жизненного цикла',
+  'lifecycle observations': 'наблюдений жизненного цикла',
+  'See process launches, lifecycle events, network activity, domains, and file operations observed for this application. Observations describe recorded activity, not configured intent, cause, or risk.':
+    'Просматривайте запуски процессов, события жизненного цикла, сетевую активность, домены и файловые операции приложения. Наблюдения описывают зафиксированную активность, а не заданное поведение, причину или риск.',
   'File activity summary': 'Сводка файловой активности',
   'File activity occurrence': 'Событие файловой активности',
   'Program, command, operation, path, address, domain, or system call':
@@ -94,6 +100,10 @@ export const legacyRussian: Record<string, string> = {
   'View changes': 'Посмотреть изменения',
   'View observation history': 'Открыть историю наблюдений',
   'Process launch': 'Запуск процесса',
+  'Process terminated': 'Процесс завершён',
+  'Container terminated': 'Контейнер завершён',
+  'Container restarted': 'Контейнер перезапущен',
+  'Restart loop observed': 'Обнаружен цикл перезапусков',
   Connection: 'Подключение',
   'Outbound connection': 'Исходящее соединение',
   Local: 'Локальный',

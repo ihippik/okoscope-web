@@ -12,7 +12,19 @@ const classificationLabel = {
 
 function behaviorText(entry: RuntimeDiffSummary['largest_changes'][number]) {
   const value = entry.semantic_summary
-  if ('executable' in value) return value.executable
+  if ('evidence_source' in value) {
+    if (value.evidence_source === 'kernel' && 'termination' in value) {
+      const termination = value.termination
+      return termination.type === 'exited'
+        ? `Process exited with status ${termination.status}`
+        : `Process terminated by ${termination.signal_name} (${termination.signal})`
+    }
+    if (value.evidence_source === 'derived' && 'observed_restart_count' in value)
+      return `${value.container_name} · ${value.observed_restart_count} restarts in bounded window`
+    if ('reason' in value) return `${value.container_name} · ${String(value.reason)}`
+    if ('container_name' in value) return `${String(value.container_name)} · container restart`
+  }
+  if ('executable' in value) return String(value.executable)
   if ('destination_address' in value)
     return `${value.process_command} → ${value.destination_address}:${value.destination_port}`
   if ('name' in value) return `${value.process_command} → ${value.name} (${value.query_type})`

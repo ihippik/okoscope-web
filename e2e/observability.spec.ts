@@ -113,6 +113,159 @@ test('restores all first-seen filters and cursor through detail navigation', asy
   await expect(page).toHaveURL(/first_seen_from=/)
 })
 
+test('investigates a restart loop from Requires attention with source-qualified evidence', async ({
+  page,
+}) => {
+  const { project, application, group } = await mockApi(page)
+  const restartGroup = {
+    ...group,
+    id: '00000000-0000-4000-8000-000000000099',
+    event_kind: 'container.restart_loop',
+    semantic_summary: {
+      evidence_source: 'derived',
+      projection_version: 1,
+      threshold: 3,
+      window_started_at: '2026-08-17T11:50:00Z',
+      window_ended_at: '2026-08-17T12:00:00Z',
+      observed_restart_count: 4,
+      container_name: 'gateway',
+      latest_waiting_reason: 'CrashLoopBackOff',
+    },
+  }
+  const loopOccurrence = {
+    id: '00000000-0000-4000-8000-000000000098',
+    event_id: '00000000-0000-4000-8000-000000000097',
+    observed_at: '2026-08-17T12:00:00Z',
+    received_at: '2026-08-17T12:00:05Z',
+    node_name: 'node-1',
+    namespace: 'production',
+    pod_name: 'gateway-abc',
+    container_name: 'gateway',
+    process_command: '',
+    event_kind: 'container.restart_loop',
+    payload: { type: 'ContainerRestartLoop', data: restartGroup.semantic_summary },
+    correlation: { status: 'qualified', candidate_count: 1, related_event_ids: ['kernel-exit'] },
+    related_evidence: [
+      {
+        id: 'kernel-exit',
+        event_id: 'kernel-event',
+        observed_at: '2026-08-17T11:59:58Z',
+        received_at: '2026-08-17T12:00:01Z',
+        event_kind: 'process.exit',
+        source: 'kernel',
+        payload: {
+          type: 'ProcessExit',
+          data: {
+            source: 'kernel',
+            raw_wait_status: 9,
+            termination: {
+              type: 'signaled',
+              signal: 9,
+              signal_name: 'SIGKILL',
+              core_dump_flag: false,
+              conventional_exit_code: 137,
+            },
+            correlation: { status: 'unresolved', reason: 'before_observation' },
+          },
+        },
+      },
+    ],
+    release_id: null,
+    release_version: null,
+  }
+  await page.route(
+    `**/api/v1/projects/${project.id}/applications/${application.id}/attention-summary**`,
+    (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          generated_at: '2026-08-17T12:00:00Z',
+          window: { kind: '24h', from: '2026-08-16T12:00:00Z', to: '2026-08-17T12:00:00Z' },
+          project: { id: project.id, name: project.name, slug: project.slug },
+          application: { id: application.id, name: application.name, slug: application.slug },
+          totals: {
+            new_discoveries: 0,
+            open_discoveries: 1,
+            acknowledged_discoveries: 0,
+            new_runtime_items: 0,
+            disappeared_runtime_items: 0,
+            unchanged_runtime_items: 0,
+            total_runtime_items: 0,
+          },
+          release_comparison: null,
+          priority_items: [
+            {
+              id: 'restart-loop',
+              kind: 'container_restart_loop',
+              priority: 'normal',
+              reason_code: 'container_restart_loop_observed',
+              facts: {
+                reason_count: 1,
+                restart_loop: {
+                  projection_version: 1,
+                  threshold: 3,
+                  observed_restart_count: 4,
+                  window_started_at: '2026-08-17T11:50:00Z',
+                  window_ended_at: '2026-08-17T12:00:00Z',
+                  container_name: 'gateway',
+                },
+              },
+              occurred_at: '2026-08-17T12:00:00Z',
+              project: { id: project.id, name: project.name, slug: project.slug },
+              application: { id: application.id, name: application.name, slug: application.slug },
+              resource: {
+                type: 'runtime_group',
+                project_id: project.id,
+                application_id: application.id,
+                runtime_group_id: restartGroup.id,
+              },
+            },
+          ],
+          recommendations: [],
+        }),
+      }),
+  )
+  await page.route(`**/api/v1/runtime-groups/${restartGroup.id}`, (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...restartGroup,
+        representative_event: loopOccurrence,
+        notification: {
+          state: 'not_configured',
+          delivery_count: 0,
+          succeeded_count: 0,
+          failed_count: 0,
+        },
+      }),
+    }),
+  )
+  await page.route(`**/api/v1/runtime-groups/${restartGroup.id}/occurrences**`, (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        items: [loopOccurrence],
+        next_cursor: null,
+        ordering: 'received_at_desc_observed_at_desc_id_desc',
+      }),
+    }),
+  )
+  await page.goto(`/projects/${project.id}/applications/${application.id}/attention`)
+  await authenticate(page)
+  await expect(
+    page.getByText('gateway restarted 4 times in the bounded investigation window.'),
+  ).toBeVisible()
+  await page.getByRole('link', { name: 'Review' }).click()
+  await expect(page.getByRole('heading', { name: 'Restart loop observed' })).toBeVisible()
+  await expect(page.getByText('Derived finding').first()).toBeVisible()
+  await page
+    .getByRole('region', { name: 'Observation history' })
+    .getByText('Technical details')
+    .click()
+  await expect(page.getByLabel(/Kernel evidence\. Observed by/).first()).toBeVisible()
+  await expect(page.getByText(/cause, including OOM, are unknown/)).toBeVisible()
+})
+
 test('withholds runtime group data on route ownership mismatch', async ({ page }) => {
   const { project, application, group } = await mockApi(page)
   await page.route(`**/api/v1/runtime-groups/${group.id}`, (route) =>

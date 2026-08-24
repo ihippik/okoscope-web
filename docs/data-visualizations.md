@@ -2,6 +2,18 @@
 
 Okoscope visualizes recorded runtime observations to help operators compare activity. A percentage is never a duration, byte volume, configured intent, prevalence across time, anomaly score, or risk score.
 
+## Process termination and restart evidence
+
+Runtime discoveries keep evidence authority visible throughout the list, detail, and bounded occurrence timeline:
+
+- **Kernel evidence** reports native normal exit status or terminating signal. A displayed `128 + signal` value is a derived shell convention; `SIGKILL` or conventional code 137 alone does not establish OOM.
+- **Kubernetes evidence** reports container runtime termination reason/exit code, restart-count transitions, and waiting state. `CrashLoopBackOff` is a waiting/backoff state rather than a termination cause.
+- **Derived finding** reports the server's versioned bounded restart-loop projection with its threshold, count, and window.
+
+Qualified correlation places source records together without merging their claims. Ambiguous correlation does not select a candidate. Related evidence is bounded by the API, and occurrence pages remain in the declared `received_at DESC, observed_at DESC, id DESC` order rather than being reordered across cursor pages.
+
+The “Requires attention” views show restart loops only when the server returns a typed attention item. The browser does not promote isolated exits, restarts, SIGKILL, 137, `OOMKilled`, or `CrashLoopBackOff` into severity or a client-derived warning.
+
 ## Denominators
 
 - Application activity kind share: the kind's `occurrence_count` divided by the complete filtered Runtime Inventory summary `occurrence_count`.

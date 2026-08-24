@@ -94,4 +94,20 @@ describe('localization', () => {
     expect(screen.getByText('Прочие наблюдаемые DNS-запрос')).toBeVisible()
     expect(screen.getByRole('region', { name: 'Наиболее наблюдаемые DNS-запрос' })).toBeVisible()
   })
+  it('translates termination and restart event labels through the legacy dictionary', async () => {
+    render(
+      <LocalizationProvider initialLocale="ru">
+        <div>
+          <a href="/process-exit">Process terminated</a>
+          <span>Container terminated</span>
+          <span>Container restarted</span>
+          <span>Restart loop observed</span>
+        </div>
+      </LocalizationProvider>,
+    )
+    expect(await screen.findByRole('link', { name: 'Процесс завершён' })).toBeVisible()
+    expect(screen.getByText('Контейнер завершён')).toBeVisible()
+    expect(screen.getByText('Контейнер перезапущен')).toBeVisible()
+    expect(screen.getByText('Обнаружен цикл перезапусков')).toBeVisible()
+  })
 })

@@ -137,6 +137,7 @@ describe('runtime inventory safe presentation', () => {
       'domain',
       'syscall',
       'file_activity',
+      'lifecycle',
     ])
   })
 
@@ -163,6 +164,24 @@ describe('runtime inventory safe presentation', () => {
       kind: 'inbound_endpoint',
       search: '8080',
     })
+  })
+
+  it('accepts lifecycle activity and renders its source-qualified identity', () => {
+    expect(parseInventorySearch({ kind: 'lifecycle' })).toEqual({ kind: 'lifecycle' })
+    render(
+      <InventoryIdentity
+        item={{
+          ...contractFixture.inventoryItemDetail,
+          inventory_kind: 'lifecycle',
+          semantic_summary: {
+            event_kind: 'container.terminated',
+            evidence_source: 'kubernetes',
+          },
+        }}
+      />,
+    )
+    expect(screen.getByText('Container terminated')).toBeVisible()
+    expect(screen.getByText('Kubernetes evidence')).toBeVisible()
   })
 
   it('accepts file activity search and operation filters', () => {

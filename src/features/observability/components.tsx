@@ -18,6 +18,19 @@ import type {
   NetworkListenPayload,
   NetworkDnsQueryPayload,
   NetworkDnsResponsePayload,
+  NetworkDnsQuerySemanticSummary,
+  NetworkDnsResponseSemanticSummary,
+  ProcessExitSemanticSummary,
+  ProcessTermination,
+  ContainerTerminationSemanticSummary,
+  ContainerRestartSemanticSummary,
+  RestartLoopSemanticSummary,
+  ProcessExitPayload,
+  ContainerTerminationPayload,
+  ContainerRestartPayload,
+  ContainerRestartLoopPayload,
+  EvidenceSource,
+  RelatedEvidence,
   Release,
   RuntimeDiffEntry,
   RuntimeGroup,
@@ -27,11 +40,15 @@ import { Button } from '../../shared/ui/button'
 import { Card } from '../../shared/ui/card'
 import { ErrorState } from '../../shared/ui/error-state'
 import { formatCount, formatTimestamp } from '../tenant/format'
+import { useLocalization, type MessageKey } from '../../shared/i18n'
 import {
   directionLabel,
   formatEndpoint,
   getEventKindLabel,
   getWildcardEndpointLabel,
+  correlationPresentation,
+  evidencePresentation,
+  terminationText,
 } from './presentation'
 
 export const RECENT_WINDOW_MS = 24 * 60 * 60 * 1000
@@ -214,14 +231,91 @@ export function JsonDetailsViewer({
 const isNetworkSummary = (
   value: RuntimeGroup['semantic_summary'],
 ): value is NetworkConnectSemanticSummary => 'destination_address' in value
-const isDnsSummary = (value: RuntimeGroup['semantic_summary']) =>
-  'query_type' in value && 'name' in value
+const isDnsSummary = (
+  value: RuntimeGroup['semantic_summary'],
+): value is NetworkDnsQuerySemanticSummary | NetworkDnsResponseSemanticSummary =>
+  'query_type' in value && 'name' in value && 'process_command' in value
 const isInboundSummary = (
   value: RuntimeGroup['semantic_summary'],
 ): value is InboundNetworkSemanticSummary => 'local_address' in value && 'local_port' in value
 const isFileActivitySummary = (
   value: RuntimeGroup['semantic_summary'],
 ): value is FileActivitySemanticSummary => 'operation' in value && 'path' in value
+const isProcessExitSummary = (
+  value: RuntimeGroup['semantic_summary'],
+): value is ProcessExitSemanticSummary =>
+  'evidence_source' in value && value.evidence_source === 'kernel' && 'termination' in value
+const isContainerTerminationSummary = (
+  value: RuntimeGroup['semantic_summary'],
+): value is ContainerTerminationSemanticSummary =>
+  'evidence_source' in value &&
+  value.evidence_source === 'kubernetes' &&
+  'reason' in value &&
+  'exit_code' in value
+const isContainerRestartSummary = (
+  value: RuntimeGroup['semantic_summary'],
+): value is ContainerRestartSemanticSummary =>
+  'evidence_source' in value && value.evidence_source === 'kubernetes' && !('reason' in value)
+const isRestartLoopSummary = (
+  value: RuntimeGroup['semantic_summary'],
+): value is RestartLoopSemanticSummary =>
+  'evidence_source' in value && value.evidence_source === 'derived'
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null
+
+const isProcessTermination = (value: unknown): value is ProcessTermination => {
+  if (!isRecord(value)) return false
+  if (value.type === 'exited') return typeof value.status === 'number'
+  return (
+    value.type === 'signaled' &&
+    typeof value.signal === 'number' &&
+    typeof value.signal_name === 'string' &&
+    typeof value.core_dump_flag === 'boolean'
+  )
+}
+
+const normalizeTerminationSummary = (
+  value: RuntimeGroup['semantic_summary'],
+):
+  | ProcessExitSemanticSummary
+  | ContainerTerminationSemanticSummary
+  | ContainerRestartSemanticSummary
+  | RestartLoopSemanticSummary
+  | undefined => {
+  if (
+    isProcessExitSummary(value) ||
+    isContainerTerminationSummary(value) ||
+    isContainerRestartSummary(value) ||
+    isRestartLoopSummary(value)
+  )
+    return value
+  const source = 'source' in value ? value.source : undefined
+  if (source === 'kernel' && 'termination' in value && isProcessTermination(value.termination))
+    return { evidence_source: 'kernel', termination: value.termination }
+  if (
+    source === 'kubernetes' &&
+    'container_name' in value &&
+    typeof value.container_name === 'string' &&
+    'reason' in value &&
+    typeof value.reason === 'string' &&
+    'exit_code' in value &&
+    typeof value.exit_code === 'number'
+  )
+    return {
+      evidence_source: 'kubernetes',
+      container_name: value.container_name,
+      reason: value.reason,
+      exit_code: value.exit_code,
+    }
+  if (
+    source === 'kubernetes' &&
+    'container_name' in value &&
+    typeof value.container_name === 'string'
+  )
+    return { evidence_source: 'kubernetes', container_name: value.container_name }
+  return undefined
+}
 
 export const FILE_PATH_HELP =
   'Path reported by the process. It may contain symlinks and is not a canonical filesystem path.'
@@ -447,7 +541,114 @@ function DnsContextView({ context }: { context: DnsContext }) {
   )
 }
 
+export function EvidenceSourceBadge({ source }: { source: EvidenceSource | 'unknown' }) {
+  const copy = evidencePresentation[source]
+  const { t } = useLocalization()
+  const labelKey: Record<EvidenceSource | 'unknown', MessageKey> = {
+    kernel: 'kernelEvidence',
+    kubernetes: 'kubernetesEvidence',
+    derived: 'derivedFinding',
+    unknown: 'unknownEvidence',
+  }
+  const label = t(labelKey[source])
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold ${copy.className}`}
+      title={copy.description}
+      aria-label={`${label}. ${copy.description}`}
+    >
+      {label}
+    </span>
+  )
+}
+
+function TerminationSemanticSummary({
+  value,
+}: {
+  value:
+    | ProcessExitSemanticSummary
+    | ContainerTerminationSemanticSummary
+    | ContainerRestartSemanticSummary
+    | RestartLoopSemanticSummary
+}) {
+  const { t } = useLocalization()
+  if (value.evidence_source === 'kernel') {
+    const copy = terminationText(value.termination, t)
+    return (
+      <div className="rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm">
+        <EvidenceSourceBadge source="kernel" />
+        <p className="mt-3 font-semibold">{copy.primary}</p>
+        {copy.conventional && <p className="mt-1 text-slate-300">{copy.conventional}</p>}
+        {copy.coreFlag && <p className="mt-1 text-slate-400">{copy.coreFlag}</p>}
+        <p className="mt-2 text-xs text-slate-400">{copy.explanation}</p>
+      </div>
+    )
+  }
+  if (value.evidence_source === 'derived')
+    return (
+      <dl className="details rounded-lg border border-dashed border-cyan-800 bg-slate-950 p-3 text-sm">
+        <dt>Evidence</dt>
+        <dd>
+          <EvidenceSourceBadge source="derived" />
+        </dd>
+        <dt>Container</dt>
+        <dd className="font-mono">{value.container_name}</dd>
+        <dt>{t('observedRestarts')}</dt>
+        <dd>
+          {value.observed_restart_count} ({t('thresholdLabel', { count: value.threshold })})
+        </dd>
+        <dt>{t('evidenceWindow')}</dt>
+        <dd>
+          {formatTimestamp(value.window_started_at)} – {formatTimestamp(value.window_ended_at)}
+        </dd>
+        <dt>{t('projectionLabel')}</dt>
+        <dd>{t('projectionVersion', { version: value.projection_version })}</dd>
+        {value.latest_waiting_reason && (
+          <>
+            <dt>{t('waitingState')}</dt>
+            <dd>{value.latest_waiting_reason}</dd>
+          </>
+        )}
+      </dl>
+    )
+  if ('reason' in value)
+    return (
+      <dl className="details rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm">
+        <dt>Evidence</dt>
+        <dd>
+          <EvidenceSourceBadge source="kubernetes" />
+        </dd>
+        <dt>Container</dt>
+        <dd className="font-mono">{value.container_name}</dd>
+        <dt>{t('runtimeReason')}</dt>
+        <dd>{String(value.reason)}</dd>
+        <dt>{t('runtimeExitCode')}</dt>
+        <dd>{String(value.exit_code)}</dd>
+        {value.reason === 'OOMKilled' && (
+          <>
+            <dt className="sr-only">{t('sourceNote')}</dt>
+            <dd className="col-span-2 text-xs text-slate-400">{t('kubernetesOomNote')}</dd>
+          </>
+        )}
+      </dl>
+    )
+  return (
+    <dl className="details rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm">
+      <dt>Evidence</dt>
+      <dd>
+        <EvidenceSourceBadge source="kubernetes" />
+      </dd>
+      <dt>Container</dt>
+      <dd className="font-mono">{value.container_name}</dd>
+      <dt>{t('observationLabel')}</dt>
+      <dd>{t('containerRestartTransition')}</dd>
+    </dl>
+  )
+}
+
 export function SemanticSummary({ value }: { value: RuntimeGroup['semantic_summary'] }) {
+  const termination = normalizeTerminationSummary(value)
+  if (termination) return <TerminationSemanticSummary value={termination} />
   if (isFileActivitySummary(value)) return <FileActivitySummary value={value} />
   if (isDnsSummary(value))
     return (
@@ -682,6 +883,126 @@ function FileOccurrence({
   )
 }
 
+type TerminationOccurrencePayload =
+  | ProcessExitPayload
+  | ContainerTerminationPayload
+  | ContainerRestartPayload
+  | ContainerRestartLoopPayload
+
+function TerminationOccurrence({ payload }: { payload: TerminationOccurrencePayload }) {
+  const { t } = useLocalization()
+  if (payload.type === 'ProcessExit') {
+    const copy = terminationText(payload.data.termination, t)
+    return (
+      <div className="rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm">
+        <EvidenceSourceBadge source="kernel" />
+        <p className="mt-3 font-semibold">{copy.primary}</p>
+        {copy.conventional && <p className="mt-1">{copy.conventional}</p>}
+        {copy.coreFlag && <p className="mt-1 text-slate-400">{copy.coreFlag}</p>}
+        <p className="mt-2 text-xs text-slate-400">{copy.explanation}</p>
+        <p className="mt-2 text-xs text-slate-400">
+          {t('executableCorrelation', {
+            status:
+              payload.data.correlation.status === 'observed'
+                ? 'Observed generation match'
+                : `Unresolved · ${payload.data.correlation.reason}`,
+          })}
+        </p>
+      </div>
+    )
+  }
+  if (payload.type === 'ContainerTermination')
+    return (
+      <dl className="details rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm">
+        <dt>Evidence</dt>
+        <dd>
+          <EvidenceSourceBadge source="kubernetes" />
+        </dd>
+        <dt>{t('runtimeReason')}</dt>
+        <dd>{payload.data.reason}</dd>
+        <dt>{t('runtimeExitCode')}</dt>
+        <dd>{payload.data.exit_code}</dd>
+        {payload.data.reason === 'OOMKilled' && (
+          <>
+            <dt className="sr-only">{t('sourceNote')}</dt>
+            <dd className="col-span-2 text-xs text-slate-400">{t('kubernetesOomDetail')}</dd>
+          </>
+        )}
+      </dl>
+    )
+  if (payload.type === 'ContainerRestart') {
+    const previous = payload.data.restart_count - payload.data.restart_delta
+    return (
+      <dl className="details rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm">
+        <dt>Evidence</dt>
+        <dd>
+          <EvidenceSourceBadge source="kubernetes" />
+        </dd>
+        <dt>{t('restartCount')}</dt>
+        <dd>
+          {payload.data.restart_count} (+{payload.data.restart_delta})
+        </dd>
+        {payload.data.waiting_reason && (
+          <>
+            <dt>{t('waitingState')}</dt>
+            <dd>{payload.data.waiting_reason}</dd>
+          </>
+        )}
+        {payload.data.observation_gap && (
+          <>
+            <dt className="sr-only">{t('observationGap')}</dt>
+            <dd className="col-span-2 text-xs text-slate-400">
+              {t('restartGapDetail', { from: previous, to: payload.data.restart_count })}
+            </dd>
+          </>
+        )}
+        {payload.data.waiting_reason === 'CrashLoopBackOff' && (
+          <>
+            <dt className="sr-only">{t('waitingStateNote')}</dt>
+            <dd className="col-span-2 text-xs text-slate-400">{t('crashLoopBackoffNote')}</dd>
+          </>
+        )}
+      </dl>
+    )
+  }
+  return <TerminationSemanticSummary value={payload.data} />
+}
+
+function RelatedEvidenceList({ evidence }: { evidence: RelatedEvidence[] }) {
+  const { t } = useLocalization()
+  if (!evidence.length) return null
+  return (
+    <section
+      className="mt-4 rounded-lg border border-slate-700 bg-slate-950/60 p-3"
+      aria-label={t('relatedEvidence')}
+    >
+      <h4 className="font-semibold">{t('relatedEvidence')}</h4>
+      <p className="mt-1 text-xs text-slate-400">{t('relatedEvidenceHelp')}</p>
+      <ol className="mt-3 space-y-3">
+        {evidence.map((entry) => (
+          <li key={entry.id} className="border-l-2 border-slate-600 pl-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <EvidenceSourceBadge source={entry.source} />
+              <time className="text-xs text-slate-400" dateTime={entry.observed_at}>
+                {formatTimestamp(entry.observed_at)}
+              </time>
+              <span className="text-sm font-semibold">{getEventKindLabel(entry.event_kind)}</span>
+            </div>
+            {(entry.payload.type === 'ProcessExit' ||
+              entry.payload.type === 'ContainerTermination' ||
+              entry.payload.type === 'ContainerRestart' ||
+              entry.payload.type === 'ContainerRestartLoop') && (
+              <div className="mt-2">
+                <TerminationOccurrence payload={entry.payload} />
+              </div>
+            )}
+          </li>
+        ))}
+      </ol>
+    </section>
+  )
+}
+
 export function RuntimeGroupList({
   groups,
   projectId,
@@ -748,13 +1069,37 @@ export function OccurrenceTimeline({
   occurrences: EventOccurrence[]
   view?: 'grid' | 'list'
 }) {
+  const { t } = useLocalization()
   return (
     <ol data-view={view} className={view === 'grid' ? 'grid gap-4 lg:grid-cols-2' : 'space-y-4'}>
       {occurrences.map((item) => (
-        <li key={item.id}>
+        <li
+          key={item.id}
+          className={view === 'list' ? 'relative border-l-2 border-slate-700 pl-5' : ''}
+        >
+          {view === 'list' && (
+            <span
+              aria-hidden="true"
+              className="absolute -left-[7px] top-6 h-3 w-3 rounded-full border-2 border-slate-950 bg-cyan-400"
+            />
+          )}
           <Card>
-            <p className="font-semibold">{formatTimestamp(item.observed_at)}</p>
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div>
+                <p className="font-semibold">{formatTimestamp(item.observed_at)}</p>
+                <p className="mt-1 text-xs text-slate-400">
+                  {t('receivedAt', { time: formatTimestamp(item.received_at) })}
+                </p>
+              </div>
+              <span className="text-xs text-slate-400">{t('receiveOrdering')}</span>
+            </div>
             <p className="mt-2 text-sm font-semibold">{getEventKindLabel(item.event_kind)}</p>
+            <div className="mt-2 rounded border border-slate-700 p-2 text-xs text-slate-300">
+              <strong>{correlationPresentation(item.correlation).label}</strong>
+              <p className="mt-1 text-slate-400">
+                {correlationPresentation(item.correlation).description}
+              </p>
+            </div>
             <dl className="details mt-3">
               <dt>Node</dt>
               <dd>{item.node_name || 'Unavailable'}</dd>
@@ -788,11 +1133,17 @@ export function OccurrenceTimeline({
                   item.payload.type === 'file.delete' ||
                   item.payload.type === 'file.rename' ? (
                   <FileOccurrence payload={item.payload} />
+                ) : item.payload.type === 'ProcessExit' ||
+                  item.payload.type === 'ContainerTermination' ||
+                  item.payload.type === 'ContainerRestart' ||
+                  item.payload.type === 'ContainerRestartLoop' ? (
+                  <TerminationOccurrence payload={item.payload} />
                 ) : (
                   <JsonDetailsViewer value={item.payload} label="Event payload" />
                 )}
               </div>
             </details>
+            <RelatedEvidenceList evidence={item.related_evidence ?? []} />
           </Card>
         </li>
       ))}

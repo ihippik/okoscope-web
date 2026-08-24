@@ -61,6 +61,7 @@ const occurrence = {
   id: '00000000-0000-4000-8000-000000000007',
   event_id: group.representative_event_id,
   observed_at: '2026-08-17T12:00:00Z',
+  received_at: '2026-08-17T12:00:01Z',
   node_name: 'node-1',
   namespace: 'production',
   pod_name: 'gateway-abc',
@@ -83,6 +84,8 @@ const occurrence = {
       },
     },
   },
+  correlation: { status: 'absent', candidate_count: 0, related_event_ids: [] },
+  related_evidence: [],
   release_id: '00000000-0000-4000-8000-000000000008',
   release_version: 'v2',
 }
@@ -105,6 +108,66 @@ const baselineRelease = {
   created_at: '2026-08-16T11:00:00Z',
 }
 const releases = [targetRelease, baselineRelease]
+const attentionComparison = {
+  target_release: {
+    id: targetRelease.id,
+    version: targetRelease.version,
+    deployed_at: targetRelease.deployed_at,
+  },
+  baseline_release: {
+    id: baselineRelease.id,
+    version: baselineRelease.version,
+    deployed_at: baselineRelease.deployed_at,
+  },
+  new_count: 1,
+  disappeared_count: 0,
+  unchanged_count: 2,
+  total_item_count: 3,
+  absolute_occurrence_delta_sum: 12,
+  max_absolute_occurrence_delta: 12,
+  largest_changes: [
+    {
+      group_id: group.id,
+      classification: 'new',
+      baseline_occurrence_count: 0,
+      target_occurrence_count: 12,
+      occurrence_delta: 12,
+    },
+  ],
+}
+const attentionWindow = { kind: '24h', from: '2026-08-16T12:00:00Z', to: '2026-08-17T12:00:00Z' }
+const attentionItem = {
+  id: `discovery:${group.id}`,
+  kind: 'new_discovery',
+  priority: 'normal',
+  reason_code: 'discovery_first_seen_in_window',
+  facts: { reason_count: 1, occurrence_count: 12 },
+  occurred_at: group.first_seen_at,
+  project: { id: project.id, name: project.name, slug: project.slug },
+  application: { id: application.id, name: application.name, slug: application.slug },
+  resource: {
+    type: 'runtime_group',
+    project_id: project.id,
+    application_id: application.id,
+    runtime_group_id: group.id,
+    event_kind: group.event_kind,
+    semantic_summary: group.semantic_summary,
+    namespace: group.namespace,
+    workload_kind: group.workload_kind,
+    workload_name: group.workload_name,
+  },
+}
+const attentionRecommendation = {
+  id: `review:${group.id}`,
+  kind: 'review_new_discoveries',
+  priority: 'normal',
+  reason_code: 'discovery_first_seen_in_window',
+  facts: { reason_count: 1 },
+  project: attentionItem.project,
+  application: attentionItem.application,
+  resource: attentionItem.resource,
+  created_from_snapshot_at: attentionWindow.to,
+}
 const inventoryItemId = '10000000-0000-4000-8000-000000000001'
 const unsafeInventoryText = "<img src=x onerror=alert('inventory')>"
 const inventoryBase = `/api/v1/projects/${project.id}/applications/${application.id}/runtime-inventory`
@@ -225,6 +288,33 @@ export async function mockApi(page: Page) {
         401,
         'auth-id',
       )
+    if (path === '/api/v1/attention-summary')
+      return json(route, {
+        generated_at: attentionWindow.to,
+        window: {
+          ...attentionWindow,
+          kind: url.searchParams.get('window') === '7d' ? '7d' : '24h',
+        },
+        totals: {
+          new_discoveries: 1,
+          open_discoveries: 1,
+          acknowledged_discoveries: 0,
+          changed_applications: 1,
+          projects_with_notification_problems: 0,
+          failed_notification_deliveries: 0,
+        },
+        priority_items: [attentionItem],
+        changed_applications: [
+          {
+            ...attentionComparison,
+            project: attentionItem.project,
+            application: attentionItem.application,
+            changed_at: targetRelease.deployed_at,
+          },
+        ],
+        notification_problems: [],
+        recommendations: [attentionRecommendation],
+      })
     if (path === '/api/v1/organization') return json(route, organization)
     if (path === '/api/v1/projects') return json(route, { items: [project], next_cursor: null })
     if (path === `/api/v1/projects/${project.id}`) return json(route, project)
@@ -379,6 +469,25 @@ export async function mockApi(page: Page) {
           },
         ],
         next_cursor: null,
+      })
+    if (path === `/api/v1/projects/${project.id}/applications/${application.id}/attention-summary`)
+      return json(route, {
+        generated_at: attentionWindow.to,
+        window: attentionWindow,
+        project: attentionItem.project,
+        application: attentionItem.application,
+        totals: {
+          new_discoveries: 1,
+          open_discoveries: 1,
+          acknowledged_discoveries: 0,
+          new_runtime_items: 1,
+          disappeared_runtime_items: 0,
+          unchanged_runtime_items: 2,
+          total_runtime_items: 3,
+        },
+        release_comparison: attentionComparison,
+        priority_items: [attentionItem],
+        recommendations: [attentionRecommendation],
       })
     if (path === `/api/v1/projects/${project.id}/applications/${application.id}`)
       return json(route, application)
@@ -570,7 +679,11 @@ export async function mockApi(page: Page) {
     if (path === '/api/v1/runtime-groups')
       return json(route, { items: [{ ...group, status: groupStatus }], next_cursor: null })
     if (path === `/api/v1/runtime-groups/${group.id}/occurrences`)
-      return json(route, { items: [occurrence], next_cursor: null })
+      return json(route, {
+        items: [occurrence],
+        next_cursor: null,
+        ordering: 'received_at_desc_observed_at_desc_id_desc',
+      })
     const action = path.match(
       new RegExp(`/api/v1/runtime-groups/${group.id}/(acknowledge|resolve|reopen)$`),
     )?.[1]

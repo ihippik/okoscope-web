@@ -3,27 +3,102 @@ import type { ChangeEvent } from 'react'
 import { formatCount, formatTimestamp } from '../tenant/format'
 import {
   EndpointValue,
+  EvidenceSourceBadge,
   FileActivitySummary,
   JsonDetailsViewer,
   NetworkScopeBadge,
 } from '../observability/components'
 import type {
+  InventoryDestinationIdentity,
+  InventoryDomainIdentity,
   InventoryFacet,
   InventoryFacetPage,
+  InventoryFileActivitySemanticSummary,
   InventoryGroupPage,
+  InventoryInboundEndpointIdentity,
   InventoryItem,
   InventoryKind,
+  InventoryLifecycleSemanticSummary,
   InventoryOccurrencePage,
+  InventoryProcessIdentity,
   InventoryReleaseEvidence,
   InventoryReleasePresencePage,
   InventorySightingPage,
   InventorySummary,
+  InventorySyscallIdentity,
   Release,
 } from '../../shared/api/types'
 import { Button } from '../../shared/ui/button'
 import { Card } from '../../shared/ui/card'
 import type { InventorySearch } from './url-state'
 import { getActivityPresentation, getEventKindLabel } from '../observability/presentation'
+
+type InventorySummaryValue = InventoryItem['semantic_summary']
+
+export const isInventoryProcess = (
+  value: InventorySummaryValue,
+): value is InventoryProcessIdentity =>
+  'executable' in value && typeof value.executable === 'string'
+
+export const isInventoryDestination = (
+  value: InventorySummaryValue,
+): value is InventoryDestinationIdentity =>
+  'process_command' in value &&
+  typeof value.process_command === 'string' &&
+  'destination_address' in value &&
+  typeof value.destination_address === 'string' &&
+  'destination_port' in value &&
+  typeof value.destination_port === 'number' &&
+  'address_family' in value &&
+  (value.address_family === 'ipv4' || value.address_family === 'ipv6')
+
+export const isInventoryDomain = (value: InventorySummaryValue): value is InventoryDomainIdentity =>
+  'process_command' in value &&
+  typeof value.process_command === 'string' &&
+  'name' in value &&
+  typeof value.name === 'string' &&
+  'query_type' in value &&
+  (value.query_type === 'A' || value.query_type === 'AAAA')
+
+export const isInventorySyscall = (
+  value: InventorySummaryValue,
+): value is InventorySyscallIdentity =>
+  'process_command' in value &&
+  typeof value.process_command === 'string' &&
+  'syscall' in value &&
+  typeof value.syscall === 'string'
+
+export const isInventoryInboundEndpoint = (
+  value: InventorySummaryValue,
+): value is InventoryInboundEndpointIdentity =>
+  'transport' in value &&
+  value.transport === 'tcp' &&
+  'address_family' in value &&
+  (value.address_family === 'ipv4' || value.address_family === 'ipv6') &&
+  'local_address' in value &&
+  typeof value.local_address === 'string' &&
+  'local_port' in value &&
+  typeof value.local_port === 'number'
+
+export const isInventoryFileActivity = (
+  value: InventorySummaryValue,
+): value is InventoryFileActivitySemanticSummary =>
+  'operation' in value &&
+  ['create', 'modify', 'delete', 'rename'].includes(String(value.operation)) &&
+  'process_command' in value &&
+  typeof value.process_command === 'string' &&
+  'path' in value &&
+  typeof value.path === 'string'
+
+export const isInventoryLifecycle = (
+  value: InventorySummaryValue,
+): value is InventoryLifecycleSemanticSummary =>
+  'event_kind' in value &&
+  ['process.exit', 'container.terminated', 'container.restart', 'container.restart_loop'].includes(
+    String(value.event_kind),
+  ) &&
+  'evidence_source' in value &&
+  ['kernel', 'kubernetes', 'derived'].includes(String(value.evidence_source))
 
 export const inventoryKinds: { kind: InventoryKind; label: string }[] = [
   { kind: 'process', label: 'Process launches' },
@@ -32,6 +107,7 @@ export const inventoryKinds: { kind: InventoryKind; label: string }[] = [
   { kind: 'domain', label: 'Domains' },
   { kind: 'syscall', label: 'System calls' },
   { kind: 'file_activity', label: 'File Activity' },
+  { kind: 'lifecycle', label: 'Lifecycle' },
 ]
 
 export function InventorySummaryCards({
@@ -76,9 +152,9 @@ export function InventorySummaryCards({
 
 export function InventoryIdentity({ item }: { item: InventoryItem }) {
   const value = item.semantic_summary
-  if (item.inventory_kind === 'process' && 'executable' in value)
+  if (item.inventory_kind === 'process' && isInventoryProcess(value))
     return <span className="break-all font-mono">{value.executable}</span>
-  if (item.inventory_kind === 'destination' && 'destination_address' in value)
+  if (item.inventory_kind === 'destination' && isInventoryDestination(value))
     return (
       <span className="inline-flex flex-wrap items-center gap-2 break-all font-mono">
         <span>
@@ -88,19 +164,19 @@ export function InventoryIdentity({ item }: { item: InventoryItem }) {
         <NetworkScopeBadge address={value.destination_address} />
       </span>
     )
-  if (item.inventory_kind === 'domain' && 'name' in value && 'query_type' in value)
+  if (item.inventory_kind === 'domain' && isInventoryDomain(value))
     return (
       <span className="break-all font-mono">
         {value.process_command} → {value.name} ({value.query_type})
       </span>
     )
-  if (item.inventory_kind === 'syscall' && 'syscall' in value)
+  if (item.inventory_kind === 'syscall' && isInventorySyscall(value))
     return (
       <span className="break-all font-mono">
         {value.process_command} → {value.syscall}
       </span>
     )
-  if (item.inventory_kind === 'inbound_endpoint' && 'local_address' in value)
+  if (item.inventory_kind === 'inbound_endpoint' && isInventoryInboundEndpoint(value))
     return (
       <span className="inline-flex min-w-0 flex-col gap-2">
         <span className="inline-flex flex-wrap items-center gap-2">
@@ -115,8 +191,15 @@ export function InventoryIdentity({ item }: { item: InventoryItem }) {
         <InboundEndpointEvidence value={value} />
       </span>
     )
-  if (item.inventory_kind === 'file_activity' && 'operation' in value && 'path' in value)
+  if (item.inventory_kind === 'file_activity' && isInventoryFileActivity(value))
     return <FileActivitySummary value={value} />
+  if (item.inventory_kind === 'lifecycle' && isInventoryLifecycle(value))
+    return (
+      <span className="inline-flex flex-wrap items-center gap-2">
+        <span>{getEventKindLabel(value.event_kind)}</span>
+        <EvidenceSourceBadge source={value.evidence_source} />
+      </span>
+    )
   return <span className="text-rose-200">Unsupported identity</span>
 }
 

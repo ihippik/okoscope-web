@@ -35,6 +35,7 @@ export function parseInventorySearch(input: Record<string, unknown>): InventoryS
     'syscall',
     'inbound_endpoint',
     'file_activity',
+    'lifecycle',
   ].includes(String(input.kind))
     ? (input.kind as InventoryKind)
     : 'process'

@@ -1,10 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, Outlet, createFileRoute, useLocation } from '@tanstack/react-router'
+import { CircleAlert } from 'lucide-react'
 import { useEffect } from 'react'
 import { formatCount, formatTimestamp } from '../features/tenant/format'
 import { ApplicationWorkers } from '../features/tenant/application-workers'
 import { applicationOptions, projectOptions } from '../shared/api/queries'
 import { useApi } from '../shared/api/context'
+import { useLocalization } from '../shared/i18n'
 import { Card } from '../shared/ui/card'
 import { ErrorState } from '../shared/ui/error-state'
 import { Loading } from '../shared/ui/loading'
@@ -17,6 +19,7 @@ function ApplicationPage() {
   const { projectId, applicationId } = Route.useParams()
   const location = useLocation()
   const api = useApi()
+  const { t } = useLocalization()
   const project = useQuery(projectOptions(api, projectId))
   const application = useQuery(applicationOptions(api, projectId, applicationId))
   useEffect(() => {
@@ -94,16 +97,6 @@ function ApplicationPage() {
               Processes, connections, and domains observed in this application.
             </span>
           </Link>
-          <button
-            type="button"
-            disabled
-            className="cursor-not-allowed rounded-xl border border-slate-800 bg-slate-950/30 p-4 text-left opacity-70"
-          >
-            <strong className="block text-lg">Recommendations</strong>
-            <span className="mt-1 block text-sm text-slate-400">
-              Coming soon: suggested actions based on observed activity.
-            </span>
-          </button>
           <Link
             className="rounded-xl border border-slate-700 p-4 transition hover:border-slate-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
             to="/projects/$projectId/applications/$applicationId/runtime-groups"
@@ -122,6 +115,24 @@ function ApplicationPage() {
             <strong className="block text-lg">Releases and changes</strong>
             <span className="mt-1 block text-sm text-slate-400">
               Compare observed activity between releases.
+            </span>
+          </Link>
+          <Link
+            className="relative overflow-hidden rounded-xl border border-slate-700 p-4 transition hover:border-slate-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
+            to="/projects/$projectId/applications/$applicationId/attention"
+            params={{ projectId, applicationId }}
+          >
+            <span
+              aria-hidden="true"
+              className="absolute right-0 top-0 h-10 w-10 bg-amber-500/20 [clip-path:polygon(0_0,100%_0,100%_100%)]"
+            />
+            <CircleAlert
+              aria-hidden="true"
+              className="absolute right-1.5 top-1.5 h-3.5 w-3.5 text-amber-300"
+            />
+            <strong className="block text-lg">{t('requiresAttention')}</strong>
+            <span className="mt-1 block text-sm text-slate-400">
+              {t('applicationAttentionLinkHelp')}
             </span>
           </Link>
         </div>

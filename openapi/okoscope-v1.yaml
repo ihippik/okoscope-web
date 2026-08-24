@@ -13,6 +13,64 @@ paths:
       operationId: getBuildInfo
       security: []
       responses: { '200': { $ref: '#/components/responses/BuildInfoResponse' } }
+  /api/v1/attention-summary:
+    get:
+      operationId: getOrganizationAttentionSummary
+      description: Returns a bounded, repeatable-read organization triage snapshot. Totals cover the complete tenant-scoped database set; disappeared means no longer observed and is not a security or deletion claim.
+      parameters:
+        - { name: window, in: query, schema: { $ref: '#/components/schemas/AttentionWindowKind' } }
+        - {
+            name: limit,
+            in: query,
+            schema: { type: integer, minimum: 1, maximum: 50, default: 20 },
+          }
+        - {
+            name: changed_application_limit,
+            in: query,
+            schema: { type: integer, minimum: 1, maximum: 10, default: 5 },
+          }
+        - {
+            name: recommendation_limit,
+            in: query,
+            schema: { type: integer, minimum: 1, maximum: 10, default: 5 },
+          }
+      responses:
+        '200': { $ref: '#/components/responses/OrganizationAttentionSummary' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '500': { $ref: '#/components/responses/Error' }
+  /api/v1/projects/{project_id}/applications/{application_id}/attention-summary:
+    parameters:
+      [
+        { $ref: '#/components/parameters/ProjectId' },
+        { $ref: '#/components/parameters/ApplicationId' },
+      ]
+    get:
+      operationId: getApplicationAttentionSummary
+      description: Returns a bounded Application investigation snapshot using the latest comparable release and complete discovery totals.
+      parameters:
+        - { name: window, in: query, schema: { $ref: '#/components/schemas/AttentionWindowKind' } }
+        - {
+            name: limit,
+            in: query,
+            schema: { type: integer, minimum: 1, maximum: 50, default: 20 },
+          }
+        - {
+            name: largest_change_limit,
+            in: query,
+            schema: { type: integer, minimum: 1, maximum: 10, default: 5 },
+          }
+        - {
+            name: recommendation_limit,
+            in: query,
+            schema: { type: integer, minimum: 1, maximum: 10, default: 5 },
+          }
+      responses:
+        '200': { $ref: '#/components/responses/ApplicationAttentionSummary' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '500': { $ref: '#/components/responses/Error' }
   /api/v1/organization:
     get:
       operationId: getCurrentOrganization
@@ -351,7 +409,7 @@ paths:
             required: true,
             schema: { type: string, format: uuid },
           }
-        - { name: event_kind, in: query, schema: { type: string } }
+        - { name: event_kind, in: query, schema: { $ref: '#/components/schemas/RuntimeEventKind' } }
         - {
             name: status,
             in: query,
@@ -657,6 +715,478 @@ components:
   headers:
     RequestId: { schema: { type: string }, description: Correlation identifier for the request. }
   schemas:
+    AttentionWindowKind: { type: string, enum: [24h, 7d], default: 24h }
+    AttentionPriority: { type: string, enum: [urgent, high, normal] }
+    AttentionItemKind:
+      {
+        type: string,
+        enum:
+          [
+            notification_delivery_failing,
+            notification_delivery_backlogged,
+            notification_destination_missing,
+            release_runtime_changed,
+            new_discovery,
+            open_discovery,
+            container_restart_loop,
+          ],
+      }
+    AttentionReasonCode:
+      {
+        type: string,
+        enum:
+          [
+            terminal_deliveries_failed,
+            notification_health_failing,
+            notification_health_backlogged,
+            notification_health_retrying,
+            enabled_destination_missing,
+            release_runtime_changed,
+            discovery_first_seen_in_window,
+            discovery_open,
+            container_restart_loop_observed,
+          ],
+      }
+    AttentionRecommendationKind:
+      {
+        type: string,
+        enum:
+          [
+            review_failed_deliveries,
+            configure_webhook_destination,
+            review_notification_backlog,
+            review_release_changes,
+            review_new_discoveries,
+          ],
+      }
+    AttentionWindow:
+      type: object
+      additionalProperties: false
+      required: [kind, from, to]
+      properties:
+        {
+          kind: { $ref: '#/components/schemas/AttentionWindowKind' },
+          from: { $ref: '#/components/schemas/Timestamp' },
+          to: { $ref: '#/components/schemas/Timestamp' },
+        }
+    AttentionProjectRef:
+      type: object
+      additionalProperties: false
+      required: [id, name, slug]
+      properties:
+        {
+          id: { $ref: '#/components/schemas/Uuid' },
+          name: { type: string },
+          slug: { type: string },
+        }
+    AttentionApplicationRef:
+      type: object
+      additionalProperties: false
+      required: [id, name, slug]
+      properties:
+        {
+          id: { $ref: '#/components/schemas/Uuid' },
+          name: { type: string },
+          slug: { type: string },
+        }
+    AttentionReleaseRef:
+      type: object
+      additionalProperties: false
+      required: [id, version, deployed_at]
+      properties:
+        {
+          id: { $ref: '#/components/schemas/Uuid' },
+          version: { type: string },
+          deployed_at: { $ref: '#/components/schemas/Timestamp' },
+        }
+    AttentionFacts:
+      type: object
+      additionalProperties: false
+      required: [reason_count]
+      properties:
+        reason_count: { type: integer, format: int64, minimum: 0 }
+        new_count: { type: integer, format: int64, minimum: 0 }
+        disappeared_count: { type: integer, format: int64, minimum: 0 }
+        failed_count: { type: integer, format: int64, minimum: 0 }
+        occurrence_count: { type: integer, format: int64, minimum: 0 }
+        restart_loop: { $ref: '#/components/schemas/AttentionRestartLoopFacts' }
+    AttentionRestartLoopFacts:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          projection_version,
+          threshold,
+          observed_restart_count,
+          window_started_at,
+          window_ended_at,
+          container_name,
+        ]
+      properties:
+        projection_version: { type: integer, format: int64, minimum: 1 }
+        threshold: { type: integer, format: int64, minimum: 1 }
+        observed_restart_count: { type: integer, format: int64, minimum: 1 }
+        window_started_at: { $ref: '#/components/schemas/Timestamp' }
+        window_ended_at: { $ref: '#/components/schemas/Timestamp' }
+        container_name: { type: string, minLength: 1, maxLength: 256 }
+    AttentionResourceRef:
+      oneOf:
+        - { $ref: '#/components/schemas/AttentionProjectResourceRef' }
+        - { $ref: '#/components/schemas/AttentionApplicationResourceRef' }
+        - { $ref: '#/components/schemas/AttentionRuntimeGroupResourceRef' }
+        - { $ref: '#/components/schemas/AttentionRuntimeDiffResourceRef' }
+    AttentionProjectResourceRef:
+      type: object
+      additionalProperties: false
+      required: [type, project_id]
+      properties:
+        {
+          type: { type: string, const: project },
+          project_id: { $ref: '#/components/schemas/Uuid' },
+        }
+    AttentionApplicationResourceRef:
+      type: object
+      additionalProperties: false
+      required: [type, project_id, application_id]
+      properties:
+        {
+          type: { type: string, const: application },
+          project_id: { $ref: '#/components/schemas/Uuid' },
+          application_id: { $ref: '#/components/schemas/Uuid' },
+        }
+    AttentionRuntimeGroupResourceRef:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          type,
+          project_id,
+          application_id,
+          runtime_group_id,
+          event_kind,
+          semantic_summary,
+          namespace,
+          workload_kind,
+          workload_name,
+        ]
+      properties:
+        {
+          type: { type: string, const: runtime_group },
+          project_id: { $ref: '#/components/schemas/Uuid' },
+          application_id: { $ref: '#/components/schemas/Uuid' },
+          runtime_group_id: { $ref: '#/components/schemas/Uuid' },
+          event_kind: { type: string },
+          semantic_summary: { $ref: '#/components/schemas/RuntimeEventSemanticSummary' },
+          namespace: { type: string },
+          workload_kind: { type: string },
+          workload_name: { type: string },
+        }
+    AttentionRuntimeDiffResourceRef:
+      type: object
+      additionalProperties: false
+      required: [type, project_id, application_id, target_release_id, baseline_release_id]
+      properties:
+        {
+          type: { type: string, const: runtime_diff },
+          project_id: { $ref: '#/components/schemas/Uuid' },
+          application_id: { $ref: '#/components/schemas/Uuid' },
+          target_release_id: { $ref: '#/components/schemas/Uuid' },
+          baseline_release_id: { $ref: '#/components/schemas/Uuid' },
+        }
+    AttentionPriorityItem:
+      type: object
+      additionalProperties: false
+      required: [id, kind, priority, reason_code, facts, occurred_at, project, resource]
+      properties:
+        id: { type: string }
+        kind: { $ref: '#/components/schemas/AttentionItemKind' }
+        priority: { $ref: '#/components/schemas/AttentionPriority' }
+        reason_code: { $ref: '#/components/schemas/AttentionReasonCode' }
+        facts: { $ref: '#/components/schemas/AttentionFacts' }
+        occurred_at: { $ref: '#/components/schemas/Timestamp' }
+        project: { $ref: '#/components/schemas/AttentionProjectRef' }
+        application: { $ref: '#/components/schemas/AttentionApplicationRef' }
+        resource: { $ref: '#/components/schemas/AttentionResourceRef' }
+    AttentionLargestChange:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          group_id,
+          classification,
+          baseline_occurrence_count,
+          target_occurrence_count,
+          occurrence_delta,
+        ]
+      properties:
+        {
+          group_id: { $ref: '#/components/schemas/Uuid' },
+          classification: { type: string, enum: [new, disappeared, unchanged] },
+          baseline_occurrence_count: { type: integer, format: int64 },
+          target_occurrence_count: { type: integer, format: int64 },
+          occurrence_delta: { type: integer, format: int64 },
+        }
+    AttentionReleaseComparison:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          target_release,
+          baseline_release,
+          new_count,
+          disappeared_count,
+          unchanged_count,
+          total_item_count,
+          absolute_occurrence_delta_sum,
+          max_absolute_occurrence_delta,
+          largest_changes,
+        ]
+      properties:
+        target_release: { $ref: '#/components/schemas/AttentionReleaseRef' }
+        baseline_release:
+          { anyOf: [{ $ref: '#/components/schemas/AttentionReleaseRef' }, { type: 'null' }] }
+        new_count: { type: integer, format: int64, minimum: 0 }
+        disappeared_count:
+          {
+            type: integer,
+            format: int64,
+            minimum: 0,
+            description: Runtime behavior no longer observed in the target release; this does not assert deletion.,
+          }
+        unchanged_count: { type: integer, format: int64, minimum: 0 }
+        total_item_count: { type: integer, format: int64, minimum: 0 }
+        absolute_occurrence_delta_sum: { type: integer, format: int64, minimum: 0 }
+        max_absolute_occurrence_delta: { type: integer, format: int64, minimum: 0 }
+        largest_changes:
+          {
+            type: array,
+            maxItems: 10,
+            items: { $ref: '#/components/schemas/AttentionLargestChange' },
+          }
+    AttentionChangedApplication:
+      allOf:
+        - { $ref: '#/components/schemas/AttentionReleaseComparison' }
+        - type: object
+          required: [project, application, changed_at]
+          properties:
+            {
+              project: { $ref: '#/components/schemas/AttentionProjectRef' },
+              application: { $ref: '#/components/schemas/AttentionApplicationRef' },
+              changed_at: { $ref: '#/components/schemas/Timestamp' },
+            }
+    AttentionNotificationProblem:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          project,
+          state,
+          delivery_enabled,
+          enabled_destination_count,
+          pending_count,
+          due_count,
+          retrying_count,
+          in_flight_count,
+          expired_lease_count,
+          failed_count,
+          oldest_due_age_seconds,
+          observed_at,
+          priority,
+          reason_code,
+        ]
+      properties:
+        project: { $ref: '#/components/schemas/AttentionProjectRef' }
+        state: { type: string, enum: [disabled, idle, backlogged, retrying, failing, draining] }
+        delivery_enabled: { type: boolean }
+        enabled_destination_count: { type: integer, format: int64, minimum: 0 }
+        pending_count: { type: integer, format: int64, minimum: 0 }
+        due_count: { type: integer, format: int64, minimum: 0 }
+        retrying_count: { type: integer, format: int64, minimum: 0 }
+        in_flight_count: { type: integer, format: int64, minimum: 0 }
+        expired_lease_count: { type: integer, format: int64, minimum: 0 }
+        failed_count: { type: integer, format: int64, minimum: 0 }
+        oldest_due_age_seconds: { type: [integer, 'null'], format: int64, minimum: 0 }
+        observed_at: { $ref: '#/components/schemas/Timestamp' }
+        priority: { $ref: '#/components/schemas/AttentionPriority' }
+        reason_code: { $ref: '#/components/schemas/AttentionReasonCode' }
+    AttentionRecommendation:
+      type: object
+      additionalProperties: false
+      required:
+        [id, kind, priority, reason_code, facts, project, resource, created_from_snapshot_at]
+      properties:
+        {
+          id: { type: string },
+          kind: { $ref: '#/components/schemas/AttentionRecommendationKind' },
+          priority: { $ref: '#/components/schemas/AttentionPriority' },
+          reason_code: { $ref: '#/components/schemas/AttentionReasonCode' },
+          facts: { $ref: '#/components/schemas/AttentionFacts' },
+          project: { $ref: '#/components/schemas/AttentionProjectRef' },
+          application: { $ref: '#/components/schemas/AttentionApplicationRef' },
+          resource: { $ref: '#/components/schemas/AttentionResourceRef' },
+          created_from_snapshot_at: { $ref: '#/components/schemas/Timestamp' },
+        }
+    OrganizationAttentionTotals:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          new_discoveries,
+          open_discoveries,
+          acknowledged_discoveries,
+          changed_applications,
+          projects_with_notification_problems,
+          failed_notification_deliveries,
+        ]
+      properties:
+        {
+          new_discoveries: { type: integer, format: int64, minimum: 0 },
+          open_discoveries: { type: integer, format: int64, minimum: 0 },
+          acknowledged_discoveries: { type: integer, format: int64, minimum: 0 },
+          changed_applications: { type: integer, format: int64, minimum: 0 },
+          projects_with_notification_problems: { type: integer, format: int64, minimum: 0 },
+          failed_notification_deliveries: { type: integer, format: int64, minimum: 0 },
+        }
+    OrganizationAttentionSummary:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          generated_at,
+          window,
+          totals,
+          priority_items,
+          changed_applications,
+          notification_problems,
+          recommendations,
+        ]
+      properties:
+        {
+          generated_at: { $ref: '#/components/schemas/Timestamp' },
+          window: { $ref: '#/components/schemas/AttentionWindow' },
+          totals: { $ref: '#/components/schemas/OrganizationAttentionTotals' },
+          priority_items:
+            {
+              type: array,
+              maxItems: 50,
+              items: { $ref: '#/components/schemas/AttentionPriorityItem' },
+            },
+          changed_applications:
+            {
+              type: array,
+              maxItems: 10,
+              items: { $ref: '#/components/schemas/AttentionChangedApplication' },
+            },
+          notification_problems:
+            { type: array, items: { $ref: '#/components/schemas/AttentionNotificationProblem' } },
+          recommendations:
+            {
+              type: array,
+              maxItems: 10,
+              items: { $ref: '#/components/schemas/AttentionRecommendation' },
+            },
+        }
+      example:
+        {
+          generated_at: '2026-08-22T12:00:00Z',
+          window: { kind: 24h, from: '2026-08-21T12:00:00Z', to: '2026-08-22T12:00:00Z' },
+          totals:
+            {
+              new_discoveries: 0,
+              open_discoveries: 0,
+              acknowledged_discoveries: 0,
+              changed_applications: 0,
+              projects_with_notification_problems: 0,
+              failed_notification_deliveries: 0,
+            },
+          priority_items: [],
+          changed_applications: [],
+          notification_problems: [],
+          recommendations: [],
+        }
+    ApplicationAttentionTotals:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          new_discoveries,
+          open_discoveries,
+          acknowledged_discoveries,
+          new_runtime_items,
+          disappeared_runtime_items,
+          unchanged_runtime_items,
+          total_runtime_items,
+        ]
+      properties:
+        {
+          new_discoveries: { type: integer, format: int64, minimum: 0 },
+          open_discoveries: { type: integer, format: int64, minimum: 0 },
+          acknowledged_discoveries: { type: integer, format: int64, minimum: 0 },
+          new_runtime_items: { type: integer, format: int64, minimum: 0 },
+          disappeared_runtime_items: { type: integer, format: int64, minimum: 0 },
+          unchanged_runtime_items: { type: integer, format: int64, minimum: 0 },
+          total_runtime_items: { type: integer, format: int64, minimum: 0 },
+        }
+    ApplicationAttentionSummary:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          generated_at,
+          window,
+          project,
+          application,
+          totals,
+          release_comparison,
+          priority_items,
+          recommendations,
+        ]
+      properties:
+        {
+          generated_at: { $ref: '#/components/schemas/Timestamp' },
+          window: { $ref: '#/components/schemas/AttentionWindow' },
+          project: { $ref: '#/components/schemas/AttentionProjectRef' },
+          application: { $ref: '#/components/schemas/AttentionApplicationRef' },
+          totals: { $ref: '#/components/schemas/ApplicationAttentionTotals' },
+          release_comparison:
+            {
+              anyOf:
+                [{ $ref: '#/components/schemas/AttentionReleaseComparison' }, { type: 'null' }],
+            },
+          priority_items:
+            {
+              type: array,
+              maxItems: 50,
+              items: { $ref: '#/components/schemas/AttentionPriorityItem' },
+            },
+          recommendations:
+            {
+              type: array,
+              maxItems: 10,
+              items: { $ref: '#/components/schemas/AttentionRecommendation' },
+            },
+        }
+      example:
+        {
+          generated_at: '2026-08-22T12:00:00Z',
+          window: { kind: 24h, from: '2026-08-21T12:00:00Z', to: '2026-08-22T12:00:00Z' },
+          project: { id: '00000000-0000-0000-0000-000000000001', name: Commerce, slug: commerce },
+          application:
+            { id: '00000000-0000-0000-0000-000000000002', name: Checkout, slug: checkout },
+          totals:
+            {
+              new_discoveries: 0,
+              open_discoveries: 0,
+              acknowledged_discoveries: 0,
+              new_runtime_items: 0,
+              disappeared_runtime_items: 0,
+              unchanged_runtime_items: 0,
+              total_runtime_items: 0,
+            },
+          release_comparison: null,
+          priority_items: [],
+          recommendations: [],
+        }
     Error:
       type: object
       additionalProperties: false
@@ -673,7 +1203,7 @@ components:
         service_version: { type: string, example: 0.1.0 }
         git_commit: { type: string, example: ac23c0b4d042e8d430ea6880f6b66ed1a9d4580a }
         api_version: { type: string, const: v1 }
-        required_database_migration: { type: integer, format: int64, example: 12 }
+        required_database_migration: { type: integer, format: int64, example: 13 }
     Organization:
       type: object
       additionalProperties: false
@@ -825,6 +1355,7 @@ components:
           id,
           event_id,
           observed_at,
+          received_at,
           node_name,
           namespace,
           pod_name,
@@ -832,6 +1363,8 @@ components:
           process_command,
           event_kind,
           payload,
+          correlation,
+          related_evidence,
           release_id,
           release_version,
         ]
@@ -839,6 +1372,7 @@ components:
         id: { $ref: '#/components/schemas/Uuid' }
         event_id: { $ref: '#/components/schemas/Uuid' }
         observed_at: { $ref: '#/components/schemas/Timestamp' }
+        received_at: { $ref: '#/components/schemas/Timestamp' }
         node_name: { type: string }
         namespace: { type: string }
         pod_name: { type: string }
@@ -846,15 +1380,31 @@ components:
         process_command: { type: string }
         event_kind: { type: string }
         payload: { $ref: '#/components/schemas/RuntimeEventPayload' }
+        correlation: { $ref: '#/components/schemas/EventCorrelation' }
+        related_evidence:
+          { type: array, maxItems: 20, items: { $ref: '#/components/schemas/RelatedEvidence' } }
         release_id: { $ref: '#/components/schemas/NullableUuid' }
         release_version: { type: [string, 'null'] }
     OccurrencePage:
       type: object
       additionalProperties: false
-      required: [items, next_cursor]
+      required: [items, next_cursor, ordering]
       properties:
         items: { type: array, items: { $ref: '#/components/schemas/EventOccurrence' } }
         next_cursor: { $ref: '#/components/schemas/NullableUuid' }
+        ordering: { type: string, const: received_at_desc_observed_at_desc_id_desc }
+    RelatedEvidence:
+      type: object
+      additionalProperties: false
+      required: [id, event_id, observed_at, received_at, event_kind, source, payload]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        event_id: { $ref: '#/components/schemas/Uuid' }
+        observed_at: { $ref: '#/components/schemas/Timestamp' }
+        received_at: { $ref: '#/components/schemas/Timestamp' }
+        event_kind: { type: string }
+        source: { type: string, enum: [kernel, kubernetes, derived, unknown] }
+        payload: { $ref: '#/components/schemas/RuntimeEventPayload' }
     RuntimeEventSemanticSummary:
       oneOf:
         - { $ref: '#/components/schemas/ProcessExecSemanticSummary' }
@@ -864,6 +1414,10 @@ components:
         - { $ref: '#/components/schemas/NetworkDnsQuerySemanticSummary' }
         - { $ref: '#/components/schemas/NetworkDnsResponseSemanticSummary' }
         - { $ref: '#/components/schemas/FileActivitySemanticSummary' }
+        - { $ref: '#/components/schemas/ProcessExitSemanticSummary' }
+        - { $ref: '#/components/schemas/ContainerTerminationSemanticSummary' }
+        - { $ref: '#/components/schemas/ContainerRestartSemanticSummary' }
+        - { $ref: '#/components/schemas/RestartLoopSemanticSummary' }
     ProcessExecSemanticSummary:
       type: object
       additionalProperties: false
@@ -938,6 +1492,136 @@ components:
             description: Whether rename replaced an existing destination; null means unknown.,
           }
     FileActivityOperation: { type: string, enum: [create, modify, delete, rename] }
+    RuntimeEventKind:
+      type: string
+      enum:
+        [
+          process.exec,
+          syscall,
+          network.connect,
+          network.listen,
+          network.accept,
+          network.dns_query,
+          network.dns_response,
+          file.create,
+          file.modify,
+          file.delete,
+          file.rename,
+          process.exit,
+          container.terminated,
+          container.restart,
+          container.restart_loop,
+        ]
+    EvidenceSource: { type: string, enum: [kernel, kubernetes, derived] }
+    EventCorrelation:
+      type: object
+      additionalProperties: false
+      required: [status, candidate_count, related_event_ids]
+      properties:
+        status: { type: string, enum: [absent, qualified, ambiguous] }
+        candidate_count: { type: integer, minimum: 0, maximum: 2 }
+        tolerance_seconds: { type: integer, minimum: 1 }
+        related_event_ids:
+          { type: array, maxItems: 1, items: { $ref: '#/components/schemas/Uuid' } }
+    ProcessTermination:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [type, status]
+          properties:
+            type: { type: string, const: exited }
+            status: { type: integer, minimum: 0, maximum: 255 }
+        - type: object
+          additionalProperties: false
+          required: [type, signal, signal_name, core_dump_flag]
+          properties:
+            type: { type: string, const: signaled }
+            signal: { type: integer, minimum: 1, maximum: 64 }
+            signal_name: { type: string, pattern: '^SIG[A-Z0-9]+$' }
+            core_dump_flag:
+              {
+                type: boolean,
+                description: Kernel wait-status flag; does not prove a core file was written.,
+              }
+            conventional_exit_code: { type: integer, minimum: 129, maximum: 192, readOnly: true }
+    GenerationCorrelation:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [status, generation, exec_event_id, executable]
+          properties:
+            status: { type: string, const: observed }
+            generation: { type: integer, format: int64, minimum: 1 }
+            exec_event_id: { $ref: '#/components/schemas/Uuid' }
+            executable: { type: string, minLength: 1, maxLength: 256 }
+        - type: object
+          additionalProperties: false
+          required: [status, reason]
+          properties:
+            status: { type: string, const: unresolved }
+            reason:
+              {
+                type: string,
+                enum:
+                  [before_observation, evicted, generation_mismatch, container_lifetime_mismatch],
+              }
+    KubernetesTermination:
+      type: object
+      additionalProperties: false
+      required: [source, runtime_container_id, reason, exit_code]
+      properties:
+        source: { type: string, const: kubernetes }
+        runtime_container_id: { type: string, minLength: 1, maxLength: 256 }
+        reason: { type: string, minLength: 1, maxLength: 256 }
+        exit_code: { type: integer, minimum: 0 }
+        started_at: { $ref: '#/components/schemas/NullableTimestamp' }
+        finished_at: { $ref: '#/components/schemas/NullableTimestamp' }
+    ProcessExitSemanticSummary:
+      type: object
+      additionalProperties: true
+      required: [evidence_source, termination]
+      properties:
+        evidence_source: { type: string, const: kernel }
+        termination: { $ref: '#/components/schemas/ProcessTermination' }
+    ContainerTerminationSemanticSummary:
+      type: object
+      additionalProperties: true
+      required: [evidence_source, container_name, reason, exit_code]
+      properties:
+        evidence_source: { type: string, const: kubernetes }
+        container_name: { type: string, minLength: 1 }
+        reason: { type: string, minLength: 1 }
+        exit_code: { type: integer, minimum: 0 }
+    ContainerRestartSemanticSummary:
+      type: object
+      additionalProperties: true
+      required: [evidence_source, container_name]
+      properties:
+        evidence_source: { type: string, const: kubernetes }
+        container_name: { type: string, minLength: 1 }
+    RestartLoopSemanticSummary:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          evidence_source,
+          projection_version,
+          threshold,
+          window_started_at,
+          window_ended_at,
+          observed_restart_count,
+          container_name,
+        ]
+      properties:
+        evidence_source: { type: string, const: derived }
+        projection_version: { type: integer, minimum: 1 }
+        threshold: { type: integer, minimum: 1 }
+        window_started_at: { $ref: '#/components/schemas/Timestamp' }
+        window_ended_at: { $ref: '#/components/schemas/Timestamp' }
+        observed_restart_count: { type: integer, minimum: 1 }
+        container_name: { type: string, minLength: 1 }
+        latest_termination: { $ref: '#/components/schemas/KubernetesTermination' }
+        latest_waiting_reason: { type: [string, 'null'], maxLength: 256 }
     RuntimeEventPayload:
       oneOf:
         - { $ref: '#/components/schemas/ProcessExecPayload' }
@@ -951,6 +1635,57 @@ components:
         - { $ref: '#/components/schemas/FileModifyPayload' }
         - { $ref: '#/components/schemas/FileDeletePayload' }
         - { $ref: '#/components/schemas/FileRenamePayload' }
+        - { $ref: '#/components/schemas/ProcessExitPayload' }
+        - { $ref: '#/components/schemas/ContainerTerminationPayload' }
+        - { $ref: '#/components/schemas/ContainerRestartPayload' }
+        - { $ref: '#/components/schemas/ContainerRestartLoopPayload' }
+    ContainerRestartLoopPayload:
+      type: object
+      additionalProperties: false
+      required: [type, data]
+      properties:
+        type: { type: string, const: ContainerRestartLoop }
+        data: { $ref: '#/components/schemas/RestartLoopSemanticSummary' }
+    ProcessExitPayload:
+      type: object
+      additionalProperties: false
+      required: [type, data]
+      properties:
+        type: { type: string, const: ProcessExit }
+        data:
+          type: object
+          additionalProperties: false
+          required: [source, raw_wait_status, termination, correlation]
+          properties:
+            source: { type: string, const: kernel }
+            raw_wait_status: { type: integer, format: int32 }
+            termination: { $ref: '#/components/schemas/ProcessTermination' }
+            correlation: { $ref: '#/components/schemas/GenerationCorrelation' }
+    ContainerTerminationPayload:
+      type: object
+      additionalProperties: false
+      required: [type, data]
+      properties:
+        type: { type: string, const: ContainerTermination }
+        data: { $ref: '#/components/schemas/KubernetesTermination' }
+    ContainerRestartPayload:
+      type: object
+      additionalProperties: false
+      required: [type, data]
+      properties:
+        type: { type: string, const: ContainerRestart }
+        data:
+          type: object
+          additionalProperties: false
+          required: [source, runtime_container_id, restart_count, restart_delta, observation_gap]
+          properties:
+            source: { type: string, const: kubernetes }
+            runtime_container_id: { type: string, minLength: 1, maxLength: 256 }
+            restart_count: { type: integer, minimum: 1 }
+            restart_delta: { type: integer, minimum: 1 }
+            observation_gap: { type: boolean }
+            previous_termination: { $ref: '#/components/schemas/KubernetesTermination' }
+            waiting_reason: { type: [string, 'null'], maxLength: 256 }
     ProcessExecPayload:
       type: object
       additionalProperties: false
@@ -1662,7 +2397,7 @@ components:
     InventoryKind:
       {
         type: string,
-        enum: [process, destination, domain, syscall, inbound_endpoint, file_activity],
+        enum: [process, destination, domain, syscall, inbound_endpoint, file_activity, lifecycle],
       }
     InventoryReleasePresence:
       {
@@ -1678,6 +2413,16 @@ components:
         - { $ref: '#/components/schemas/InventorySyscallIdentity' }
         - { $ref: '#/components/schemas/InventoryInboundEndpointIdentity' }
         - { $ref: '#/components/schemas/FileActivitySemanticSummary' }
+        - { $ref: '#/components/schemas/InventoryLifecycleSemanticSummary' }
+    InventoryLifecycleSemanticSummary:
+      type: object
+      additionalProperties: true
+      required: [event_kind, evidence_source]
+      properties:
+        event_kind:
+          type: string
+          enum: [process.exit, container.terminated, container.restart, container.restart_loop]
+        evidence_source: { type: string, enum: [kernel, kubernetes, derived] }
     InventoryProcessIdentity:
       type: object
       additionalProperties: false
@@ -1784,7 +2529,7 @@ components:
         first_seen_at: { $ref: '#/components/schemas/NullableTimestamp' }
         last_seen_at: { $ref: '#/components/schemas/NullableTimestamp' }
         kinds:
-          { type: array, maxItems: 6, items: { $ref: '#/components/schemas/InventoryKindCount' } }
+          { type: array, maxItems: 7, items: { $ref: '#/components/schemas/InventoryKindCount' } }
     InventoryDistributionEntry:
       type: object
       additionalProperties: false
@@ -2055,6 +2800,22 @@ components:
       required: true
       content: { application/json: { schema: { $ref: '#/components/schemas/BulkRetryFilter' } } }
   responses:
+    OrganizationAttentionSummary:
+      description: Complete organization attention snapshot with bounded lists
+      headers: { X-Request-Id: { $ref: '#/components/headers/RequestId' } }
+      content:
+        {
+          application/json:
+            { schema: { $ref: '#/components/schemas/OrganizationAttentionSummary' } },
+        }
+    ApplicationAttentionSummary:
+      description: Complete Application attention snapshot with bounded lists
+      headers: { X-Request-Id: { $ref: '#/components/headers/RequestId' } }
+      content:
+        {
+          application/json:
+            { schema: { $ref: '#/components/schemas/ApplicationAttentionSummary' } },
+        }
     BuildInfoResponse:
       {
         description: Build compatibility metadata,

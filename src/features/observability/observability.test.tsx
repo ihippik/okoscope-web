@@ -145,6 +145,9 @@ describe('inbound network privacy', () => {
             id: 'accept',
             event_id: 'event-accept',
             observed_at: '2026-08-21T10:00:00Z',
+            received_at: '2026-08-21T10:00:01Z',
+            correlation: { status: 'absent', candidate_count: 0, related_event_ids: [] },
+            related_evidence: [],
             node_name: 'node',
             namespace: 'prod',
             pod_name: 'api-1',
@@ -267,6 +270,9 @@ describe('observability presentation', () => {
   it('renders every file occurrence and safely falls back for an unknown kind', async () => {
     const base = {
       observed_at: '2026-08-21T10:00:00Z',
+      received_at: '2026-08-21T10:00:01Z',
+      correlation: { status: 'absent' as const, candidate_count: 0, related_event_ids: [] },
+      related_evidence: [],
       node_name: '',
       namespace: '',
       pod_name: '',
@@ -411,6 +417,9 @@ describe('observability presentation', () => {
               id: 'occurrence',
               event_id: 'event',
               observed_at: '2026-08-17T12:00:00Z',
+              received_at: '2026-08-17T12:00:01Z',
+              correlation: { status: 'absent', candidate_count: 0, related_event_ids: [] },
+              related_evidence: [],
               node_name: '',
               namespace: '',
               pod_name: '',
@@ -431,6 +440,37 @@ describe('observability presentation', () => {
     expect(screen.queryByText('must-not-render')).not.toBeInTheDocument()
     expect(screen.getAllByText('Unavailable')).toHaveLength(6)
   })
+  it('renders older occurrences when related evidence is absent', () => {
+    const occurrence = {
+      id: 'occurrence-without-related-evidence',
+      event_id: 'event-without-related-evidence',
+      observed_at: '2026-08-17T12:00:00Z',
+      received_at: '2026-08-17T12:00:01Z',
+      correlation: { status: 'absent', candidate_count: 0, related_event_ids: [] },
+      node_name: 'node-1',
+      namespace: 'production',
+      pod_name: 'api-1',
+      container_name: 'api',
+      process_command: '/bin/api',
+      event_kind: 'process.exit',
+      payload: {
+        type: 'ProcessExit',
+        data: {
+          source: 'kernel',
+          raw_wait_status: 0,
+          termination: { type: 'exited', status: 0 },
+          correlation: { status: 'unresolved', reason: 'before_observation' },
+        },
+      },
+      release_id: null,
+      release_version: null,
+    } as unknown as Parameters<typeof OccurrenceTimeline>[0]['occurrences'][number]
+
+    render(<OccurrenceTimeline occurrences={[occurrence]} />)
+
+    expect(screen.getByText('Process terminated')).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Related evidence' })).not.toBeInTheDocument()
+  })
   it('renders network destinations as inert text and explains every syscall outcome', () => {
     render(
       <>
@@ -447,6 +487,9 @@ describe('observability presentation', () => {
             id: `occurrence-${outcome}`,
             event_id: `event-${outcome}`,
             observed_at: '2026-08-17T12:00:00Z',
+            received_at: '2026-08-17T12:00:01Z',
+            correlation: { status: 'absent' as const, candidate_count: 0, related_event_ids: [] },
+            related_evidence: [],
             node_name: 'node-1',
             namespace: 'production',
             pod_name: 'api-1',
@@ -503,6 +546,9 @@ describe('observability presentation', () => {
               id: 'dns-response',
               event_id: 'event-dns-response',
               observed_at: '2026-08-18T10:00:00Z',
+              received_at: '2026-08-18T10:00:01Z',
+              correlation: { status: 'absent', candidate_count: 0, related_event_ids: [] },
+              related_evidence: [],
               node_name: 'node-1',
               namespace: 'production',
               pod_name: 'api-1',
@@ -534,6 +580,9 @@ describe('observability presentation', () => {
               id: 'connect',
               event_id: 'event-connect',
               observed_at: '2026-08-18T10:00:01Z',
+              received_at: '2026-08-18T10:00:02Z',
+              correlation: { status: 'absent', candidate_count: 0, related_event_ids: [] },
+              related_evidence: [],
               node_name: 'node-1',
               namespace: 'production',
               pod_name: 'api-1',

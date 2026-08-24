@@ -20,6 +20,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/attention-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Returns a bounded, repeatable-read organization triage snapshot. Totals cover the complete tenant-scoped database set; disappeared means no longer observed and is not a security or deletion claim. */
+        get: operations["getOrganizationAttentionSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/attention-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        /** @description Returns a bounded Application investigation snapshot using the latest comparable release and complete discovery totals. */
+        get: operations["getApplicationAttentionSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organization": {
         parameters: {
             query?: never;
@@ -737,6 +774,281 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * @default 24h
+         * @enum {string}
+         */
+        AttentionWindowKind: "24h" | "7d";
+        /** @enum {string} */
+        AttentionPriority: "urgent" | "high" | "normal";
+        /** @enum {string} */
+        AttentionItemKind: "notification_delivery_failing" | "notification_delivery_backlogged" | "notification_destination_missing" | "release_runtime_changed" | "new_discovery" | "open_discovery" | "container_restart_loop";
+        /** @enum {string} */
+        AttentionReasonCode: "terminal_deliveries_failed" | "notification_health_failing" | "notification_health_backlogged" | "notification_health_retrying" | "enabled_destination_missing" | "release_runtime_changed" | "discovery_first_seen_in_window" | "discovery_open" | "container_restart_loop_observed";
+        /** @enum {string} */
+        AttentionRecommendationKind: "review_failed_deliveries" | "configure_webhook_destination" | "review_notification_backlog" | "review_release_changes" | "review_new_discoveries";
+        AttentionWindow: {
+            kind: components["schemas"]["AttentionWindowKind"];
+            from: components["schemas"]["Timestamp"];
+            to: components["schemas"]["Timestamp"];
+        };
+        AttentionProjectRef: {
+            id: components["schemas"]["Uuid"];
+            name: string;
+            slug: string;
+        };
+        AttentionApplicationRef: {
+            id: components["schemas"]["Uuid"];
+            name: string;
+            slug: string;
+        };
+        AttentionReleaseRef: {
+            id: components["schemas"]["Uuid"];
+            version: string;
+            deployed_at: components["schemas"]["Timestamp"];
+        };
+        AttentionFacts: {
+            /** Format: int64 */
+            reason_count: number;
+            /** Format: int64 */
+            new_count?: number;
+            /** Format: int64 */
+            disappeared_count?: number;
+            /** Format: int64 */
+            failed_count?: number;
+            /** Format: int64 */
+            occurrence_count?: number;
+            restart_loop?: components["schemas"]["AttentionRestartLoopFacts"];
+        };
+        AttentionRestartLoopFacts: {
+            /** Format: int64 */
+            projection_version: number;
+            /** Format: int64 */
+            threshold: number;
+            /** Format: int64 */
+            observed_restart_count: number;
+            window_started_at: components["schemas"]["Timestamp"];
+            window_ended_at: components["schemas"]["Timestamp"];
+            container_name: string;
+        };
+        AttentionResourceRef: components["schemas"]["AttentionProjectResourceRef"] | components["schemas"]["AttentionApplicationResourceRef"] | components["schemas"]["AttentionRuntimeGroupResourceRef"] | components["schemas"]["AttentionRuntimeDiffResourceRef"];
+        AttentionProjectResourceRef: {
+            /** @constant */
+            type: "project";
+            project_id: components["schemas"]["Uuid"];
+        };
+        AttentionApplicationResourceRef: {
+            /** @constant */
+            type: "application";
+            project_id: components["schemas"]["Uuid"];
+            application_id: components["schemas"]["Uuid"];
+        };
+        AttentionRuntimeGroupResourceRef: {
+            /** @constant */
+            type: "runtime_group";
+            project_id: components["schemas"]["Uuid"];
+            application_id: components["schemas"]["Uuid"];
+            runtime_group_id: components["schemas"]["Uuid"];
+            event_kind: string;
+            semantic_summary: components["schemas"]["RuntimeEventSemanticSummary"];
+            namespace: string;
+            workload_kind: string;
+            workload_name: string;
+        };
+        AttentionRuntimeDiffResourceRef: {
+            /** @constant */
+            type: "runtime_diff";
+            project_id: components["schemas"]["Uuid"];
+            application_id: components["schemas"]["Uuid"];
+            target_release_id: components["schemas"]["Uuid"];
+            baseline_release_id: components["schemas"]["Uuid"];
+        };
+        AttentionPriorityItem: {
+            id: string;
+            kind: components["schemas"]["AttentionItemKind"];
+            priority: components["schemas"]["AttentionPriority"];
+            reason_code: components["schemas"]["AttentionReasonCode"];
+            facts: components["schemas"]["AttentionFacts"];
+            occurred_at: components["schemas"]["Timestamp"];
+            project: components["schemas"]["AttentionProjectRef"];
+            application?: components["schemas"]["AttentionApplicationRef"];
+            resource: components["schemas"]["AttentionResourceRef"];
+        };
+        AttentionLargestChange: {
+            group_id: components["schemas"]["Uuid"];
+            /** @enum {string} */
+            classification: "new" | "disappeared" | "unchanged";
+            /** Format: int64 */
+            baseline_occurrence_count: number;
+            /** Format: int64 */
+            target_occurrence_count: number;
+            /** Format: int64 */
+            occurrence_delta: number;
+        };
+        AttentionReleaseComparison: {
+            target_release: components["schemas"]["AttentionReleaseRef"];
+            baseline_release: components["schemas"]["AttentionReleaseRef"] | null;
+            /** Format: int64 */
+            new_count: number;
+            /**
+             * Format: int64
+             * @description Runtime behavior no longer observed in the target release; this does not assert deletion.
+             */
+            disappeared_count: number;
+            /** Format: int64 */
+            unchanged_count: number;
+            /** Format: int64 */
+            total_item_count: number;
+            /** Format: int64 */
+            absolute_occurrence_delta_sum: number;
+            /** Format: int64 */
+            max_absolute_occurrence_delta: number;
+            largest_changes: components["schemas"]["AttentionLargestChange"][];
+        };
+        AttentionChangedApplication: components["schemas"]["AttentionReleaseComparison"] & {
+            project: components["schemas"]["AttentionProjectRef"];
+            application: components["schemas"]["AttentionApplicationRef"];
+            changed_at: components["schemas"]["Timestamp"];
+        };
+        AttentionNotificationProblem: {
+            project: components["schemas"]["AttentionProjectRef"];
+            /** @enum {string} */
+            state: "disabled" | "idle" | "backlogged" | "retrying" | "failing" | "draining";
+            delivery_enabled: boolean;
+            /** Format: int64 */
+            enabled_destination_count: number;
+            /** Format: int64 */
+            pending_count: number;
+            /** Format: int64 */
+            due_count: number;
+            /** Format: int64 */
+            retrying_count: number;
+            /** Format: int64 */
+            in_flight_count: number;
+            /** Format: int64 */
+            expired_lease_count: number;
+            /** Format: int64 */
+            failed_count: number;
+            /** Format: int64 */
+            oldest_due_age_seconds: number | null;
+            observed_at: components["schemas"]["Timestamp"];
+            priority: components["schemas"]["AttentionPriority"];
+            reason_code: components["schemas"]["AttentionReasonCode"];
+        };
+        AttentionRecommendation: {
+            id: string;
+            kind: components["schemas"]["AttentionRecommendationKind"];
+            priority: components["schemas"]["AttentionPriority"];
+            reason_code: components["schemas"]["AttentionReasonCode"];
+            facts: components["schemas"]["AttentionFacts"];
+            project: components["schemas"]["AttentionProjectRef"];
+            application?: components["schemas"]["AttentionApplicationRef"];
+            resource: components["schemas"]["AttentionResourceRef"];
+            created_from_snapshot_at: components["schemas"]["Timestamp"];
+        };
+        OrganizationAttentionTotals: {
+            /** Format: int64 */
+            new_discoveries: number;
+            /** Format: int64 */
+            open_discoveries: number;
+            /** Format: int64 */
+            acknowledged_discoveries: number;
+            /** Format: int64 */
+            changed_applications: number;
+            /** Format: int64 */
+            projects_with_notification_problems: number;
+            /** Format: int64 */
+            failed_notification_deliveries: number;
+        };
+        /**
+         * @example {
+         *       "generated_at": "2026-08-22T12:00:00Z",
+         *       "window": {
+         *         "kind": "24h",
+         *         "from": "2026-08-21T12:00:00Z",
+         *         "to": "2026-08-22T12:00:00Z"
+         *       },
+         *       "totals": {
+         *         "new_discoveries": 0,
+         *         "open_discoveries": 0,
+         *         "acknowledged_discoveries": 0,
+         *         "changed_applications": 0,
+         *         "projects_with_notification_problems": 0,
+         *         "failed_notification_deliveries": 0
+         *       },
+         *       "priority_items": [],
+         *       "changed_applications": [],
+         *       "notification_problems": [],
+         *       "recommendations": []
+         *     }
+         */
+        OrganizationAttentionSummary: {
+            generated_at: components["schemas"]["Timestamp"];
+            window: components["schemas"]["AttentionWindow"];
+            totals: components["schemas"]["OrganizationAttentionTotals"];
+            priority_items: components["schemas"]["AttentionPriorityItem"][];
+            changed_applications: components["schemas"]["AttentionChangedApplication"][];
+            notification_problems: components["schemas"]["AttentionNotificationProblem"][];
+            recommendations: components["schemas"]["AttentionRecommendation"][];
+        };
+        ApplicationAttentionTotals: {
+            /** Format: int64 */
+            new_discoveries: number;
+            /** Format: int64 */
+            open_discoveries: number;
+            /** Format: int64 */
+            acknowledged_discoveries: number;
+            /** Format: int64 */
+            new_runtime_items: number;
+            /** Format: int64 */
+            disappeared_runtime_items: number;
+            /** Format: int64 */
+            unchanged_runtime_items: number;
+            /** Format: int64 */
+            total_runtime_items: number;
+        };
+        /**
+         * @example {
+         *       "generated_at": "2026-08-22T12:00:00Z",
+         *       "window": {
+         *         "kind": "24h",
+         *         "from": "2026-08-21T12:00:00Z",
+         *         "to": "2026-08-22T12:00:00Z"
+         *       },
+         *       "project": {
+         *         "id": "00000000-0000-0000-0000-000000000001",
+         *         "name": "Commerce",
+         *         "slug": "commerce"
+         *       },
+         *       "application": {
+         *         "id": "00000000-0000-0000-0000-000000000002",
+         *         "name": "Checkout",
+         *         "slug": "checkout"
+         *       },
+         *       "totals": {
+         *         "new_discoveries": 0,
+         *         "open_discoveries": 0,
+         *         "acknowledged_discoveries": 0,
+         *         "new_runtime_items": 0,
+         *         "disappeared_runtime_items": 0,
+         *         "unchanged_runtime_items": 0,
+         *         "total_runtime_items": 0
+         *       },
+         *       "release_comparison": null,
+         *       "priority_items": [],
+         *       "recommendations": []
+         *     }
+         */
+        ApplicationAttentionSummary: {
+            generated_at: components["schemas"]["Timestamp"];
+            window: components["schemas"]["AttentionWindow"];
+            project: components["schemas"]["AttentionProjectRef"];
+            application: components["schemas"]["AttentionApplicationRef"];
+            totals: components["schemas"]["ApplicationAttentionTotals"];
+            release_comparison: components["schemas"]["AttentionReleaseComparison"] | null;
+            priority_items: components["schemas"]["AttentionPriorityItem"][];
+            recommendations: components["schemas"]["AttentionRecommendation"][];
+        };
         Error: {
             /** @example not_found */
             error: string;
@@ -754,7 +1066,7 @@ export interface components {
             api_version: "v1";
             /**
              * Format: int64
-             * @example 12
+             * @example 13
              */
             required_database_migration: number;
         };
@@ -841,6 +1153,7 @@ export interface components {
             id: components["schemas"]["Uuid"];
             event_id: components["schemas"]["Uuid"];
             observed_at: components["schemas"]["Timestamp"];
+            received_at: components["schemas"]["Timestamp"];
             node_name: string;
             namespace: string;
             pod_name: string;
@@ -848,14 +1161,28 @@ export interface components {
             process_command: string;
             event_kind: string;
             payload: components["schemas"]["RuntimeEventPayload"];
+            correlation: components["schemas"]["EventCorrelation"];
+            related_evidence: components["schemas"]["RelatedEvidence"][];
             release_id: components["schemas"]["NullableUuid"];
             release_version: string | null;
         };
         OccurrencePage: {
             items: components["schemas"]["EventOccurrence"][];
             next_cursor: components["schemas"]["NullableUuid"];
+            /** @constant */
+            ordering: "received_at_desc_observed_at_desc_id_desc";
         };
-        RuntimeEventSemanticSummary: components["schemas"]["ProcessExecSemanticSummary"] | components["schemas"]["SyscallSemanticSummary"] | components["schemas"]["NetworkConnectSemanticSummary"] | components["schemas"]["InboundNetworkSemanticSummary"] | components["schemas"]["NetworkDnsQuerySemanticSummary"] | components["schemas"]["NetworkDnsResponseSemanticSummary"] | components["schemas"]["FileActivitySemanticSummary"];
+        RelatedEvidence: {
+            id: components["schemas"]["Uuid"];
+            event_id: components["schemas"]["Uuid"];
+            observed_at: components["schemas"]["Timestamp"];
+            received_at: components["schemas"]["Timestamp"];
+            event_kind: string;
+            /** @enum {string} */
+            source: "kernel" | "kubernetes" | "derived" | "unknown";
+            payload: components["schemas"]["RuntimeEventPayload"];
+        };
+        RuntimeEventSemanticSummary: components["schemas"]["ProcessExecSemanticSummary"] | components["schemas"]["SyscallSemanticSummary"] | components["schemas"]["NetworkConnectSemanticSummary"] | components["schemas"]["InboundNetworkSemanticSummary"] | components["schemas"]["NetworkDnsQuerySemanticSummary"] | components["schemas"]["NetworkDnsResponseSemanticSummary"] | components["schemas"]["FileActivitySemanticSummary"] | components["schemas"]["ProcessExitSemanticSummary"] | components["schemas"]["ContainerTerminationSemanticSummary"] | components["schemas"]["ContainerRestartSemanticSummary"] | components["schemas"]["RestartLoopSemanticSummary"];
         ProcessExecSemanticSummary: {
             executable: string;
         };
@@ -919,7 +1246,124 @@ export interface components {
         };
         /** @enum {string} */
         FileActivityOperation: "create" | "modify" | "delete" | "rename";
-        RuntimeEventPayload: components["schemas"]["ProcessExecPayload"] | components["schemas"]["SyscallPayload"] | components["schemas"]["NetworkConnectPayload"] | components["schemas"]["NetworkListenPayload"] | components["schemas"]["NetworkAcceptPayload"] | components["schemas"]["NetworkDnsQueryPayload"] | components["schemas"]["NetworkDnsResponsePayload"] | components["schemas"]["FileCreatePayload"] | components["schemas"]["FileModifyPayload"] | components["schemas"]["FileDeletePayload"] | components["schemas"]["FileRenamePayload"];
+        /** @enum {string} */
+        RuntimeEventKind: "process.exec" | "syscall" | "network.connect" | "network.listen" | "network.accept" | "network.dns_query" | "network.dns_response" | "file.create" | "file.modify" | "file.delete" | "file.rename" | "process.exit" | "container.terminated" | "container.restart" | "container.restart_loop";
+        /** @enum {string} */
+        EvidenceSource: "kernel" | "kubernetes" | "derived";
+        EventCorrelation: {
+            /** @enum {string} */
+            status: "absent" | "qualified" | "ambiguous";
+            candidate_count: number;
+            tolerance_seconds?: number;
+            related_event_ids: components["schemas"]["Uuid"][];
+        };
+        ProcessTermination: {
+            /** @constant */
+            type: "exited";
+            status: number;
+        } | {
+            /** @constant */
+            type: "signaled";
+            signal: number;
+            signal_name: string;
+            /** @description Kernel wait-status flag; does not prove a core file was written. */
+            core_dump_flag: boolean;
+            readonly conventional_exit_code?: number;
+        };
+        GenerationCorrelation: {
+            /** @constant */
+            status: "observed";
+            /** Format: int64 */
+            generation: number;
+            exec_event_id: components["schemas"]["Uuid"];
+            executable: string;
+        } | {
+            /** @constant */
+            status: "unresolved";
+            /** @enum {string} */
+            reason: "before_observation" | "evicted" | "generation_mismatch" | "container_lifetime_mismatch";
+        };
+        KubernetesTermination: {
+            /** @constant */
+            source: "kubernetes";
+            runtime_container_id: string;
+            reason: string;
+            exit_code: number;
+            started_at?: components["schemas"]["NullableTimestamp"];
+            finished_at?: components["schemas"]["NullableTimestamp"];
+        };
+        ProcessExitSemanticSummary: {
+            /** @constant */
+            evidence_source: "kernel";
+            termination: components["schemas"]["ProcessTermination"];
+        } & {
+            [key: string]: unknown;
+        };
+        ContainerTerminationSemanticSummary: {
+            /** @constant */
+            evidence_source: "kubernetes";
+            container_name: string;
+            reason: string;
+            exit_code: number;
+        } & {
+            [key: string]: unknown;
+        };
+        ContainerRestartSemanticSummary: {
+            /** @constant */
+            evidence_source: "kubernetes";
+            container_name: string;
+        } & {
+            [key: string]: unknown;
+        };
+        RestartLoopSemanticSummary: {
+            /** @constant */
+            evidence_source: "derived";
+            projection_version: number;
+            threshold: number;
+            window_started_at: components["schemas"]["Timestamp"];
+            window_ended_at: components["schemas"]["Timestamp"];
+            observed_restart_count: number;
+            container_name: string;
+            latest_termination?: components["schemas"]["KubernetesTermination"];
+            latest_waiting_reason?: string | null;
+        };
+        RuntimeEventPayload: components["schemas"]["ProcessExecPayload"] | components["schemas"]["SyscallPayload"] | components["schemas"]["NetworkConnectPayload"] | components["schemas"]["NetworkListenPayload"] | components["schemas"]["NetworkAcceptPayload"] | components["schemas"]["NetworkDnsQueryPayload"] | components["schemas"]["NetworkDnsResponsePayload"] | components["schemas"]["FileCreatePayload"] | components["schemas"]["FileModifyPayload"] | components["schemas"]["FileDeletePayload"] | components["schemas"]["FileRenamePayload"] | components["schemas"]["ProcessExitPayload"] | components["schemas"]["ContainerTerminationPayload"] | components["schemas"]["ContainerRestartPayload"] | components["schemas"]["ContainerRestartLoopPayload"];
+        ContainerRestartLoopPayload: {
+            /** @constant */
+            type: "ContainerRestartLoop";
+            data: components["schemas"]["RestartLoopSemanticSummary"];
+        };
+        ProcessExitPayload: {
+            /** @constant */
+            type: "ProcessExit";
+            data: {
+                /** @constant */
+                source: "kernel";
+                /** Format: int32 */
+                raw_wait_status: number;
+                termination: components["schemas"]["ProcessTermination"];
+                correlation: components["schemas"]["GenerationCorrelation"];
+            };
+        };
+        ContainerTerminationPayload: {
+            /** @constant */
+            type: "ContainerTermination";
+            data: components["schemas"]["KubernetesTermination"];
+        };
+        ContainerRestartPayload: {
+            /** @constant */
+            type: "ContainerRestart";
+            data: {
+                /** @constant */
+                source: "kubernetes";
+                runtime_container_id: string;
+                restart_count: number;
+                restart_delta: number;
+                observation_gap: boolean;
+                previous_termination?: components["schemas"]["KubernetesTermination"];
+                waiting_reason?: string | null;
+            };
+        };
         ProcessExecPayload: {
             /** @constant */
             type: "ProcessExec";
@@ -1362,13 +1806,21 @@ export interface components {
             affected_deliveries: components["schemas"]["RecoveryOperationDelivery"][];
         };
         /** @enum {string} */
-        InventoryKind: "process" | "destination" | "domain" | "syscall" | "inbound_endpoint" | "file_activity";
+        InventoryKind: "process" | "destination" | "domain" | "syscall" | "inbound_endpoint" | "file_activity" | "lifecycle";
         /**
          * @description Evidence-qualified state; not_observed does not prove behavior cannot occur.
          * @enum {string}
          */
         InventoryReleasePresence: "observed" | "not_observed" | "unknown";
-        InventorySemanticSummary: components["schemas"]["InventoryProcessIdentity"] | components["schemas"]["InventoryDestinationIdentity"] | components["schemas"]["InventoryDomainIdentity"] | components["schemas"]["InventorySyscallIdentity"] | components["schemas"]["InventoryInboundEndpointIdentity"] | components["schemas"]["FileActivitySemanticSummary"];
+        InventorySemanticSummary: components["schemas"]["InventoryProcessIdentity"] | components["schemas"]["InventoryDestinationIdentity"] | components["schemas"]["InventoryDomainIdentity"] | components["schemas"]["InventorySyscallIdentity"] | components["schemas"]["InventoryInboundEndpointIdentity"] | components["schemas"]["FileActivitySemanticSummary"] | components["schemas"]["InventoryLifecycleSemanticSummary"];
+        InventoryLifecycleSemanticSummary: {
+            /** @enum {string} */
+            event_kind: "process.exit" | "container.terminated" | "container.restart" | "container.restart_loop";
+            /** @enum {string} */
+            evidence_source: "kernel" | "kubernetes" | "derived";
+        } & {
+            [key: string]: unknown;
+        };
         InventoryProcessIdentity: {
             /** @example /app/payments */
             executable: string;
@@ -1601,6 +2053,26 @@ export interface components {
         NullableTimestamp: string | null;
     };
     responses: {
+        /** @description Complete organization attention snapshot with bounded lists */
+        OrganizationAttentionSummary: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["OrganizationAttentionSummary"];
+            };
+        };
+        /** @description Complete Application attention snapshot with bounded lists */
+        ApplicationAttentionSummary: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ApplicationAttentionSummary"];
+            };
+        };
         /** @description Build compatibility metadata */
         BuildInfoResponse: {
             headers: {
@@ -2021,6 +2493,50 @@ export interface operations {
             200: components["responses"]["BuildInfoResponse"];
         };
     };
+    getOrganizationAttentionSummary: {
+        parameters: {
+            query?: {
+                window?: components["schemas"]["AttentionWindowKind"];
+                limit?: number;
+                changed_application_limit?: number;
+                recommendation_limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["OrganizationAttentionSummary"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    getApplicationAttentionSummary: {
+        parameters: {
+            query?: {
+                window?: components["schemas"]["AttentionWindowKind"];
+                limit?: number;
+                largest_change_limit?: number;
+                recommendation_limit?: number;
+            };
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ApplicationAttentionSummary"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
     getCurrentOrganization: {
         parameters: {
             query?: never;
@@ -2370,7 +2886,7 @@ export interface operations {
             query: {
                 project_id: string;
                 application_id: string;
-                event_kind?: string;
+                event_kind?: components["schemas"]["RuntimeEventKind"];
                 status?: "open" | "acknowledged" | "resolved";
                 namespace?: string;
                 workload_kind?: string;

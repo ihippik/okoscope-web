@@ -9,6 +9,13 @@ import { ErrorState } from '../../shared/ui/error-state'
 import { Loading } from '../../shared/ui/loading'
 import { formatTimestamp } from './format'
 
+const WORKER_INACTIVE_AFTER_MS = 15 * 60 * 1000
+
+export function isWorkerInactive(worker: ApplicationWorker, now: number) {
+  const lastSeenAt = Date.parse(worker.agent_last_seen_at)
+  return Number.isFinite(lastSeenAt) && now - lastSeenAt > WORKER_INACTIVE_AFTER_MS
+}
+
 function WorkerDetails({ worker }: { worker: ApplicationWorker }) {
   const t = useT()
   const unavailable = t('notReported')
@@ -59,6 +66,15 @@ export function ApplicationWorkers({
     .filter(
       (worker, index, all) => all.findIndex((item) => item.agent_id === worker.agent_id) === index,
     )
+  const now = query.dataUpdatedAt
+  const activeWorkers = workers.filter((worker) => !isWorkerInactive(worker, now))
+  const inactiveWorkers = workers.filter((worker) => isWorkerInactive(worker, now))
+
+  const renderWorker = (worker: ApplicationWorker) => (
+    <Card key={worker.agent_id} className="overflow-hidden">
+      <WorkerDetails worker={worker} />
+    </Card>
+  )
 
   return (
     <section aria-labelledby="worker-nodes-heading">
@@ -82,11 +98,15 @@ export function ApplicationWorkers({
         </Card>
       ) : (
         <div className="space-y-3">
-          {workers.map((worker) => (
-            <Card key={worker.agent_id} className="overflow-hidden">
-              <WorkerDetails worker={worker} />
-            </Card>
-          ))}
+          {activeWorkers.map(renderWorker)}
+          {inactiveWorkers.length > 0 && (
+            <details className="rounded-lg border border-slate-700 p-3">
+              <summary className="cursor-pointer font-semibold text-slate-200 marker:text-cyan-300">
+                {t('inactiveWorkerNodes', { count: inactiveWorkers.length })}
+              </summary>
+              <div className="mt-3 space-y-3">{inactiveWorkers.map(renderWorker)}</div>
+            </details>
+          )}
         </div>
       )}
       {query.hasNextPage && (

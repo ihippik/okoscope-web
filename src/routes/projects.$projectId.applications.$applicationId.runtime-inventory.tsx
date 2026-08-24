@@ -173,54 +173,57 @@ function RuntimeInventoryPage() {
         <p className="eyebrow">Application</p>
         <h1 className="mt-2 text-4xl font-semibold">Application Activity</h1>
         <p className="mt-2 text-slate-400">
-          See which processes this application starts and which network destinations and domains it
-          uses. Observations describe recorded activity, not configured intent or risk.
+          See process launches, lifecycle events, network activity, domains, and file operations
+          observed for this application. Observations describe recorded activity, not configured
+          intent, cause, or risk.
         </p>
       </header>
-      {summary.isPending ? (
-        <Loading label="Loading inventory summary…" />
-      ) : summary.isError ? (
-        <ApiErrorPanel
-          title="Could not load inventory summary"
-          error={summary.error}
-          onRetry={() => void summary.refetch()}
-        />
-      ) : (
-        <InventoryKindDistribution
-          summary={summary.data}
-          activeKind={search.kind}
-          onKind={(kind) => setScope({ kind })}
-        />
-      )}
-      {distribution.isPending ? (
-        <Loading label="Loading activity distribution…" />
-      ) : distribution.isError && !distribution.data ? (
-        <ApiErrorPanel
-          title="Could not load activity distribution"
-          error={distribution.error}
-          onRetry={() => void distribution.refetch()}
-        />
-      ) : distribution.data.total_occurrence_count === 0 ? (
-        <EmptyState
-          title="No activity to visualize"
-          description="No recorded observations match the selected activity type and filters."
-        />
-      ) : (
-        <>
-          {distribution.isError && (
-            <ApiErrorPanel
-              title="Activity distribution may be stale"
-              error={distribution.error}
-              onRetry={() => void distribution.refetch()}
-            />
-          )}
-          <TopBehaviorDistribution
-            distribution={distribution.data}
-            selectedToken={search.identity_token}
-            onIdentity={(identity_token) => setScope({ identity_token })}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {summary.isPending ? (
+          <Loading label="Loading inventory summary…" />
+        ) : summary.isError ? (
+          <ApiErrorPanel
+            title="Could not load inventory summary"
+            error={summary.error}
+            onRetry={() => void summary.refetch()}
           />
-        </>
-      )}
+        ) : (
+          <InventoryKindDistribution
+            summary={summary.data}
+            activeKind={search.kind}
+            onKind={(kind) => setScope({ kind })}
+          />
+        )}
+        {distribution.isPending ? (
+          <Loading label="Loading activity distribution…" />
+        ) : distribution.isError && !distribution.data ? (
+          <ApiErrorPanel
+            title="Could not load activity distribution"
+            error={distribution.error}
+            onRetry={() => void distribution.refetch()}
+          />
+        ) : distribution.data.total_occurrence_count === 0 ? (
+          <EmptyState
+            title="No activity to visualize"
+            description="No recorded observations match the selected activity type and filters."
+          />
+        ) : (
+          <div className="flex h-full flex-col gap-6">
+            {distribution.isError && (
+              <ApiErrorPanel
+                title="Activity distribution may be stale"
+                error={distribution.error}
+                onRetry={() => void distribution.refetch()}
+              />
+            )}
+            <TopBehaviorDistribution
+              distribution={distribution.data}
+              selectedToken={search.identity_token}
+              onIdentity={(identity_token) => setScope({ identity_token })}
+            />
+          </div>
+        )}
+      </div>
       <Card>
         <label className="text-sm">
           <span className="mb-1 block text-slate-300">Search application activity</span>

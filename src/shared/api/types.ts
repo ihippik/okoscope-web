@@ -11,11 +11,46 @@ export type ApplicationWorkerPage = components['schemas']['ApplicationWorkerPage
 export type ApplicationWorkerQuery = NonNullable<
   operations['listApplicationWorkers']['parameters']['query']
 >
+export type AttentionWindowKind = components['schemas']['AttentionWindowKind']
+export type AttentionPriority = components['schemas']['AttentionPriority']
+export type AttentionItemKind = components['schemas']['AttentionItemKind']
+export type AttentionReasonCode = components['schemas']['AttentionReasonCode']
+export type AttentionRecommendationKind = components['schemas']['AttentionRecommendationKind']
+export type AttentionFacts = components['schemas']['AttentionFacts']
+export type AttentionResourceRef = components['schemas']['AttentionResourceRef']
+export type AttentionPriorityItem = components['schemas']['AttentionPriorityItem']
+export type AttentionReleaseComparison = components['schemas']['AttentionReleaseComparison']
+export type AttentionChangedApplication = components['schemas']['AttentionChangedApplication']
+export type AttentionNotificationProblem = components['schemas']['AttentionNotificationProblem']
+export type AttentionRecommendation = components['schemas']['AttentionRecommendation']
+export type OrganizationAttentionSummary = components['schemas']['OrganizationAttentionSummary']
+export type ApplicationAttentionSummary = components['schemas']['ApplicationAttentionSummary']
+export type OrganizationAttentionQuery = NonNullable<
+  operations['getOrganizationAttentionSummary']['parameters']['query']
+>
+export type ApplicationAttentionQuery = NonNullable<
+  operations['getApplicationAttentionSummary']['parameters']['query']
+>
 export type ErrorEnvelope = components['schemas']['Error']
 export type RuntimeGroup = components['schemas']['RuntimeGroup']
 export type RuntimeGroupPage = components['schemas']['RuntimeGroupPage']
 export type RuntimeGroupDetail = components['schemas']['RuntimeGroupDetail']
 export type EventOccurrence = components['schemas']['EventOccurrence']
+export type RelatedEvidence = components['schemas']['RelatedEvidence']
+export type EvidenceSource = components['schemas']['EvidenceSource']
+export type EventCorrelation = components['schemas']['EventCorrelation']
+export type ProcessTermination = components['schemas']['ProcessTermination']
+export type ProcessExitSemanticSummary = components['schemas']['ProcessExitSemanticSummary']
+export type ContainerTerminationSemanticSummary =
+  components['schemas']['ContainerTerminationSemanticSummary']
+export type ContainerRestartSemanticSummary =
+  components['schemas']['ContainerRestartSemanticSummary']
+export type RestartLoopSemanticSummary = components['schemas']['RestartLoopSemanticSummary']
+export type ProcessExitPayload = components['schemas']['ProcessExitPayload']
+export type ContainerTerminationPayload = components['schemas']['ContainerTerminationPayload']
+export type ContainerRestartPayload = components['schemas']['ContainerRestartPayload']
+export type ContainerRestartLoopPayload = components['schemas']['ContainerRestartLoopPayload']
+export type AttentionRestartLoopFacts = components['schemas']['AttentionRestartLoopFacts']
 export type NetworkConnectSemanticSummary = components['schemas']['NetworkConnectSemanticSummary']
 export type InboundNetworkSemanticSummary = components['schemas']['InboundNetworkSemanticSummary']
 export type FileActivitySemanticSummary = components['schemas']['FileActivitySemanticSummary']
@@ -42,8 +77,16 @@ export type RuntimeDiffEntry = components['schemas']['RuntimeDiffEntry']
 export type RuntimeDiffSummary = components['schemas']['RuntimeDiffSummary']
 export type RuntimeDiffChangeEntry = components['schemas']['RuntimeDiffChangeEntry']
 export type InventoryKind = components['schemas']['InventoryKind']
+export type InventoryProcessIdentity = components['schemas']['InventoryProcessIdentity']
+export type InventoryDestinationIdentity = components['schemas']['InventoryDestinationIdentity']
+export type InventoryDomainIdentity = components['schemas']['InventoryDomainIdentity']
+export type InventorySyscallIdentity = components['schemas']['InventorySyscallIdentity']
 export type InventoryInboundEndpointIdentity =
   components['schemas']['InventoryInboundEndpointIdentity']
+export type InventoryLifecycleSemanticSummary =
+  components['schemas']['InventoryLifecycleSemanticSummary']
+export type InventoryFileActivitySemanticSummary =
+  components['schemas']['FileActivitySemanticSummary']
 export type InventoryFacet = components['schemas']['InventoryFacet']
 export type InventoryItem = components['schemas']['InventoryItem']
 export type InventoryItemPage = components['schemas']['InventoryItemPage']
@@ -113,6 +156,85 @@ export type DeliveryQuery = NonNullable<
   operations['listNotificationDeliveries']['parameters']['query']
 >
 
+export const terminationContractFixtures = {
+  normalExit: {
+    type: 'ProcessExit',
+    data: {
+      source: 'kernel',
+      raw_wait_status: 512,
+      termination: { type: 'exited', status: 2 },
+      correlation: {
+        status: 'observed',
+        generation: 7,
+        exec_event_id: 'exec-event',
+        executable: '/app/api',
+      },
+    },
+  } satisfies ProcessExitPayload,
+  signaledExit: {
+    type: 'ProcessExit',
+    data: {
+      source: 'kernel',
+      raw_wait_status: 139,
+      termination: {
+        type: 'signaled',
+        signal: 11,
+        signal_name: 'SIGSEGV',
+        core_dump_flag: true,
+        conventional_exit_code: 139,
+      },
+      correlation: { status: 'unresolved', reason: 'before_observation' },
+    },
+  } satisfies ProcessExitPayload,
+  containerTermination: {
+    type: 'ContainerTermination',
+    data: {
+      source: 'kubernetes',
+      runtime_container_id: 'containerd://api',
+      reason: 'OOMKilled',
+      exit_code: 137,
+      finished_at: '2026-08-23T10:00:00Z',
+    },
+  } satisfies ContainerTerminationPayload,
+  restartGap: {
+    type: 'ContainerRestart',
+    data: {
+      source: 'kubernetes',
+      runtime_container_id: 'containerd://api',
+      restart_count: 7,
+      restart_delta: 3,
+      observation_gap: true,
+      waiting_reason: 'CrashLoopBackOff',
+    },
+  } satisfies ContainerRestartPayload,
+  restartLoop: {
+    type: 'ContainerRestartLoop',
+    data: {
+      evidence_source: 'derived',
+      projection_version: 1,
+      threshold: 3,
+      window_started_at: '2026-08-23T09:50:00Z',
+      window_ended_at: '2026-08-23T10:00:00Z',
+      observed_restart_count: 4,
+      container_name: 'api',
+      latest_waiting_reason: 'CrashLoopBackOff',
+    },
+  } satisfies ContainerRestartLoopPayload,
+  correlations: {
+    absent: { status: 'absent', candidate_count: 0, related_event_ids: [] },
+    qualified: { status: 'qualified', candidate_count: 1, related_event_ids: ['kernel-event'] },
+    ambiguous: { status: 'ambiguous', candidate_count: 2, related_event_ids: [] },
+  } satisfies Record<'absent' | 'qualified' | 'ambiguous', EventCorrelation>,
+  attention: {
+    projection_version: 1,
+    threshold: 3,
+    observed_restart_count: 4,
+    window_started_at: '2026-08-23T09:50:00Z',
+    window_ended_at: '2026-08-23T10:00:00Z',
+    container_name: 'api',
+  } satisfies AttentionRestartLoopFacts,
+}
+
 // Compile-time contract fixtures for the OpenAPI shapes used by the MVP.
 export const contractFixture = {
   buildInfo: {
@@ -160,7 +282,7 @@ export const contractFixture = {
   runtimeGroupQuery: {
     project_id: 'project',
     application_id: 'application',
-    event_kind: 'exec',
+    event_kind: 'process.exec',
     status: 'acknowledged',
     namespace: 'default',
     workload_kind: 'Deployment',
