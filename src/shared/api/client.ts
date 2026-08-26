@@ -3,7 +3,14 @@ import type { RuntimeConfig } from '../config/runtime-config'
 import type { ErrorEnvelope } from './types'
 
 export type ClientError =
-  | { kind: 'api'; status: number; code: string; message: string; requestId: string }
+  | {
+      kind: 'api'
+      status: number
+      code: string
+      message: string
+      requestId: string
+      fields?: Record<string, string>
+    }
   | { kind: 'network'; message: string; requestId: string }
   | { kind: 'invalid-response'; message: string; requestId: string }
 
@@ -19,12 +26,24 @@ function isErrorEnvelope(value: unknown): value is ErrorEnvelope {
   return ['error', 'message', 'request_id'].every((key) => typeof object[key] === 'string')
 }
 
+function safeFields(value: unknown): Record<string, string> | undefined {
+  if (!value || typeof value !== 'object') return undefined
+  const fields = (value as Record<string, unknown>).fields
+  if (!fields || typeof fields !== 'object' || Array.isArray(fields)) return undefined
+  const safe = Object.fromEntries(
+    Object.entries(fields).filter(
+      (entry): entry is [string, string] => typeof entry[1] === 'string',
+    ),
+  )
+  return Object.keys(safe).length ? safe : undefined
+}
+
 export function shouldRetry(failureCount: number, error: unknown): boolean {
   if (failureCount >= 2) return false
   return !(
     error instanceof ApiClientError &&
     error.detail.kind === 'api' &&
-    [400, 401, 404].includes(error.detail.status)
+    [400, 401, 404, 409].includes(error.detail.status)
   )
 }
 
@@ -65,8 +84,15 @@ export class ApiClient {
     return this.request<T>('PATCH', path, options)
   }
 
+  async delete(
+    path: string,
+    options: { protected?: boolean; signal?: AbortSignal; headers?: Record<string, string> } = {},
+  ): Promise<void> {
+    return this.request<void>('DELETE', path, options)
+  }
+
   private async request<T>(
-    method: 'GET' | 'POST' | 'PATCH',
+    method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
     path: string,
     options: {
       protected?: boolean
@@ -99,6 +125,8 @@ export class ApiClient {
       })
     }
     const headerId = response.headers.get('x-request-id')
+    if (response.ok && (response.status === 204 || response.headers.get('content-length') === '0'))
+      return undefined as T
     let body: unknown
     try {
       body = await response.json()
@@ -111,12 +139,14 @@ export class ApiClient {
     }
     if (!response.ok) {
       const envelope = isErrorEnvelope(body) ? body : null
+      const fields = envelope ? safeFields(envelope) : undefined
       const detail: ClientError = {
         kind: 'api',
         status: response.status,
         code: envelope?.error ?? 'request_failed',
         message: envelope?.message ?? `Request failed (${response.status}).`,
         requestId: headerId ?? envelope?.request_id ?? requestId,
+        ...(fields ? { fields } : {}),
       }
       if (response.status === 401) this.onUnauthorized()
       throw new ApiClientError(detail)

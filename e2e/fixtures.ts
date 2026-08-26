@@ -279,7 +279,7 @@ export async function mockApi(page: Page) {
         service_version: '0.1.0',
         git_commit: 'abcdef',
         api_version: 'v1',
-        required_database_migration: 12,
+        required_database_migration: 15,
       })
     if (!route.request().headers().authorization)
       return json(
@@ -773,6 +773,5 @@ export async function mockApi(page: Page) {
 }
 
 export async function authenticate(page: Page) {
-  await page.getByLabel('Bearer credential').fill('e2e-secret')
   await page.getByRole('button', { name: 'Start session' }).click()
 }

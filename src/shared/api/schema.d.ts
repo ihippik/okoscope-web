@@ -20,6 +20,111 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/organizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["createOrganization"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/organizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listAdminOrganizations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/organizations/{organization_id}/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: components["parameters"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        get: operations["listAdminProjects"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/projects/{project_id}/applications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        get: operations["listAdminApplications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/projects/{project_id}/applications/{application_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        get: operations["getAdminApplication"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organization_id}/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: components["parameters"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["createProject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/attention-summary": {
         parameters: {
             query?: never;
@@ -118,7 +223,7 @@ export interface paths {
         };
         get: operations["listApplications"];
         put?: never;
-        post?: never;
+        post: operations["createApplication"];
         delete?: never;
         options?: never;
         head?: never;
@@ -158,6 +263,45 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        get: operations["listApplicationCredentials"];
+        put?: never;
+        post: operations["issueApplicationCredential"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/credentials/{credential_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                credential_id: components["parameters"]["CredentialId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["revokeApplicationCredential"];
         options?: never;
         head?: never;
         patch?: never;
@@ -849,7 +993,7 @@ export interface components {
             project_id: components["schemas"]["Uuid"];
             application_id: components["schemas"]["Uuid"];
             runtime_group_id: components["schemas"]["Uuid"];
-            event_kind: string;
+            event_kind: components["schemas"]["RuntimeEventKind"];
             semantic_summary: components["schemas"]["RuntimeEventSemanticSummary"];
             namespace: string;
             workload_kind: string;
@@ -1056,6 +1200,10 @@ export interface components {
             message: string;
             /** @example 0ec02ed2-8483-4981-893e-bffc535897d7 */
             request_id: string;
+            /** @description Present for field-level validation failures. */
+            fields?: {
+                [key: string]: string;
+            };
         };
         BuildInfo: {
             /** @example 0.1.0 */
@@ -1066,7 +1214,7 @@ export interface components {
             api_version: "v1";
             /**
              * Format: int64
-             * @example 13
+             * @example 15
              */
             required_database_migration: number;
         };
@@ -1075,6 +1223,62 @@ export interface components {
             slug: string;
             name: string;
             created_at: components["schemas"]["Timestamp"];
+        };
+        AdminOrganizationPage: {
+            items: components["schemas"]["Organization"][];
+        };
+        CreateNamedResource: {
+            slug: string;
+            name: string;
+        };
+        ProvisionedProject: {
+            id: components["schemas"]["Uuid"];
+            organization_id: components["schemas"]["Uuid"];
+            slug: string;
+            name: string;
+            created_at: components["schemas"]["Timestamp"];
+        };
+        AdminProjectPage: {
+            items: components["schemas"]["ProvisionedProject"][];
+        };
+        ProvisionedApplication: {
+            id: components["schemas"]["Uuid"];
+            organization_id: components["schemas"]["Uuid"];
+            project_id: components["schemas"]["Uuid"];
+            slug: string;
+            name: string;
+            created_at: components["schemas"]["Timestamp"];
+        };
+        AdminApplicationPage: {
+            items: components["schemas"]["ProvisionedApplication"][];
+        };
+        ApplicationCredential: {
+            id: components["schemas"]["Uuid"];
+            name: string;
+            token_hint: string;
+            created_at: components["schemas"]["Timestamp"];
+            /** @description Time of the most recent successful agent authentication; failed attempts do not update it. */
+            last_used_at: components["schemas"]["NullableTimestamp"];
+            revoked_at: components["schemas"]["NullableTimestamp"];
+        };
+        ApplicationCredentialPage: {
+            items: components["schemas"]["ApplicationCredential"][];
+        };
+        IssueCredentialRequest: {
+            name: string;
+        };
+        IssuedApplicationCredential: {
+            id: components["schemas"]["Uuid"];
+            name: string;
+            token: string;
+            token_hint: string;
+            created_at: components["schemas"]["Timestamp"];
+            /** @constant */
+            shown_once: true;
+        };
+        CreatedApplication: {
+            application: components["schemas"]["ProvisionedApplication"];
+            credential: components["schemas"]["IssuedApplicationCredential"];
         };
         Project: {
             id: components["schemas"]["Uuid"];
@@ -2441,7 +2645,9 @@ export interface components {
         OpaqueCursor: string;
         Limit: number;
         ProjectId: string;
+        OrganizationId: string;
         ApplicationId: string;
+        CredentialId: string;
         InventoryItemId: string;
         GroupId: string;
         ReleaseId: string;
@@ -2450,6 +2656,8 @@ export interface components {
         DeliveryId: string;
         OperationId: string;
         IdempotencyKey: string;
+        /** @description Canonical UUID. Reusing it with a different request returns idempotency_key_reused. Application and credential replays never return plaintext token material. */
+        ProvisioningIdempotencyKey: string;
     };
     requestBodies: {
         CreateRelease: {
@@ -2491,6 +2699,187 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["BuildInfoResponse"];
+        };
+    };
+    createOrganization: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Canonical UUID. Reusing it with a different request returns idempotency_key_reused. Application and credential replays never return plaintext token material. */
+                "Idempotency-Key"?: components["parameters"]["ProvisioningIdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateNamedResource"];
+            };
+        };
+        responses: {
+            /** @description Original Organization returned for an idempotent replay */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Organization"];
+                };
+            };
+            /** @description Organization created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Organization"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    listAdminOrganizations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Organizations ordered by creation time and id */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminOrganizationPage"];
+                };
+            };
+            401: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    listAdminProjects: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: components["parameters"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Projects ordered by creation time and id */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminProjectPage"];
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    listAdminApplications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Applications ordered by creation time and id */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminApplicationPage"];
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    getAdminApplication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Application metadata without credentials */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProvisionedApplication"];
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    createProject: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Canonical UUID. Reusing it with a different request returns idempotency_key_reused. Application and credential replays never return plaintext token material. */
+                "Idempotency-Key"?: components["parameters"]["ProvisioningIdempotencyKey"];
+            };
+            path: {
+                organization_id: components["parameters"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateNamedResource"];
+            };
+        };
+        responses: {
+            /** @description Original Project returned for an idempotent replay */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProvisionedProject"];
+                };
+            };
+            /** @description Project created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProvisionedProject"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            500: components["responses"]["Error"];
         };
     };
     getOrganizationAttentionSummary: {
@@ -2601,6 +2990,40 @@ export interface operations {
             404: components["responses"]["Error"];
         };
     };
+    createApplication: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Canonical UUID. Reusing it with a different request returns idempotency_key_reused. Application and credential replays never return plaintext token material. */
+                "Idempotency-Key"?: components["parameters"]["ProvisioningIdempotencyKey"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateNamedResource"];
+            };
+        };
+        responses: {
+            /** @description Application and one-time initial credential created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedApplication"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
     getApplication: {
         parameters: {
             query?: never;
@@ -2637,6 +3060,91 @@ export interface operations {
             400: components["responses"]["Error"];
             401: components["responses"]["Error"];
             404: components["responses"]["Error"];
+        };
+    };
+    listApplicationCredentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Secret-safe credential metadata */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationCredentialPage"];
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    issueApplicationCredential: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Canonical UUID. Reusing it with a different request returns idempotency_key_reused. Application and credential replays never return plaintext token material. */
+                "Idempotency-Key"?: components["parameters"]["ProvisioningIdempotencyKey"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IssueCredentialRequest"];
+            };
+        };
+        responses: {
+            /** @description One-time Application credential */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssuedApplicationCredential"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    revokeApplicationCredential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                credential_id: components["parameters"]["CredentialId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Credential revoked; repeated revocation is successful */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            500: components["responses"]["Error"];
         };
     };
     listApplicationRuntimeInventory: {

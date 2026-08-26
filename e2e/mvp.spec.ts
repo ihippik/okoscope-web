@@ -22,7 +22,6 @@ test('renders tenant, runtime, and notification surfaces fully in Russian', asyn
     await mockApi(page)
   const openRussian = async (path: string) => {
     await page.goto(path)
-    await page.getByLabel('Токен доступа').fill('e2e-secret')
     await page.getByRole('button', { name: 'Начать сеанс' }).click()
   }
   await page.goto(`/projects/${project.id}/applications/${application.id}`)
@@ -116,7 +115,7 @@ test('navigates Organization → Projects → Applications and supports a deep l
   await page.getByRole('link', { name: /Gateway/ }).click()
   await expect(page.getByRole('heading', { name: 'Gateway' })).toBeVisible()
   await page.reload()
-  await expect(page.getByLabel('Bearer credential')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Start session' })).toBeVisible()
   await authenticate(page)
   await expect(page).toHaveURL(`/projects/${project.id}/applications/${application.id}`)
   await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toContainText('Platform')
@@ -143,7 +142,8 @@ test('credential flow and primary navigation have no detectable accessibility vi
 }) => {
   await mockApi(page)
   await page.goto('/')
-  await expect(page.getByLabel('Bearer credential')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Start session' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Start onboarding' })).toBeVisible()
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   await authenticate(page)
   await expect(page.getByRole('heading', { name: 'Requires attention' })).toBeVisible()
@@ -182,7 +182,7 @@ test('blocks an incompatible backend with diagnostics', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Incompatible backend' })).toBeVisible()
   await expect(page.getByText('v2')).toBeVisible()
-  await expect(page.getByLabel('Bearer credential')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Start session' })).toHaveCount(0)
 })
 
 test('shows invalid runtime configuration without API fallback', async ({ page }) => {
@@ -205,7 +205,7 @@ test('shows correlated API errors and clears a rejected credential', async ({ pa
           service_version: '0.1.0',
           git_commit: 'abc',
           api_version: 'v1',
-          required_database_migration: 12,
+          required_database_migration: 15,
         }),
       })
     return route.fulfill({
@@ -221,7 +221,7 @@ test('shows correlated API errors and clears a rejected credential', async ({ pa
   })
   await page.goto('/projects')
   await authenticate(page)
-  await expect(page.getByLabel('Bearer credential')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Start session' })).toBeVisible()
 })
 
 test('reports malformed and server responses safely', async ({ page }) => {

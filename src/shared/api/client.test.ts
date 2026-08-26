@@ -100,5 +100,54 @@ describe('ApiClient', () => {
         }),
       ),
     ).toBe(false)
+    expect(
+      shouldRetry(
+        0,
+        new ApiClientError({
+          kind: 'api',
+          status: 409,
+          code: 'conflict',
+          message: 'Conflict',
+          requestId: 'id',
+        }),
+      ),
+    ).toBe(false)
+  })
+
+  it('accepts empty 204 DELETE responses', async () => {
+    credentialSession.set('admin-secret')
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const api = new ApiClient({ apiBaseUrl: 'https://api.example' }, vi.fn())
+    await expect(api.delete('/credential', { protected: true })).resolves.toBeUndefined()
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.example/credential',
+      expect.objectContaining({ method: 'DELETE' }),
+    )
+  })
+
+  it('retains only string field errors from safe envelopes', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        response(
+          {
+            error: 'validation_failed',
+            message: 'Invalid fields',
+            request_id: 'request-id',
+            fields: { slug: 'Already exists', unsafe: { token: 'secret' } },
+            token: 'must-not-survive',
+          },
+          { status: 409 },
+        ),
+      ),
+    )
+    const api = new ApiClient({ apiBaseUrl: 'https://api.example' }, vi.fn())
+    await expect(api.post('/organizations', { body: { name: 'Acme' } })).rejects.toMatchObject({
+      detail: {
+        code: 'validation_failed',
+        fields: { slug: 'Already exists' },
+      },
+    })
   })
 })

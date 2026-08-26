@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { credentialSession } from './session'
+import { credentialSession, getSessionMode } from './session'
 
 describe('credential session', () => {
   afterEach(() => credentialSession.clear())
@@ -14,5 +14,14 @@ describe('credential session', () => {
     expect(credentialSession.get()).toBeNull()
     expect(listener).toHaveBeenCalledTimes(2)
     unsubscribe()
+  })
+
+  it('keeps tenant and administrator development entry modes separate', () => {
+    credentialSession.set('tenant-secret')
+    expect(getSessionMode()).toBe('tenant')
+    credentialSession.set('admin-secret', 'admin')
+    expect(getSessionMode()).toBe('admin')
+    credentialSession.clear()
+    expect(getSessionMode()).toBe('tenant')
   })
 })

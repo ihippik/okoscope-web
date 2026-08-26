@@ -32,6 +32,17 @@ export type ApplicationAttentionQuery = NonNullable<
   operations['getApplicationAttentionSummary']['parameters']['query']
 >
 export type ErrorEnvelope = components['schemas']['Error']
+export type AdminOrganizationPage = components['schemas']['AdminOrganizationPage']
+export type ProvisionedProject = components['schemas']['ProvisionedProject']
+export type AdminProjectPage = components['schemas']['AdminProjectPage']
+export type ProvisionedApplication = components['schemas']['ProvisionedApplication']
+export type AdminApplicationPage = components['schemas']['AdminApplicationPage']
+export type CreateNamedResource = components['schemas']['CreateNamedResource']
+export type ApplicationCredential = components['schemas']['ApplicationCredential']
+export type ApplicationCredentialPage = components['schemas']['ApplicationCredentialPage']
+export type IssueCredentialRequest = components['schemas']['IssueCredentialRequest']
+export type IssuedApplicationCredential = components['schemas']['IssuedApplicationCredential']
+export type CreatedApplication = components['schemas']['CreatedApplication']
 export type RuntimeGroup = components['schemas']['RuntimeGroup']
 export type RuntimeGroupPage = components['schemas']['RuntimeGroupPage']
 export type RuntimeGroupDetail = components['schemas']['RuntimeGroupDetail']
@@ -241,7 +252,7 @@ export const contractFixture = {
     service_version: '0.1.0',
     git_commit: 'unknown',
     api_version: 'v1',
-    required_database_migration: 12,
+    required_database_migration: 15,
   } satisfies BuildInfo,
   applicationWorkerPage: {
     items: [

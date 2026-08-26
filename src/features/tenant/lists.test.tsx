@@ -7,12 +7,17 @@ import {
   RouterProvider,
 } from '@tanstack/react-router'
 import { describe, expect, it, vi } from 'vitest'
+import userEvent from '@testing-library/user-event'
 import { ApiProvider } from '../../shared/api/context'
 import type { ApiClient } from '../../shared/api/client'
 import { ApplicationList } from './application-list'
 import { ProjectList } from './project-list'
 
-function renderWithProviders(node: React.ReactNode, get: ApiClient['get']) {
+function renderWithProviders(
+  node: React.ReactNode,
+  get: ApiClient['get'],
+  post: ApiClient['post'] = vi.fn(),
+) {
   const rootRoute = createRootRoute({ component: () => node })
   const router = createRouter({
     routeTree: rootRoute,
@@ -21,7 +26,7 @@ function renderWithProviders(node: React.ReactNode, get: ApiClient['get']) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const rendered = render(
     <QueryClientProvider client={client}>
-      <ApiProvider value={{ get } as ApiClient}>
+      <ApiProvider value={{ get, post } as ApiClient}>
         <RouterProvider router={router} />
       </ApiProvider>
     </QueryClientProvider>,
@@ -90,5 +95,54 @@ describe('tenant lists', () => {
     expect(
       screen.getByRole('heading', { name: 'Projects could not be refreshed' }),
     ).toBeInTheDocument()
+  })
+
+  it('creates a Project in the current tenant Organization', async () => {
+    const post = vi.fn().mockResolvedValue({
+      id: 'project-2',
+      organization_id: 'organization-1',
+      slug: 'payments',
+      name: 'Payments',
+      created_at: '2026-08-26T12:00:00Z',
+    })
+    renderWithProviders(
+      <ProjectList organizationId="organization-1" />,
+      vi.fn().mockResolvedValue({ items: [], next_cursor: null }),
+      post,
+    )
+    await userEvent.type(await screen.findByLabelText('Name'), 'Payments')
+    await userEvent.click(screen.getByRole('button', { name: 'Create Project' }))
+    await waitFor(() => expect(post).toHaveBeenCalledTimes(1))
+    expect(post.mock.calls[0]![0]).toBe('/api/v1/organizations/organization-1/projects')
+  })
+
+  it('creates an Application and shows its one-time tenant credential', async () => {
+    const post = vi.fn().mockResolvedValue({
+      application: {
+        id: 'application-2',
+        organization_id: 'organization-1',
+        project_id: 'project-1',
+        slug: 'payments',
+        name: 'Payments',
+        created_at: '2026-08-26T12:00:00Z',
+      },
+      credential: {
+        id: 'credential-1',
+        name: 'default',
+        token: 'oko_app_v1_once',
+        token_hint: 'once',
+        created_at: '2026-08-26T12:00:00Z',
+        shown_once: true,
+      },
+    })
+    renderWithProviders(
+      <ApplicationList projectId="project-1" />,
+      vi.fn().mockResolvedValue({ items: [], next_cursor: null }),
+      post,
+    )
+    await userEvent.type(await screen.findByLabelText('Name'), 'Payments')
+    await userEvent.click(screen.getByRole('button', { name: 'Create Application' }))
+    expect(await screen.findByText('oko_app_v1_once')).toBeInTheDocument()
+    expect(post.mock.calls[0]![0]).toBe('/api/v1/projects/project-1/applications')
   })
 })

@@ -23,7 +23,7 @@ function ProjectsPage() {
         <p className="eyebrow">{organization.data?.name ?? 'Organization'}</p>
         <h1 className="mt-2 text-4xl font-semibold">Projects</h1>
       </div>
-      <ProjectList />
+      <ProjectList organizationId={organization.data?.id} />
     </div>
   )
 }

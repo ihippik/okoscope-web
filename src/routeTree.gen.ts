@@ -10,11 +10,13 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ProjectsIndexRouteImport } from './routes/projects.index'
 import { Route as ProjectsProjectIdIndexRouteImport } from './routes/projects.$projectId.index'
 import { Route as ProjectsProjectIdNotificationsRouteImport } from './routes/projects.$projectId.notifications'
 import { Route as ProjectsProjectIdApplicationsApplicationIdRouteImport } from './routes/projects.$projectId.applications.$applicationId'
 import { Route as ProjectsProjectIdNotificationsRecoveryRouteImport } from './routes/projects.$projectId.notifications.recovery'
+import { Route as AdminProjectsProjectIdApplicationsApplicationIdRouteImport } from './routes/admin.projects.$projectId.applications.$applicationId'
 import { Route as ProjectsProjectIdApplicationsApplicationIdAttentionRouteImport } from './routes/projects.$projectId.applications.$applicationId.attention'
 import { Route as ProjectsProjectIdApplicationsApplicationIdReleasesRouteImport } from './routes/projects.$projectId.applications.$applicationId.releases'
 import { Route as ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteImport } from './routes/projects.$projectId.applications.$applicationId.runtime-groups'
@@ -29,6 +31,11 @@ import { Route as ProjectsProjectIdApplicationsApplicationIdReleasesTargetReleas
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProjectsIndexRoute = ProjectsIndexRouteImport.update({
@@ -58,6 +65,12 @@ const ProjectsProjectIdNotificationsRecoveryRoute =
     id: '/recovery',
     path: '/recovery',
     getParentRoute: () => ProjectsProjectIdNotificationsRoute,
+  } as any)
+const AdminProjectsProjectIdApplicationsApplicationIdRoute =
+  AdminProjectsProjectIdApplicationsApplicationIdRouteImport.update({
+    id: '/admin/projects/$projectId/applications/$applicationId',
+    path: '/admin/projects/$projectId/applications/$applicationId',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const ProjectsProjectIdApplicationsApplicationIdAttentionRoute =
   ProjectsProjectIdApplicationsApplicationIdAttentionRouteImport.update({
@@ -131,11 +144,13 @@ const ProjectsProjectIdApplicationsApplicationIdReleasesTargetReleaseIdRuntimeDi
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/onboarding': typeof OnboardingRoute
   '/projects/': typeof ProjectsIndexRoute
   '/projects/$projectId/notifications': typeof ProjectsProjectIdNotificationsRouteWithChildren
   '/projects/$projectId/': typeof ProjectsProjectIdIndexRoute
   '/projects/$projectId/applications/$applicationId': typeof ProjectsProjectIdApplicationsApplicationIdRouteWithChildren
   '/projects/$projectId/notifications/recovery': typeof ProjectsProjectIdNotificationsRecoveryRouteWithChildren
+  '/admin/projects/$projectId/applications/$applicationId': typeof AdminProjectsProjectIdApplicationsApplicationIdRoute
   '/projects/$projectId/applications/$applicationId/attention': typeof ProjectsProjectIdApplicationsApplicationIdAttentionRoute
   '/projects/$projectId/applications/$applicationId/releases': typeof ProjectsProjectIdApplicationsApplicationIdReleasesRouteWithChildren
   '/projects/$projectId/applications/$applicationId/runtime-groups': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteWithChildren
@@ -149,11 +164,13 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/onboarding': typeof OnboardingRoute
   '/projects': typeof ProjectsIndexRoute
   '/projects/$projectId/notifications': typeof ProjectsProjectIdNotificationsRouteWithChildren
   '/projects/$projectId': typeof ProjectsProjectIdIndexRoute
   '/projects/$projectId/applications/$applicationId': typeof ProjectsProjectIdApplicationsApplicationIdRouteWithChildren
   '/projects/$projectId/notifications/recovery': typeof ProjectsProjectIdNotificationsRecoveryRouteWithChildren
+  '/admin/projects/$projectId/applications/$applicationId': typeof AdminProjectsProjectIdApplicationsApplicationIdRoute
   '/projects/$projectId/applications/$applicationId/attention': typeof ProjectsProjectIdApplicationsApplicationIdAttentionRoute
   '/projects/$projectId/applications/$applicationId/releases': typeof ProjectsProjectIdApplicationsApplicationIdReleasesRouteWithChildren
   '/projects/$projectId/applications/$applicationId/runtime-groups': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteWithChildren
@@ -168,11 +185,13 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/onboarding': typeof OnboardingRoute
   '/projects/': typeof ProjectsIndexRoute
   '/projects/$projectId/notifications': typeof ProjectsProjectIdNotificationsRouteWithChildren
   '/projects/$projectId/': typeof ProjectsProjectIdIndexRoute
   '/projects/$projectId/applications/$applicationId': typeof ProjectsProjectIdApplicationsApplicationIdRouteWithChildren
   '/projects/$projectId/notifications/recovery': typeof ProjectsProjectIdNotificationsRecoveryRouteWithChildren
+  '/admin/projects/$projectId/applications/$applicationId': typeof AdminProjectsProjectIdApplicationsApplicationIdRoute
   '/projects/$projectId/applications/$applicationId/attention': typeof ProjectsProjectIdApplicationsApplicationIdAttentionRoute
   '/projects/$projectId/applications/$applicationId/releases': typeof ProjectsProjectIdApplicationsApplicationIdReleasesRouteWithChildren
   '/projects/$projectId/applications/$applicationId/runtime-groups': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteWithChildren
@@ -188,11 +207,13 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/onboarding'
     | '/projects/'
     | '/projects/$projectId/notifications'
     | '/projects/$projectId/'
     | '/projects/$projectId/applications/$applicationId'
     | '/projects/$projectId/notifications/recovery'
+    | '/admin/projects/$projectId/applications/$applicationId'
     | '/projects/$projectId/applications/$applicationId/attention'
     | '/projects/$projectId/applications/$applicationId/releases'
     | '/projects/$projectId/applications/$applicationId/runtime-groups'
@@ -206,11 +227,13 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/onboarding'
     | '/projects'
     | '/projects/$projectId/notifications'
     | '/projects/$projectId'
     | '/projects/$projectId/applications/$applicationId'
     | '/projects/$projectId/notifications/recovery'
+    | '/admin/projects/$projectId/applications/$applicationId'
     | '/projects/$projectId/applications/$applicationId/attention'
     | '/projects/$projectId/applications/$applicationId/releases'
     | '/projects/$projectId/applications/$applicationId/runtime-groups'
@@ -224,11 +247,13 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/onboarding'
     | '/projects/'
     | '/projects/$projectId/notifications'
     | '/projects/$projectId/'
     | '/projects/$projectId/applications/$applicationId'
     | '/projects/$projectId/notifications/recovery'
+    | '/admin/projects/$projectId/applications/$applicationId'
     | '/projects/$projectId/applications/$applicationId/attention'
     | '/projects/$projectId/applications/$applicationId/releases'
     | '/projects/$projectId/applications/$applicationId/runtime-groups'
@@ -243,10 +268,12 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  OnboardingRoute: typeof OnboardingRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
   ProjectsProjectIdNotificationsRoute: typeof ProjectsProjectIdNotificationsRouteWithChildren
   ProjectsProjectIdIndexRoute: typeof ProjectsProjectIdIndexRoute
   ProjectsProjectIdApplicationsApplicationIdRoute: typeof ProjectsProjectIdApplicationsApplicationIdRouteWithChildren
+  AdminProjectsProjectIdApplicationsApplicationIdRoute: typeof AdminProjectsProjectIdApplicationsApplicationIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -256,6 +283,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/projects/': {
@@ -292,6 +326,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/projects/$projectId/notifications/recovery'
       preLoaderRoute: typeof ProjectsProjectIdNotificationsRecoveryRouteImport
       parentRoute: typeof ProjectsProjectIdNotificationsRoute
+    }
+    '/admin/projects/$projectId/applications/$applicationId': {
+      id: '/admin/projects/$projectId/applications/$applicationId'
+      path: '/admin/projects/$projectId/applications/$applicationId'
+      fullPath: '/admin/projects/$projectId/applications/$applicationId'
+      preLoaderRoute: typeof AdminProjectsProjectIdApplicationsApplicationIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/projects/$projectId/applications/$applicationId/attention': {
       id: '/projects/$projectId/applications/$applicationId/attention'
@@ -473,12 +514,15 @@ const ProjectsProjectIdApplicationsApplicationIdRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  OnboardingRoute: OnboardingRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
   ProjectsProjectIdNotificationsRoute:
     ProjectsProjectIdNotificationsRouteWithChildren,
   ProjectsProjectIdIndexRoute: ProjectsProjectIdIndexRoute,
   ProjectsProjectIdApplicationsApplicationIdRoute:
     ProjectsProjectIdApplicationsApplicationIdRouteWithChildren,
+  AdminProjectsProjectIdApplicationsApplicationIdRoute:
+    AdminProjectsProjectIdApplicationsApplicationIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,9 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
-import { Link, Outlet, createRootRoute } from '@tanstack/react-router'
-import { FormEvent, useState } from 'react'
+import { Link, Outlet, createRootRoute, useNavigate } from '@tanstack/react-router'
 import { buildInfoOptions } from '../shared/api/queries'
 import { useApi } from '../shared/api/context'
-import { credentialSession, useCredential } from '../shared/auth/session'
+import {
+  DEVELOPMENT_ADMIN_API_CREDENTIAL,
+  DEVELOPMENT_API_CREDENTIAL,
+  credentialSession,
+  getSessionMode,
+  useCredential,
+} from '../shared/auth/session'
 import { Button } from '../shared/ui/button'
 import { Card } from '../shared/ui/card'
 import { ErrorState } from '../shared/ui/error-state'
@@ -13,7 +18,7 @@ import { LanguageSelector } from '../shared/i18n/language-selector'
 import { Brand, BrandMark } from '../shared/ui/brand'
 
 export const REQUIRED_API_VERSION = 'v1'
-export const REQUIRED_DATABASE_MIGRATION = 12
+export const REQUIRED_DATABASE_MIGRATION = 15
 export const isBuildCompatible = (info: unknown): boolean => {
   if (!info || typeof info !== 'object') return false
   const value = info as { api_version?: unknown; required_database_migration?: unknown }
@@ -107,6 +112,15 @@ function RootComponent() {
             >
               {t('projects')}
             </Link>
+            {getSessionMode() === 'admin' && (
+              <Link
+                to="/onboarding"
+                className="nav-link"
+                activeProps={{ className: 'nav-link text-cyan-300' }}
+              >
+                {t('onboarding')}
+              </Link>
+            )}
             <Button variant="ghost" onClick={() => credentialSession.clear()}>
               {t('endSession')}
             </Button>
@@ -126,10 +140,14 @@ function RootComponent() {
 
 function CredentialPrompt() {
   const t = useT()
-  const [value, setValue] = useState('')
-  const submit = (event: FormEvent) => {
-    event.preventDefault()
-    if (value.trim()) credentialSession.set(value)
+  const navigate = useNavigate()
+  const startSession = (
+    credential: string,
+    mode: 'tenant' | 'admin',
+    destination?: '/onboarding',
+  ) => {
+    credentialSession.set(credential, mode)
+    if (destination) void navigate({ to: destination })
   }
   return (
     <main id="main-content" className="grid min-h-screen place-items-center p-6">
@@ -140,25 +158,23 @@ function CredentialPrompt() {
         </div>
         <p className="eyebrow">{t('compatibleApi')}</p>
         <h1 className="mt-3 text-3xl font-semibold">{t('connect')}</h1>
-        <p className="mt-3 text-sm text-slate-400">{t('credentialHelp')}</p>
-        <form className="mt-6 space-y-4" onSubmit={submit}>
-          <label className="block text-sm font-medium" htmlFor="credential">
-            {t('bearerCredential')}
-          </label>
-          <input
-            id="credential"
-            name="credential"
-            type="password"
-            autoComplete="off"
-            value={value}
-            onChange={(event) => setValue(event.target.value)}
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-300"
-            required
-          />
-          <Button className="w-full" type="submit">
+        <div className="mt-6 space-y-4">
+          <Button
+            className="w-full"
+            type="button"
+            onClick={() => startSession(DEVELOPMENT_API_CREDENTIAL, 'tenant')}
+          >
             {t('startSession')}
           </Button>
-        </form>
+          <Button
+            className="w-full"
+            type="button"
+            variant="outline"
+            onClick={() => startSession(DEVELOPMENT_ADMIN_API_CREDENTIAL, 'admin', '/onboarding')}
+          >
+            {t('startOnboarding')}
+          </Button>
+        </div>
       </Card>
     </main>
   )

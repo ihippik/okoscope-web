@@ -4,6 +4,7 @@ import { CircleAlert } from 'lucide-react'
 import { useEffect } from 'react'
 import { formatCount, formatTimestamp } from '../features/tenant/format'
 import { ApplicationWorkers } from '../features/tenant/application-workers'
+import { AgentCredentials } from '../features/provisioning/credentials'
 import { applicationOptions, projectOptions } from '../shared/api/queries'
 import { useApi } from '../shared/api/context'
 import { useLocalization } from '../shared/i18n'
@@ -138,6 +139,7 @@ function ApplicationPage() {
         </div>
       </Card>
       <ApplicationWorkers projectId={projectId} applicationId={applicationId} />
+      <AgentCredentials projectId={projectId} applicationId={applicationId} />
     </div>
   )
 }

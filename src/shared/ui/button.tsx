@@ -11,6 +11,7 @@ const buttonVariants = cva(
         default: 'brand-button px-4 py-2 text-slate-950',
         outline: 'brand-button-outline border px-4 py-2 text-slate-100',
         ghost: 'brand-button-ghost px-3 py-2 text-slate-200',
+        destructive: 'border border-rose-700 bg-rose-900 px-4 py-2 text-rose-100 hover:bg-rose-800',
       },
     },
     defaultVariants: { variant: 'default' },
