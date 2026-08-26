@@ -81,11 +81,11 @@ export function OrganizationAttention({
               </div>
             ))}
           </section>
-          <div className="max-w-4xl">
-            {summary.priority_items.length > 0 && <PriorityList items={summary.priority_items} />}
-          </div>
-          <div className="max-w-4xl">
+          <div className="w-full">
             <RecommendationList recommendations={summary.recommendations} />
+          </div>
+          <div className="w-full">
+            {summary.priority_items.length > 0 && <PriorityList items={summary.priority_items} />}
           </div>
         </>
       )}

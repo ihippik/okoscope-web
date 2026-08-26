@@ -17,6 +17,9 @@ export const englishMessages = {
   english: 'English',
   russian: 'Russian',
   projects: 'Projects',
+  profile: 'Profile',
+  profileTitle: 'Profile',
+  profileHelp: 'Manage your current Okoscope session.',
   onboarding: 'Onboarding',
   provisionOkoscope: 'Provision Okoscope',
   adminCredentialNotice:
@@ -282,6 +285,9 @@ export const russianMessages = {
   english: 'Английский',
   russian: 'Русский',
   projects: 'Проекты',
+  profile: 'Профиль',
+  profileTitle: 'Профиль',
+  profileHelp: 'Управление текущим сеансом Okoscope.',
   onboarding: 'Настройка',
   provisionOkoscope: 'Настройка Okoscope',
   adminCredentialNotice:

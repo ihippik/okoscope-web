@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import {
   createMemoryHistory,
   createRootRoute,
@@ -110,8 +110,11 @@ describe('tenant lists', () => {
       vi.fn().mockResolvedValue({ items: [], next_cursor: null }),
       post,
     )
+    await userEvent.click(await screen.findByRole('button', { name: 'Create Project' }))
     await userEvent.type(await screen.findByLabelText('Name'), 'Payments')
-    await userEvent.click(screen.getByRole('button', { name: 'Create Project' }))
+    await userEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Create Project' }),
+    )
     await waitFor(() => expect(post).toHaveBeenCalledTimes(1))
     expect(post.mock.calls[0]![0]).toBe('/api/v1/organizations/organization-1/projects')
   })
@@ -140,8 +143,11 @@ describe('tenant lists', () => {
       vi.fn().mockResolvedValue({ items: [], next_cursor: null }),
       post,
     )
+    await userEvent.click(await screen.findByRole('button', { name: 'Create Application' }))
     await userEvent.type(await screen.findByLabelText('Name'), 'Payments')
-    await userEvent.click(screen.getByRole('button', { name: 'Create Application' }))
+    await userEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Create Application' }),
+    )
     expect(await screen.findByText('oko_app_v1_once')).toBeInTheDocument()
     expect(post.mock.calls[0]![0]).toBe('/api/v1/projects/project-1/applications')
   })

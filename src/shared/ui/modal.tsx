@@ -8,12 +8,14 @@ export function Modal({
   children,
   onClose,
   closeDisabled = false,
+  showCloseButton = true,
 }: {
   title: string
   description: string
   children: ReactNode
   onClose: () => void
   closeDisabled?: boolean
+  showCloseButton?: boolean
 }) {
   const t = useT()
   const dialogRef = useRef<HTMLDivElement>(null)
@@ -69,9 +71,11 @@ export function Modal({
           {description}
         </p>
         <div className="mt-5">{children}</div>
-        <Button className="mt-5" variant="ghost" onClick={onClose} disabled={closeDisabled}>
-          {t('close')}
-        </Button>
+        {showCloseButton && (
+          <Button className="mt-5" variant="ghost" onClick={onClose} disabled={closeDisabled}>
+            {t('close')}
+          </Button>
+        )}
       </div>
     </div>
   )

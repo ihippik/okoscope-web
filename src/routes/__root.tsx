@@ -121,10 +121,13 @@ function RootComponent() {
                 {t('onboarding')}
               </Link>
             )}
-            <Button variant="ghost" onClick={() => credentialSession.clear()}>
-              {t('endSession')}
-            </Button>
-            <LanguageSelector />
+            <Link
+              to="/profile"
+              className="nav-link"
+              activeProps={{ className: 'nav-link text-cyan-300' }}
+            >
+              {t('profile')}
+            </Link>
           </nav>
         </div>
       </header>

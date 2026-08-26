@@ -83,11 +83,13 @@ export function NamedResourceForm({
   pending,
   error,
   onSubmit,
+  onCancel,
 }: {
   label: string
   pending: boolean
   error?: unknown
   onSubmit: (value: NamedResourceValue) => void
+  onCancel?: () => void
 }) {
   const t = useT()
   const [value, setValue] = useState<NamedResourceValue>({ name: '', slug: '' })
@@ -165,9 +167,16 @@ export function NamedResourceForm({
           </p>
         </div>
       )}
-      <Button type="submit" disabled={pending}>
-        {pending ? t('creating') : t('createEntity', { entity: label })}
-      </Button>
+      <div className="flex items-center justify-between gap-2">
+        <Button type="submit" disabled={pending}>
+          {pending ? t('creating') : t('createEntity', { entity: label })}
+        </Button>
+        {onCancel && (
+          <Button type="button" variant="ghost" disabled={pending} onClick={onCancel}>
+            {t('close')}
+          </Button>
+        )}
+      </div>
     </form>
   )
 }

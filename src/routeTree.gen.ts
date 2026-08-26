@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProjectsIndexRouteImport } from './routes/projects.index'
 import { Route as ProjectsProjectIdIndexRouteImport } from './routes/projects.$projectId.index'
 import { Route as ProjectsProjectIdNotificationsRouteImport } from './routes/projects.$projectId.notifications'
@@ -36,6 +37,11 @@ const IndexRoute = IndexRouteImport.update({
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProjectsIndexRoute = ProjectsIndexRouteImport.update({
@@ -145,6 +151,7 @@ const ProjectsProjectIdApplicationsApplicationIdReleasesTargetReleaseIdRuntimeDi
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/onboarding': typeof OnboardingRoute
+  '/profile': typeof ProfileRoute
   '/projects/': typeof ProjectsIndexRoute
   '/projects/$projectId/notifications': typeof ProjectsProjectIdNotificationsRouteWithChildren
   '/projects/$projectId/': typeof ProjectsProjectIdIndexRoute
@@ -165,6 +172,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/onboarding': typeof OnboardingRoute
+  '/profile': typeof ProfileRoute
   '/projects': typeof ProjectsIndexRoute
   '/projects/$projectId/notifications': typeof ProjectsProjectIdNotificationsRouteWithChildren
   '/projects/$projectId': typeof ProjectsProjectIdIndexRoute
@@ -186,6 +194,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/onboarding': typeof OnboardingRoute
+  '/profile': typeof ProfileRoute
   '/projects/': typeof ProjectsIndexRoute
   '/projects/$projectId/notifications': typeof ProjectsProjectIdNotificationsRouteWithChildren
   '/projects/$projectId/': typeof ProjectsProjectIdIndexRoute
@@ -208,6 +217,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/onboarding'
+    | '/profile'
     | '/projects/'
     | '/projects/$projectId/notifications'
     | '/projects/$projectId/'
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/onboarding'
+    | '/profile'
     | '/projects'
     | '/projects/$projectId/notifications'
     | '/projects/$projectId'
@@ -248,6 +259,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/onboarding'
+    | '/profile'
     | '/projects/'
     | '/projects/$projectId/notifications'
     | '/projects/$projectId/'
@@ -269,6 +281,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   OnboardingRoute: typeof OnboardingRoute
+  ProfileRoute: typeof ProfileRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
   ProjectsProjectIdNotificationsRoute: typeof ProjectsProjectIdNotificationsRouteWithChildren
   ProjectsProjectIdIndexRoute: typeof ProjectsProjectIdIndexRoute
@@ -290,6 +303,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/projects/': {
@@ -515,6 +535,7 @@ const ProjectsProjectIdApplicationsApplicationIdRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   OnboardingRoute: OnboardingRoute,
+  ProfileRoute: ProfileRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
   ProjectsProjectIdNotificationsRoute:
     ProjectsProjectIdNotificationsRouteWithChildren,
