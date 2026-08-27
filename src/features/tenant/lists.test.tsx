@@ -12,12 +12,18 @@ import { ApiProvider } from '../../shared/api/context'
 import type { ApiClient } from '../../shared/api/client'
 import { ApplicationList } from './application-list'
 import { ProjectList } from './project-list'
+import { authenticationSession } from '../../shared/auth/session'
 
 function renderWithProviders(
   node: React.ReactNode,
   get: ApiClient['get'],
   post: ApiClient['post'] = vi.fn(),
 ) {
+  authenticationSession.authenticate({
+    user: { id: 'user', email: 'owner@example.com' },
+    organization: { id: 'organization', name: 'Acme', slug: 'acme' },
+    role: 'owner',
+  })
   const rootRoute = createRootRoute({ component: () => node })
   const router = createRouter({
     routeTree: rootRoute,

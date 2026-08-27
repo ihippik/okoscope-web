@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { credentialSession } from '../auth/session'
 import { ApiClient, ApiClientError, shouldRetry } from './client'
 
 const response = (body: unknown, init: ResponseInit = {}) =>
@@ -12,11 +11,9 @@ const response = (body: unknown, init: ResponseInit = {}) =>
 describe('ApiClient', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
-    credentialSession.clear()
   })
 
-  it('sends ephemeral authorization and request correlation', async () => {
-    credentialSession.set('top-secret')
+  it('sends browser credentials and request correlation without tenant authorization', async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValue(response({ id: 'org' }, { headers: { 'x-request-id': 'server-id' } }))
@@ -26,13 +23,14 @@ describe('ApiClient', () => {
       id: 'org',
     })
     const headers = fetchMock.mock.calls[0]?.[1]?.headers as Headers
-    expect(headers.get('authorization')).toBe('Bearer top-secret')
+    expect(headers.get('authorization')).toBeNull()
     expect(headers.get('x-request-id')).toBeTruthy()
-    expect(JSON.stringify(fetchMock.mock.calls)).not.toContain('credential=')
+    expect(fetchMock.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({ credentials: 'include' }),
+    )
   })
 
   it('sends lifecycle mutations as protected POST requests', async () => {
-    credentialSession.set('token')
     const fetchMock = vi.fn().mockResolvedValue(response({ status: 'acknowledged' }))
     vi.stubGlobal('fetch', fetchMock)
     const api = new ApiClient({ apiBaseUrl: 'https://api.example' }, vi.fn())
@@ -41,12 +39,12 @@ describe('ApiClient', () => {
       'https://api.example/api/v1/runtime-groups/group/acknowledge',
       expect.objectContaining({ method: 'POST' }),
     )
-    const headers = fetchMock.mock.calls[0]?.[1]?.headers as Headers
-    expect(headers.get('authorization')).toBe('Bearer token')
+    expect(fetchMock.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({ credentials: 'include' }),
+    )
   })
 
   it('prefers response header request ID and clears on 401', async () => {
-    credentialSession.set('bad')
     const unauthorized = vi.fn()
     vi.stubGlobal(
       'fetch',
@@ -64,6 +62,26 @@ describe('ApiClient', () => {
       detail: { kind: 'api', status: 401, requestId: 'header-id' },
     })
     expect(unauthorized).toHaveBeenCalledOnce()
+  })
+
+  it('does not notify globally for an expected authentication 401', async () => {
+    const unauthorized = vi.fn()
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          response(
+            { error: 'invalid_credentials', message: 'No', request_id: 'id' },
+            { status: 401 },
+          ),
+        ),
+    )
+    const api = new ApiClient({ apiBaseUrl: '/' }, unauthorized)
+    await expect(
+      api.post('/api/v1/auth/login', { body: {}, unauthorized: 'ignore' }),
+    ).rejects.toBeInstanceOf(ApiClientError)
+    expect(unauthorized).not.toHaveBeenCalled()
   })
 
   it('normalizes network and malformed JSON failures', async () => {
@@ -115,7 +133,6 @@ describe('ApiClient', () => {
   })
 
   it('accepts empty 204 DELETE responses', async () => {
-    credentialSession.set('admin-secret')
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
     vi.stubGlobal('fetch', fetchMock)
     const api = new ApiClient({ apiBaseUrl: 'https://api.example' }, vi.fn())

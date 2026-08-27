@@ -29,6 +29,28 @@ body::before {
   background-size: 48px 48px;
   mask-image: linear-gradient(to bottom, black, transparent 75%);
 }
+.auth-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(20rem, 28rem);
+  gap: 4rem;
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+}
+.input {
+  width: 100%;
+  border: 1px solid rgb(71 104 143 / 65%);
+  border-radius: 0.55rem;
+  background: rgb(5 18 34 / 72%);
+  padding: 0.7rem 0.8rem;
+  color: #edf5ff;
+}
+@media (max-width: 48rem) {
+  .auth-layout {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
 button,
 input,
 select {

@@ -33,6 +33,7 @@ const json = (route: Route, body: unknown, status = 200) =>
   })
 
 async function mockProvisioning(page: Page) {
+  let loggedIn = false
   let organizations: (typeof organization)[] = []
   let projects: (typeof project)[] = []
   let applications: (typeof application)[] = []
@@ -55,8 +56,25 @@ async function mockProvisioning(page: Page) {
         service_version: '1',
         git_commit: 'test',
         api_version: 'v1',
-        required_database_migration: 15,
+        required_database_migration: 16,
       })
+    const authContext = {
+      user: { id: 'user', email: 'owner@example.com' },
+      organization,
+      role: 'owner',
+    }
+    if (path === '/api/v1/auth/me')
+      return loggedIn
+        ? json(route, authContext)
+        : json(
+            route,
+            { error: 'unauthorized', message: 'Session required', request_id: 'auth' },
+            401,
+          )
+    if (path === '/api/v1/auth/login') {
+      loggedIn = true
+      return json(route, authContext)
+    }
     if (path === '/api/v1/admin/organizations' && method === 'GET')
       return json(route, { items: organizations })
     if (path === '/api/v1/organizations' && method === 'POST') {
@@ -115,7 +133,9 @@ async function mockProvisioning(page: Page) {
 }
 
 async function authenticate(page: Page) {
-  await page.getByRole('button', { name: 'Start session' }).click()
+  await page.getByLabel('Email').fill('owner@example.com')
+  await page.getByLabel('Password').fill('correct horse battery staple')
+  await page.getByRole('button', { name: 'Sign in', exact: true }).last().click()
 }
 
 test('provisions hierarchy, exposes the token once, and manages credentials', async ({ page }) => {

@@ -2,7 +2,7 @@ import ts from 'typescript'
 import { describe, expect, it } from 'vitest'
 import { legacyRussian } from './legacy'
 
-const technicalLiterals = new Set(['OKOSCOPE', 'ms', 'null'])
+const technicalLiterals = new Set(['OKOSCOPE', 'Okoscope', 'ms', 'null'])
 
 function jsxInterfaceLiterals(): Set<string> {
   const literals = new Set<string>()

@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-`public/config.js` configures the local API base URL. Its default `/` is same-origin; use an absolute backend URL when the backend allows the UI's exact origin through CORS. The browser sends bearer authentication through the `Authorization` header. Credentials exist only in memory and must be re-entered after reload.
+`public/config.js` configures the local API base URL. Its default `/` is same-origin; use an absolute backend URL only when the backend allows the UI's exact origin through credentialed CORS. Human authentication uses the backend's opaque `HttpOnly` session cookie: the UI sends requests with browser credentials enabled and never reads or persists session material.
 
 ## OpenAPI contract
 
@@ -43,7 +43,7 @@ docker run --rm -p 8080:8080 --read-only --tmpfs /tmp:rw,noexec,nosuid,size=32m 
 
 `OKOSCOPE_API_BASE_URL` accepts a same-origin path or an absolute HTTP(S) URL without credentials. `config.js` and `index.html` are not cached; hashed assets are immutable. `/healthz` is the health endpoint and client-side deep links use SPA fallback.
 
-Prefer a same-origin deployment with `/api` reverse-proxied to the backend. For a separate origin, configure the backend's exact CORS allowlist entry for the UI origin; wildcard and credentialed CORS are intentionally unsupported.
+Prefer a same-origin deployment with `/api` reverse-proxied to the backend. For a separate origin, configure the backend's exact CORS allowlist entry for the UI origin; wildcard origins are unsupported and credentialed requests require the exact trusted origin.
 
 Build and run the container smoke suite:
 

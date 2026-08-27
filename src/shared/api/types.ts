@@ -1,6 +1,12 @@
 import type { components, operations } from './schema'
 
 export type BuildInfo = components['schemas']['BuildInfo']
+export type AuthContext = components['schemas']['AuthContext']
+export type AuthenticatedUser = components['schemas']['AuthenticatedUser']
+export type AuthenticatedOrganization = components['schemas']['AuthenticatedOrganization']
+export type OrganizationRole = components['schemas']['OrganizationRole']
+export type RegisterRequest = components['schemas']['RegisterRequest']
+export type LoginRequest = components['schemas']['LoginRequest']
 export type Organization = components['schemas']['Organization']
 export type Project = components['schemas']['Project']
 export type ProjectPage = components['schemas']['ProjectPage']
@@ -252,7 +258,7 @@ export const contractFixture = {
     service_version: '0.1.0',
     git_commit: 'unknown',
     api_version: 'v1',
-    required_database_migration: 15,
+    required_database_migration: 16,
   } satisfies BuildInfo,
   applicationWorkerPage: {
     items: [

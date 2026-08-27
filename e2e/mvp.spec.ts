@@ -6,7 +6,11 @@ test('switches the interface to Russian and persists the choice', async ({ page 
   await mockApi(page)
   await page.goto('/')
   await page.getByLabel('Language').selectOption('ru')
-  await expect(page.getByRole('heading', { name: 'Подключиться к Okoscope' })).toBeVisible()
+  await expect(
+    page.getByRole('heading', {
+      name: 'Узнайте, что приложения действительно делают во время работы.',
+    }),
+  ).toBeVisible()
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
   await page.reload()
   await expect(page.getByLabel('Язык')).toHaveValue('ru')
@@ -22,7 +26,6 @@ test('renders tenant, runtime, and notification surfaces fully in Russian', asyn
     await mockApi(page)
   const openRussian = async (path: string) => {
     await page.goto(path)
-    await page.getByRole('button', { name: 'Начать сеанс' }).click()
   }
   await page.goto(`/projects/${project.id}/applications/${application.id}`)
   await authenticate(page)
@@ -115,8 +118,6 @@ test('navigates Organization → Projects → Applications and supports a deep l
   await page.getByRole('link', { name: /Gateway/ }).click()
   await expect(page.getByRole('heading', { name: 'Gateway' })).toBeVisible()
   await page.reload()
-  await expect(page.getByRole('button', { name: 'Start session' })).toBeVisible()
-  await authenticate(page)
   await expect(page).toHaveURL(`/projects/${project.id}/applications/${application.id}`)
   await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toContainText('Platform')
 })
@@ -129,6 +130,7 @@ test('shows heterogeneous worker kernels on the Application overview at a narrow
   await page.goto(`/projects/${project.id}/applications/${application.id}`)
   await authenticate(page)
   await expect(page.getByRole('heading', { name: 'Worker nodes' })).toBeVisible()
+  await page.getByText('Inactive (2)').click()
   await expect(page.getByText('worker-amd64-01')).toBeVisible()
   await expect(page.getByText('6.9.2')).toBeVisible()
   await expect(page.getByText('worker-legacy-02')).toBeVisible()
@@ -137,17 +139,123 @@ test('shows heterogeneous worker kernels on the Application overview at a narrow
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
 })
 
-test('credential flow and primary navigation have no detectable accessibility violations', async ({
+test('authentication flow and primary navigation have no detectable accessibility violations', async ({
   page,
 }) => {
   await mockApi(page)
   await page.goto('/')
-  await expect(page.getByRole('button', { name: 'Start session' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Start onboarding' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Sign in', exact: true }).last()).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Create organization' })).toBeVisible()
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   await authenticate(page)
   await expect(page.getByRole('heading', { name: 'Requires attention' })).toBeVisible()
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+})
+
+test('keeps registration visible and shows registration_disabled without a capability probe', async ({
+  page,
+}) => {
+  await mockApi(page)
+  let capabilityRequests = 0
+  await page.route('**/api/v1/auth/register', (route) =>
+    route.fulfill({
+      status: 404,
+      contentType: 'application/json',
+      headers: { 'x-request-id': 'registration-disabled-id' },
+      body: JSON.stringify({
+        error: 'registration_disabled',
+        message: 'registration is disabled',
+        request_id: 'registration-disabled-id',
+      }),
+    }),
+  )
+  page.on('request', (request) => {
+    if (request.url().includes('capabilit')) capabilityRequests += 1
+  })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Create organization' }).click()
+  await page.getByLabel('Email').fill('owner@example.com')
+  await page.getByLabel('Password').fill('correct horse battery staple')
+  await page.getByLabel('Organization name').fill('Acme')
+  await page.getByRole('button', { name: 'Create account' }).click()
+  await expect(page.getByText('registration is disabled')).toBeVisible()
+  await expect(page.getByText('registration-disabled-id')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Create organization' })).toBeVisible()
+  expect(capabilityRequests).toBe(0)
+})
+
+test('registers an Organization and enters the requested route', async ({ page }) => {
+  await mockApi(page)
+  await page.goto('/projects')
+  await page.getByRole('button', { name: 'Create organization' }).click()
+  await page.getByLabel('Email').fill('owner@example.com')
+  await page.getByLabel('Password').fill('correct horse battery staple')
+  await page.getByLabel('Organization name').fill('Acme')
+  await expect(page.getByLabel('Organization slug')).toHaveValue('acme')
+  await page.getByRole('button', { name: 'Create account' }).click()
+  await expect(page).toHaveURL('/projects')
+  await expect(page.getByRole('heading', { name: 'Projects', level: 1 })).toBeVisible()
+})
+
+test('keeps invalid login local to the form', async ({ page }) => {
+  await mockApi(page)
+  await page.route('**/api/v1/auth/login', (route) =>
+    route.fulfill({
+      status: 401,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        error: 'invalid_credentials',
+        message: 'invalid email or password',
+        request_id: 'invalid-login-id',
+      }),
+    }),
+  )
+  await page.goto('/')
+  await page.getByLabel('Email').fill('unknown@example.com')
+  await page.getByLabel('Password').fill('wrong password')
+  await page.getByRole('button', { name: 'Sign in', exact: true }).last().click()
+  await expect(page.getByText('invalid email or password')).toBeVisible()
+  await expect(page.getByText('invalid-login-id')).toBeVisible()
+  await expect(page.getByText(/session ended/i)).toHaveCount(0)
+})
+
+test('returns to sign in when a protected request expires the session', async ({ page }) => {
+  const { project } = await mockApi(page)
+  await page.goto('/')
+  await authenticate(page)
+  await page.route(`**/api/v1/projects/${project.id}`, (route) =>
+    route.fulfill({
+      status: 401,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        error: 'unauthorized',
+        message: 'session expired',
+        request_id: 'expired-id',
+      }),
+    }),
+  )
+  await page.goto(`/projects/${project.id}`)
+  await expect(page.getByText('Your session ended. Sign in to continue.')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Sign in', exact: true }).last()).toBeVisible()
+})
+
+test('shows safe profile context and logs out authoritatively', async ({ page }) => {
+  await mockApi(page)
+  await page.goto('/profile')
+  await authenticate(page)
+  await expect(page.getByText('owner@example.com')).toBeVisible()
+  await expect(page.getByText('Owner', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'End session' }).click()
+  await expect(page.getByRole('button', { name: 'Sign in', exact: true }).last()).toBeVisible()
+})
+
+test('hides owner-only creation controls from members', async ({ page }) => {
+  const { project } = await mockApi(page, 'member')
+  await page.goto('/projects')
+  await authenticate(page)
+  await expect(page.getByRole('button', { name: 'Create Project' })).toHaveCount(0)
+  await page.goto(`/projects/${project.id}`)
+  await expect(page.getByRole('button', { name: 'Create Application' })).toHaveCount(0)
 })
 
 test('uses a URL-backed attention window and follows typed investigation actions', async ({
@@ -182,7 +290,7 @@ test('blocks an incompatible backend with diagnostics', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Incompatible backend' })).toBeVisible()
   await expect(page.getByText('v2')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Start session' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toHaveCount(0)
 })
 
 test('shows invalid runtime configuration without API fallback', async ({ page }) => {
@@ -196,7 +304,7 @@ test('shows invalid runtime configuration without API fallback', async ({ page }
   await expect(page.getByRole('heading', { name: 'Okoscope cannot start' })).toBeVisible()
 })
 
-test('shows correlated API errors and clears a rejected credential', async ({ page }) => {
+test('shows correlated session errors without protected content', async ({ page }) => {
   await page.route('**/api/v1/**', async (route) => {
     if (route.request().url().endsWith('/build-info'))
       return route.fulfill({
@@ -205,7 +313,7 @@ test('shows correlated API errors and clears a rejected credential', async ({ pa
           service_version: '0.1.0',
           git_commit: 'abc',
           api_version: 'v1',
-          required_database_migration: 15,
+          required_database_migration: 16,
         }),
       })
     return route.fulfill({
@@ -214,14 +322,13 @@ test('shows correlated API errors and clears a rejected credential', async ({ pa
       headers: { 'x-request-id': 'rejected-credential' },
       body: JSON.stringify({
         error: 'unauthorized',
-        message: 'Credential rejected',
+        message: 'Session rejected',
         request_id: 'body-id',
       }),
     })
   })
   await page.goto('/projects')
-  await authenticate(page)
-  await expect(page.getByRole('button', { name: 'Start session' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Sign in', exact: true }).last()).toBeVisible()
 })
 
 test('reports malformed and server responses safely', async ({ page }) => {

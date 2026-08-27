@@ -1,38 +1,46 @@
 import { useSyncExternalStore } from 'react'
+import type { AuthContext } from '../api/types'
 
-export const DEVELOPMENT_API_CREDENTIAL = 'replace-this-development-api-credential'
-export const DEVELOPMENT_ADMIN_API_CREDENTIAL =
-  '60f94c8a33b05d068b75e935ee5d526e60fa2cc7b19b0badd7bdd0871de6ca46'
+export type AuthenticationState =
+  | { status: 'checking' }
+  | { status: 'anonymous'; reason?: 'expired' }
+  | { status: 'authenticated'; context: AuthContext }
+  | { status: 'error'; error: unknown }
 
-let credential: string | null = null
-let sessionMode: 'tenant' | 'admin' = 'tenant'
+let state: AuthenticationState = { status: 'checking' }
 const listeners = new Set<() => void>()
 const emit = () => listeners.forEach((listener) => listener())
 
-export const credentialSession = {
-  get: () => credential,
-  set: (value: string, mode: 'tenant' | 'admin' = 'tenant') => {
-    credential = value.trim() || null
-    sessionMode = mode
+const setState = (next: AuthenticationState) => {
+  state = next
+  emit()
+}
+
+export const authenticationSession = {
+  get: () => state,
+  checking: () => setState({ status: 'checking' }),
+  authenticate: (context: AuthContext) => setState({ status: 'authenticated', context }),
+  anonymous: (reason?: 'expired') => {
+    state = reason ? { status: 'anonymous', reason } : { status: 'anonymous' }
     emit()
   },
-  clear: () => {
-    credential = null
-    sessionMode = 'tenant'
-    emit()
-  },
+  fail: (error: unknown) => setState({ status: 'error', error }),
   subscribe: (listener: () => void) => {
     listeners.add(listener)
     return () => listeners.delete(listener)
   },
+  reset: () => setState({ status: 'checking' }),
 }
 
-export const getSessionMode = () => sessionMode
-
-export function useCredential() {
+export function useAuthentication() {
   return useSyncExternalStore(
-    credentialSession.subscribe,
-    credentialSession.get,
-    credentialSession.get,
+    authenticationSession.subscribe,
+    authenticationSession.get,
+    authenticationSession.get,
   )
+}
+
+export function useIsOwner() {
+  const authentication = useAuthentication()
+  return authentication.status === 'authenticated' && authentication.context.role === 'owner'
 }

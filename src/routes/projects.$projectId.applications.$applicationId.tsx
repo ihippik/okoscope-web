@@ -11,6 +11,7 @@ import { useLocalization } from '../shared/i18n'
 import { Card } from '../shared/ui/card'
 import { ErrorState } from '../shared/ui/error-state'
 import { Loading } from '../shared/ui/loading'
+import { useIsOwner } from '../shared/auth/session'
 
 export const Route = createFileRoute('/projects/$projectId/applications/$applicationId')({
   component: ApplicationPage,
@@ -21,6 +22,7 @@ function ApplicationPage() {
   const location = useLocation()
   const api = useApi()
   const { t } = useLocalization()
+  const isOwner = useIsOwner()
   const project = useQuery(projectOptions(api, projectId))
   const application = useQuery(applicationOptions(api, projectId, applicationId))
   useEffect(() => {
@@ -139,7 +141,7 @@ function ApplicationPage() {
         </div>
       </Card>
       <ApplicationWorkers projectId={projectId} applicationId={applicationId} />
-      <AgentCredentials projectId={projectId} applicationId={applicationId} />
+      {isOwner && <AgentCredentials projectId={projectId} applicationId={applicationId} />}
     </div>
   )
 }

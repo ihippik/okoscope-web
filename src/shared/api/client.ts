@@ -1,4 +1,3 @@
-import { credentialSession } from '../auth/session'
 import type { RuntimeConfig } from '../config/runtime-config'
 import type { ErrorEnvelope } from './types'
 
@@ -53,67 +52,37 @@ export class ApiClient {
     private readonly onUnauthorized: () => void,
   ) {}
 
-  async get<T>(
-    path: string,
-    options: { protected?: boolean; signal?: AbortSignal; headers?: Record<string, string> } = {},
-  ): Promise<T> {
+  async get<T>(path: string, options: RequestOptions = {}): Promise<T> {
     return this.request<T>('GET', path, options)
   }
 
-  async post<T>(
-    path: string,
-    options: {
-      protected?: boolean
-      signal?: AbortSignal
-      body?: unknown
-      headers?: Record<string, string>
-    } = {},
-  ): Promise<T> {
+  async post<T>(path: string, options: RequestOptions = {}): Promise<T> {
     return this.request<T>('POST', path, options)
   }
 
-  async patch<T>(
-    path: string,
-    options: {
-      protected?: boolean
-      signal?: AbortSignal
-      body: unknown
-      headers?: Record<string, string>
-    },
-  ): Promise<T> {
+  async patch<T>(path: string, options: RequestOptions & { body: unknown }): Promise<T> {
     return this.request<T>('PATCH', path, options)
   }
 
-  async delete(
-    path: string,
-    options: { protected?: boolean; signal?: AbortSignal; headers?: Record<string, string> } = {},
-  ): Promise<void> {
+  async delete(path: string, options: RequestOptions = {}): Promise<void> {
     return this.request<void>('DELETE', path, options)
   }
 
   private async request<T>(
     method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
     path: string,
-    options: {
-      protected?: boolean
-      signal?: AbortSignal
-      body?: unknown
-      headers?: Record<string, string>
-    },
+    options: RequestOptions,
   ): Promise<T> {
     const requestId = crypto.randomUUID()
     const headers = new Headers({ Accept: 'application/json', 'X-Request-Id': requestId })
     for (const [name, value] of Object.entries(options.headers ?? {})) headers.set(name, value)
     if (options.body !== undefined) headers.set('Content-Type', 'application/json')
-    if (options.protected) {
-      const credential = credentialSession.get()
-      if (credential) headers.set('Authorization', `Bearer ${credential}`)
-    }
     let response: Response
     try {
       response = await fetch(`${this.config.apiBaseUrl}${path}`, {
         method,
         headers,
+        credentials: 'include',
         ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
         ...(options.signal ? { signal: options.signal } : {}),
       })
@@ -148,7 +117,8 @@ export class ApiClient {
         requestId: headerId ?? envelope?.request_id ?? requestId,
         ...(fields ? { fields } : {}),
       }
-      if (response.status === 401) this.onUnauthorized()
+      if (response.status === 401 && options.protected && options.unauthorized !== 'ignore')
+        this.onUnauthorized()
       throw new ApiClientError(detail)
     }
     if (!body || typeof body !== 'object')
@@ -159,4 +129,12 @@ export class ApiClient {
       })
     return body as T
   }
+}
+
+type RequestOptions = {
+  protected?: boolean
+  unauthorized?: 'notify' | 'ignore'
+  signal?: AbortSignal
+  body?: unknown
+  headers?: Record<string, string>
 }

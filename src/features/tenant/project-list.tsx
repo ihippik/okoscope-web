@@ -13,12 +13,14 @@ import { ErrorState } from '../../shared/ui/error-state'
 import { Loading } from '../../shared/ui/loading'
 import { Modal } from '../../shared/ui/modal'
 import { formatCount } from './format'
+import { useIsOwner } from '../../shared/auth/session'
 
 export function ProjectList({ organizationId }: { organizationId?: string | undefined }) {
   const api = useApi()
   const t = useT()
   const queryClient = useQueryClient()
   const [creating, setCreating] = useState(false)
+  const isOwner = useIsOwner()
   const query = useInfiniteQuery(projectsOptions(api))
   const create = useMutation({
     retry: false,
@@ -91,7 +93,7 @@ export function ProjectList({ organizationId }: { organizationId?: string | unde
             </Card>
           </Link>
         ))}
-        {organizationId && (
+        {organizationId && isOwner && (
           <button
             type="button"
             aria-label={t('createProjectTitle')}
@@ -102,7 +104,7 @@ export function ProjectList({ organizationId }: { organizationId?: string | unde
           </button>
         )}
       </div>
-      {creating && organizationId && (
+      {creating && organizationId && isOwner && (
         <Modal
           title={t('createProjectTitle')}
           description={t('createProjectHelp')}

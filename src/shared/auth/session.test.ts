@@ -1,27 +1,25 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { credentialSession, getSessionMode } from './session'
+import { authenticationSession } from './session'
 
-describe('credential session', () => {
-  afterEach(() => credentialSession.clear())
-  it('keeps credentials only inside the in-memory store', () => {
-    const persistCredential = vi.spyOn(Storage.prototype, 'setItem')
+describe('authentication session', () => {
+  afterEach(() => authenticationSession.reset())
+  it('publishes safe server context without browser persistence', () => {
+    const persist = vi.spyOn(Storage.prototype, 'setItem')
     const listener = vi.fn()
-    const unsubscribe = credentialSession.subscribe(listener)
-    credentialSession.set('secret')
-    expect(credentialSession.get()).toBe('secret')
-    expect(persistCredential).not.toHaveBeenCalled()
-    credentialSession.clear()
-    expect(credentialSession.get()).toBeNull()
+    const unsubscribe = authenticationSession.subscribe(listener)
+    authenticationSession.authenticate({
+      user: { id: 'u', email: 'owner@example.com' },
+      organization: { id: 'o', name: 'Acme', slug: 'acme' },
+      role: 'owner',
+    })
+    expect(authenticationSession.get()).toMatchObject({
+      status: 'authenticated',
+      context: { role: 'owner' },
+    })
+    expect(persist).not.toHaveBeenCalled()
+    authenticationSession.anonymous('expired')
+    expect(authenticationSession.get()).toEqual({ status: 'anonymous', reason: 'expired' })
     expect(listener).toHaveBeenCalledTimes(2)
     unsubscribe()
-  })
-
-  it('keeps tenant and administrator development entry modes separate', () => {
-    credentialSession.set('tenant-secret')
-    expect(getSessionMode()).toBe('tenant')
-    credentialSession.set('admin-secret', 'admin')
-    expect(getSessionMode()).toBe('admin')
-    credentialSession.clear()
-    expect(getSessionMode()).toBe('tenant')
   })
 })

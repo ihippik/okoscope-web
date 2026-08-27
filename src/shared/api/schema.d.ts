@@ -20,6 +20,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["registerUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["loginUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getCurrentUser"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["logoutUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organizations": {
         parameters: {
             query?: never;
@@ -918,6 +982,37 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @enum {string} */
+        OrganizationRole: "owner" | "member";
+        RegisterRequest: {
+            /** Format: email */
+            email: string;
+            /** Format: password */
+            password: string;
+            organization_slug: string;
+            organization_name: string;
+        };
+        LoginRequest: {
+            /** Format: email */
+            email: string;
+            /** Format: password */
+            password: string;
+        };
+        AuthenticatedUser: {
+            id: components["schemas"]["Uuid"];
+            /** Format: email */
+            email: string;
+        };
+        AuthenticatedOrganization: {
+            id: components["schemas"]["Uuid"];
+            slug: string;
+            name: string;
+        };
+        AuthContext: {
+            user: components["schemas"]["AuthenticatedUser"];
+            organization: components["schemas"]["AuthenticatedOrganization"];
+            role: components["schemas"]["OrganizationRole"];
+        };
         /**
          * @default 24h
          * @enum {string}
@@ -2257,6 +2352,18 @@ export interface components {
         NullableTimestamp: string | null;
     };
     responses: {
+        /** @description Safe authenticated user, Organization, and role context; the opaque session is set only as an HttpOnly cookie. */
+        AuthResponse: {
+            headers: {
+                "X-Request-Id"?: string;
+                "Set-Cookie"?: string;
+                "Cache-Control"?: "no-store";
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["AuthContext"];
+            };
+        };
         /** @description Complete organization attention snapshot with bounded lists */
         OrganizationAttentionSummary: {
             headers: {
@@ -2699,6 +2806,79 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["BuildInfoResponse"];
+        };
+    };
+    registerUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterRequest"];
+            };
+        };
+        responses: {
+            201: components["responses"]["AuthResponse"];
+            400: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    loginUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["AuthResponse"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    getCurrentUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AuthResponse"];
+            401: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    logoutUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Session revoked and cookie expired */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Error"];
+            500: components["responses"]["Error"];
         };
     };
     createOrganization: {

@@ -207,7 +207,8 @@ const json = (route: Route, body: unknown, status = 200, requestId = 'e2e-reques
     body: JSON.stringify(body),
   })
 
-export async function mockApi(page: Page) {
+export async function mockApi(page: Page, role: 'owner' | 'member' = 'owner') {
+  let loggedIn = false
   let groupStatus: 'open' | 'acknowledged' | 'resolved' = 'open'
   const destination = {
     id: '00000000-0000-4000-8000-000000000010',
@@ -279,12 +280,38 @@ export async function mockApi(page: Page) {
         service_version: '0.1.0',
         git_commit: 'abcdef',
         api_version: 'v1',
-        required_database_migration: 15,
+        required_database_migration: 16,
       })
-    if (!route.request().headers().authorization)
+    const authContext = {
+      user: { id: '00000000-0000-4000-8000-000000000020', email: 'owner@example.com' },
+      organization,
+      role,
+    }
+    if (path === '/api/v1/auth/me')
+      return loggedIn
+        ? json(route, authContext)
+        : json(
+            route,
+            { error: 'unauthorized', message: 'Session required', request_id: 'auth-id' },
+            401,
+            'auth-id',
+          )
+    if (path === '/api/v1/auth/login' && route.request().method() === 'POST') {
+      loggedIn = true
+      return json(route, authContext)
+    }
+    if (path === '/api/v1/auth/register' && route.request().method() === 'POST') {
+      loggedIn = true
+      return json(route, authContext, 201)
+    }
+    if (path === '/api/v1/auth/logout' && route.request().method() === 'POST') {
+      loggedIn = false
+      return route.fulfill({ status: 204 })
+    }
+    if (!loggedIn)
       return json(
         route,
-        { error: 'unauthorized', message: 'Credential required', request_id: 'auth-id' },
+        { error: 'unauthorized', message: 'Session required', request_id: 'auth-id' },
         401,
         'auth-id',
       )
@@ -773,5 +800,7 @@ export async function mockApi(page: Page) {
 }
 
 export async function authenticate(page: Page) {
-  await page.getByRole('button', { name: 'Start session' }).click()
+  await page.getByLabel('Email').fill('owner@example.com')
+  await page.getByLabel('Password').fill('correct horse battery staple')
+  await page.getByRole('button', { name: 'Sign in', exact: true }).last().click()
 }

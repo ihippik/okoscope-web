@@ -15,6 +15,7 @@ import { formatCount, formatTimestamp } from './format'
 import { NamedResourceForm } from '../provisioning/entity-form'
 import { ConnectAgent } from '../provisioning/connect-agent'
 import { useT } from '../../shared/i18n'
+import { useIsOwner } from '../../shared/auth/session'
 
 export function ApplicationList({ projectId }: { projectId: string }) {
   const api = useApi()
@@ -22,6 +23,7 @@ export function ApplicationList({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient()
   const [created, setCreated] = useState<CreatedApplication | null>(null)
   const [creating, setCreating] = useState(false)
+  const isOwner = useIsOwner()
   const query = useInfiniteQuery(applicationsOptions(api, projectId))
   const create = useMutation({
     retry: false,
@@ -93,16 +95,18 @@ export function ApplicationList({ projectId }: { projectId: string }) {
             </Card>
           </Link>
         ))}
-        <button
-          type="button"
-          aria-label={t('createApplicationTitle')}
-          className="app-card flex min-h-40 items-center justify-center rounded-2xl border border-emerald-900 bg-emerald-950/20 p-6 text-emerald-400 transition hover:border-emerald-600 hover:bg-emerald-950/40 hover:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-400"
-          onClick={() => setCreating(true)}
-        >
-          <Plus aria-hidden="true" className="size-12" strokeWidth={1.5} />
-        </button>
+        {isOwner && (
+          <button
+            type="button"
+            aria-label={t('createApplicationTitle')}
+            className="app-card flex min-h-40 items-center justify-center rounded-2xl border border-emerald-900 bg-emerald-950/20 p-6 text-emerald-400 transition hover:border-emerald-600 hover:bg-emerald-950/40 hover:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+            onClick={() => setCreating(true)}
+          >
+            <Plus aria-hidden="true" className="size-12" strokeWidth={1.5} />
+          </button>
+        )}
       </div>
-      {creating && (
+      {creating && isOwner && (
         <Modal
           title={t('createApplicationTitle')}
           description={t('createApplicationHelp')}

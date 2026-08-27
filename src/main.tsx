@@ -4,7 +4,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { ApiClient, shouldRetry } from './shared/api/client'
 import { ApiProvider } from './shared/api/context'
-import { credentialSession } from './shared/auth/session'
+import { authenticationSession } from './shared/auth/session'
 import { ConfigError, loadRuntimeConfig } from './shared/config/runtime-config'
 import { Card } from './shared/ui/card'
 import { LocalizationProvider, useT } from './shared/i18n'
@@ -21,8 +21,8 @@ function mount() {
   try {
     const config = loadRuntimeConfig()
     const api = new ApiClient(config, () => {
-      credentialSession.clear()
       queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'build-info' })
+      authenticationSession.anonymous('expired')
     })
     const router = createRouter({ routeTree, defaultPreload: 'intent' })
     root.render(

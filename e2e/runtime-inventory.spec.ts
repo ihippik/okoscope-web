@@ -12,7 +12,7 @@ test('explores Application Activity scope, views, cursors, and observation histo
   await expect(page.getByRole('heading', { name: 'Application Activity' })).toBeVisible()
   const activitySwitcher = page.getByRole('region', { name: 'Application activity summary' })
   const activityButtons = activitySwitcher.getByRole('button')
-  await expect(activityButtons).toHaveCount(6)
+  await expect(activityButtons).toHaveCount(7)
   await expect(page.getByRole('tab')).toHaveCount(0)
   await expect(page.getByRole('button', { name: /Process launches/ })).toContainText('1')
   await expect(page.getByText(/Share of 144 matching recorded observations/)).toBeVisible()
