@@ -671,7 +671,8 @@ export const legacyRussian: Record<string, string> = {
   Resolve: 'Решить',
   Reopen: 'Открыть снова',
   NEW: 'НОВОЕ',
-  Deployment: 'Deployment',
+  'Discovery status': 'Статус обнаружения',
+  'leads to': 'приводит к',
 }
 
 type TranslationRecord = { source: string; rendered: string }
