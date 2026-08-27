@@ -12,6 +12,7 @@ import { runtimeGroupsOptions } from '../features/observability/queries'
 import {
   changeRuntimeGroupFilters,
   parseRuntimeGroupSearch,
+  toggleRuntimeGroupStatus,
 } from '../features/observability/url-state'
 import { applicationOptions, projectOptions } from '../shared/api/queries'
 import { useApi } from '../shared/api/context'
@@ -71,7 +72,11 @@ function RuntimeGroupsPage() {
         search={search}
         apply={(updates) => void navigate({ search: changeRuntimeGroupFilters(search, updates) })}
       />
-      <div className="flex justify-end">
+      <div className="flex flex-wrap justify-end gap-3">
+        <StatusQuickFilters
+          status={search.status}
+          toggle={(status) => void navigate({ search: toggleRuntimeGroupStatus(search, status) })}
+        />
         <div
           role="group"
           aria-label="Discovery layout"
@@ -124,6 +129,48 @@ function RuntimeGroupsPage() {
     </div>
   )
 }
+function StatusQuickFilters({
+  status: activeStatus,
+  toggle,
+}: {
+  status: ReturnType<typeof parseRuntimeGroupSearch>['status']
+  toggle: (status: NonNullable<ReturnType<typeof parseRuntimeGroupSearch>['status']>) => void
+}) {
+  const statuses = [
+    ['open', 'Open'],
+    ['acknowledged', 'Acknowledged'],
+    ['resolved', 'Resolved'],
+  ] as const
+  return (
+    <div role="group" aria-label="Discovery status" className="flex flex-wrap items-center gap-2">
+      {statuses.map(([status, label]) => {
+        const active = activeStatus === status
+        const color = {
+          open: active
+            ? 'border-amber-500 bg-amber-900 text-amber-100'
+            : 'border-amber-800 bg-amber-950/40 text-amber-300 hover:border-amber-600 hover:bg-amber-950',
+          acknowledged: active
+            ? 'border-sky-500 bg-sky-900 text-sky-100'
+            : 'border-sky-800 bg-sky-950/40 text-sky-300 hover:border-sky-600 hover:bg-sky-950',
+          resolved: active
+            ? 'border-emerald-500 bg-emerald-900 text-emerald-100'
+            : 'border-emerald-800 bg-emerald-950/40 text-emerald-300 hover:border-emerald-600 hover:bg-emerald-950',
+        }[status]
+        return (
+          <button
+            key={status}
+            type="button"
+            aria-pressed={active}
+            onClick={() => toggle(status)}
+            className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-200 ${color}`}
+          >
+            {label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 function Filters({
   search,
   apply,
@@ -131,6 +178,7 @@ function Filters({
   search: ReturnType<typeof parseRuntimeGroupSearch>
   apply: (value: Partial<ReturnType<typeof parseRuntimeGroupSearch>>) => void
 }) {
+  const hasAdvancedFilters = Object.keys(search).some((key) => key !== 'cursor' && key !== 'status')
   const fields = [
     ['event_kind', 'Event kind'],
     ['namespace', 'Namespace'],
@@ -139,7 +187,7 @@ function Filters({
   ] as const
   return (
     <details
-      open={Object.keys(search).some((key) => key !== 'cursor') || undefined}
+      open={hasAdvancedFilters || undefined}
       className="rounded-xl border border-slate-800 bg-slate-900 p-4"
     >
       <summary className="cursor-pointer text-lg font-semibold text-slate-200 marker:text-cyan-300">
@@ -180,28 +228,6 @@ function Filters({
             )}
           </label>
         ))}
-        <label className="text-sm">
-          Status
-          <select
-            name="status"
-            value={search.status ?? ''}
-            onChange={(e) => {
-              const value = e.target.value
-              apply({
-                status:
-                  value === 'open' || value === 'acknowledged' || value === 'resolved'
-                    ? value
-                    : undefined,
-              })
-            }}
-            className="mt-1 w-full rounded border border-slate-700 bg-slate-950 p-2"
-          >
-            <option value="">Any</option>
-            <option value="open">Open</option>
-            <option value="acknowledged">Acknowledged</option>
-            <option value="resolved">Resolved</option>
-          </select>
-        </label>
         <label className="text-sm">
           Release ID
           <input

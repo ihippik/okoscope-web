@@ -24,6 +24,7 @@ import {
 import {
   changeBaseline,
   changeRuntimeGroupFilters,
+  toggleRuntimeGroupStatus,
   parseReleaseSearch,
   parseRuntimeDiffSearch,
   parseRuntimeGroupSearch,
@@ -104,6 +105,13 @@ describe('observability URL state', () => {
     expect(
       changeRuntimeGroupFilters({ namespace: 'old', cursor: 'next' }, { namespace: 'new' }),
     ).toEqual({ namespace: 'new' })
+    expect(toggleRuntimeGroupStatus({ namespace: 'n', cursor: 'next' }, 'open')).toEqual({
+      namespace: 'n',
+      status: 'open',
+    })
+    expect(toggleRuntimeGroupStatus({ namespace: 'n', status: 'open' }, 'open')).toEqual({
+      namespace: 'n',
+    })
     expect(changeBaseline({ baseline: 'old', cursor: 'next' }, 'new')).toEqual({ baseline: 'new' })
   })
   it('preserves filters on cursor navigation', () =>
@@ -621,25 +629,12 @@ describe('observability presentation', () => {
       screen.queryByRole('link', { name: /api\.example\.com|cdn\.example\.com/ }),
     ).not.toBeInTheDocument()
   })
-  it('renders markup literally, bounds nesting, and copies original JSON', async () => {
-    const writeText = vi.fn().mockResolvedValue(undefined)
-    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
+  it('renders markup literally, bounds nesting, and omits JSON copy controls', () => {
     const deep = { html: '<script>alert(1)</script>', a: { b: { c: { d: { e: { f: true } } } } } }
     const { container } = render(<JsonDetailsViewer value={deep} />)
     expect(screen.getByText('“<script>alert(1)</script>”')).toBeInTheDocument()
     expect(container.querySelector('script')).toBeNull()
     expect(screen.getByText('… nested value')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Copy JSON details' }))
-    expect(writeText).toHaveBeenCalledWith(JSON.stringify(deep, null, 2))
-    expect(screen.getByText('JSON copied')).toBeInTheDocument()
-  })
-  it('announces copy failure', async () => {
-    Object.defineProperty(navigator, 'clipboard', {
-      configurable: true,
-      value: { writeText: vi.fn().mockRejectedValue(new Error('denied')) },
-    })
-    render(<JsonDetailsViewer value={{ x: true }} />)
-    await userEvent.click(screen.getByRole('button', { name: 'Copy JSON details' }))
-    expect(screen.getByText('Could not copy JSON')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Copy JSON details/ })).not.toBeInTheDocument()
   })
 })

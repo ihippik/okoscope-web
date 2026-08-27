@@ -11,7 +11,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { ApiClient } from '../../shared/api/client'
 import { ApiProvider } from '../../shared/api/context'
 import { LocalizationProvider, translate } from '../../shared/i18n'
-import { ApplicationAttention, observedVolumeTone } from './application-attention'
+import { ApplicationAttention, observedVolumeTone, restartLoopTone } from './application-attention'
 import {
   populatedApplicationAttentionFixture,
   allClearOrganizationAttentionFixture,
@@ -64,6 +64,12 @@ describe('attention presentation', () => {
     expect(observedVolumeTone(5)).toContain('amber')
     expect(observedVolumeTone(20)).toContain('orange')
     expect(observedVolumeTone(100)).toContain('rose')
+  })
+
+  it('highlights restart loops by count', () => {
+    expect(restartLoopTone(0)).toContain('emerald')
+    expect(restartLoopTone(1)).toContain('amber')
+    expect(restartLoopTone(2)).toContain('rose')
   })
 
   it('builds a distinguishable runtime group name from its semantic identity', () => {
@@ -165,7 +171,13 @@ describe('attention presentation', () => {
     expect(
       screen.queryByRole('heading', { name: 'Приложения с изменениями' }),
     ).not.toBeInTheDocument()
-    expect(await screen.findByText('Process launch — checkout')).toBeVisible()
+    const groupLabel = await screen.findByText('Запуск процесса')
+    expect(groupLabel).toBeVisible()
+    expect(groupLabel).toHaveClass('text-emerald-200')
+    expect(groupLabel.closest('p')).toHaveClass('text-cyan-200')
+    expect(groupLabel.closest('strong')).not.toHaveClass('rounded-full', 'border-cyan-700')
+    expect(screen.getByText('checkout')).toHaveClass('text-violet-200')
+    expect(groupLabel.closest('strong')).toHaveTextContent('Запуск процесса [checkout]')
     expect(get).toHaveBeenCalledTimes(1)
   })
 
@@ -241,6 +253,11 @@ describe('attention presentation', () => {
     const observed = await screen.findByRole('heading', { name: 'Observed actions' })
     const recommendations = screen.getByRole('heading', { name: 'Recommendations to review' })
     const priority = screen.getByRole('heading', { name: 'Priority queue' })
+    expect(
+      screen.getAllByRole('heading', {
+        name: 'Commerce <script>alert(1)</script> · Checkout & API',
+      }).length,
+    ).toBeGreaterThan(0)
     expect(observed).toHaveClass('text-2xl')
     expect(recommendations).toHaveClass('text-2xl')
     expect(observed.compareDocumentPosition(recommendations)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
@@ -252,6 +269,7 @@ describe('attention presentation', () => {
       'href',
       expect.stringContaining('40000000-0000-4000-8000-000000000009'),
     )
+    expect(card).toHaveClass('border-amber-600', 'bg-amber-950/35')
   })
 
   it('rejects mismatched Application attention ownership', async () => {

@@ -144,6 +144,7 @@ function ObservedImpactFacts({
     (item) => item.reason_code === 'container_restart_loop_observed',
   )
   const firstRestartLoop = restartLoops.find((item) => item.resource.type === 'runtime_group')
+  const restartLoopCardTone = restartLoopTone(restartLoops.length)
   const restartLoopCard = (
     <>
       <span className="text-sm text-slate-400">{t('restartLoops')}</span>
@@ -161,7 +162,7 @@ function ObservedImpactFacts({
       <div className="grid gap-3 sm:grid-cols-2">
         {firstRestartLoop?.resource.type === 'runtime_group' ? (
           <Link
-            className={`rounded-xl border p-4 transition hover:brightness-125 ${observedVolumeTone(restartLoops.length)}`}
+            className={`rounded-xl border p-4 transition hover:brightness-125 ${restartLoopCardTone}`}
             to="/projects/$projectId/applications/$applicationId/runtime-groups/$groupId"
             params={{
               projectId,
@@ -173,7 +174,7 @@ function ObservedImpactFacts({
             {restartLoopCard}
           </Link>
         ) : (
-          <div className={`rounded-xl border p-4 ${observedVolumeTone(0)}`}>{restartLoopCard}</div>
+          <div className={`rounded-xl border p-4 ${restartLoopCardTone}`}>{restartLoopCard}</div>
         )}
         <Link
           className={`rounded-xl border p-4 transition hover:brightness-125 ${observedVolumeTone(deleted.data?.occurrence_count ?? 0)}`}
@@ -243,4 +244,10 @@ export function observedVolumeTone(count: number) {
   if (count >= 20) return 'border-orange-600 bg-orange-950/40'
   if (count >= 5) return 'border-amber-600 bg-amber-950/35'
   return 'border-emerald-700 bg-emerald-950/35'
+}
+
+export function restartLoopTone(count: number) {
+  if (count > 1) return 'border-rose-600 bg-rose-950/45'
+  if (count > 0) return 'border-amber-600 bg-amber-950/35'
+  return observedVolumeTone(0)
 }

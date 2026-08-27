@@ -40,7 +40,7 @@ test('renders tenant, runtime, and notification surfaces fully in Russian', asyn
   await page.getByRole('link', { name: /Требует внимания/ }).click()
   await expect(page.getByRole('heading', { name: 'Требует внимания' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Рекомендации для разбора' })).toBeVisible()
-  await expect(page.getByRole('link', { name: /Разобрать новые обнаружения/ })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Разобрать', exact: true })).toBeVisible()
   await expectNoEnglishUi()
 
   await openRussian(`/projects/${project.id}/applications/${application.id}/runtime-groups`)

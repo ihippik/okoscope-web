@@ -86,12 +86,14 @@ describe('localization', () => {
           <p>18 unique behaviors</p>
           <p>1 unique identities</p>
           <p>Other observed dns request</p>
+          <p>Deployment/payment-api</p>
         </section>
       </LocalizationProvider>,
     )
     expect(await screen.findByText('18 уникальных вариантов поведения')).toBeVisible()
     expect(screen.getByText('1 уникальная идентичность')).toBeVisible()
     expect(screen.getByText('Прочие наблюдаемые DNS-запрос')).toBeVisible()
+    expect(screen.getByText('Deployment/payment-api')).toBeVisible()
     expect(screen.getByRole('region', { name: 'Наиболее наблюдаемые DNS-запрос' })).toBeVisible()
   })
   it('translates termination and restart event labels through the legacy dictionary', async () => {
@@ -109,5 +111,23 @@ describe('localization', () => {
     expect(screen.getByText('Контейнер завершён')).toBeVisible()
     expect(screen.getByText('Контейнер перезапущен')).toBeVisible()
     expect(screen.getByText('Обнаружен цикл перезапусков')).toBeVisible()
+  })
+  it('translates discovery empty states', async () => {
+    render(
+      <LocalizationProvider initialLocale="ru">
+        <section>
+          <h2>No matching discoveries</h2>
+          <p>Adjust the filters to broaden this view.</p>
+          <h2>No discoveries yet</h2>
+          <p>Newly observed behavior will appear here.</p>
+        </section>
+      </LocalizationProvider>,
+    )
+    expect(await screen.findByText('Нет подходящих обнаружений')).toBeVisible()
+    expect(screen.getByText('Измените фильтры, чтобы расширить выборку.')).toBeVisible()
+    expect(screen.getByText('Обнаружений пока нет')).toBeVisible()
+    expect(
+      screen.getByText('Здесь появится поведение, впервые обнаруженное в приложении.'),
+    ).toBeVisible()
   })
 })

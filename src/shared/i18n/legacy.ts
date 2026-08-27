@@ -104,6 +104,10 @@ export const legacyRussian: Record<string, string> = {
   'Container terminated': 'Контейнер завершён',
   'Container restarted': 'Контейнер перезапущен',
   'Restart loop observed': 'Обнаружен цикл перезапусков',
+  'File create': 'Создание файла',
+  'File modify': 'Изменение файла',
+  'File rename': 'Переименование файла',
+  'File delete': 'Удаление файла',
   Connection: 'Подключение',
   'Outbound connection': 'Исходящее соединение',
   Local: 'Локальный',
@@ -579,6 +583,10 @@ export const legacyRussian: Record<string, string> = {
   'No items match the active application scope and filters.':
     'Нет элементов, соответствующих активной области приложения и фильтрам.',
   'No matching runtime groups': 'Нет подходящих групп среды выполнения',
+  'No matching discoveries': 'Нет подходящих обнаружений',
+  'No discoveries yet': 'Обнаружений пока нет',
+  'Newly observed behavior will appear here.':
+    'Здесь появится поведение, впервые обнаруженное в приложении.',
   'No observed behavior': 'Нет наблюдаемого поведения',
   'No runtime groups yet': 'Групп среды выполнения пока нет',
   'No trusted attributed evidence is available for evaluation.':
@@ -663,7 +671,7 @@ export const legacyRussian: Record<string, string> = {
   Resolve: 'Решить',
   Reopen: 'Открыть снова',
   NEW: 'НОВОЕ',
-  Deployment: 'Развертывание',
+  Deployment: 'Deployment',
 }
 
 type TranslationRecord = { source: string; rendered: string }

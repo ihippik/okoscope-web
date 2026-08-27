@@ -27,6 +27,10 @@ const recommendationKeys: Record<AttentionRecommendationKind, MessageKey> = {
   review_release_changes: 'reviewReleaseChanges',
   review_new_discoveries: 'reviewNewDiscoveries',
 }
+const recommendationActionKeys: Partial<Record<AttentionRecommendationKind, MessageKey>> = {
+  review_release_changes: 'checkAction',
+  review_new_discoveries: 'reviewAction',
+}
 
 export function PriorityBadge({ priority }: { priority: AttentionPriority }) {
   const { t } = useLocalization()
@@ -99,12 +103,32 @@ function RuntimeGroupIdentity({ item }: { item: AttentionPriorityItem }) {
   const { t } = useLocalization()
   const resource = item.resource
   if (resource.type !== 'runtime_group') return null
+  const displayName = runtimeGroupDisplayName(resource)
+  const [eventLabel, ...detailParts] = displayName.split(' — ')
+  const details = detailParts.join(' — ').split(' · ').filter(Boolean)
   return (
     <p className="mt-2 text-sm text-cyan-200">
-      {t('runtimeGroup')}: <strong>{runtimeGroupDisplayName(resource)}</strong>
-      <span className="text-slate-400">
-        {' '}
-        · {resource.namespace} · {resource.workload_kind}/{resource.workload_name}
+      {t('runtimeGroup')}:{' '}
+      <strong className="inline-flex max-w-full flex-wrap items-center gap-2 font-semibold">
+        <span className="text-emerald-200">{eventLabel}</span>
+        {details[0] ? (
+          <span>
+            <span className="sr-only"> </span>
+            <span className="text-white">[</span>
+            <span className="text-violet-200">{details[0]}</span>
+            <span className="text-white">]</span>
+          </span>
+        ) : null}
+        {details[1] ? (
+          <span className="inline-flex items-center gap-2">
+            <span className="sr-only"> leads to </span>
+            <ArrowRight size={14} className="text-white" aria-hidden="true" />
+            <span className="text-amber-200">{details[1]}</span>
+          </span>
+        ) : null}
+      </strong>
+      <span className="mt-1 block text-slate-400">
+        {resource.namespace} · {resource.workload_kind}/{resource.workload_name}
       </span>
     </p>
   )
@@ -149,15 +173,18 @@ export function runtimeGroupDisplayName(
 export function AttentionActionLink({
   destination,
   label,
+  showArrow = true,
 }: {
   destination: AttentionDestination | null
   label: string
+  showArrow?: boolean
 }) {
   const { t } = useLocalization()
   if (!destination) return <span className="text-sm text-slate-500">{t('actionUnavailable')}</span>
   const content = (
     <>
-      {label} <ArrowRight size={14} aria-hidden="true" />
+      {label}
+      {showArrow ? <ArrowRight size={14} aria-hidden="true" /> : null}
     </>
   )
   if (destination.kind === 'project')
@@ -255,13 +282,9 @@ export function PriorityList({ items }: { items: AttentionPriorityItem[] }) {
                 <div className="min-w-0">
                   <PriorityBadge priority={item.priority} />
                   <h3 className="mt-3 text-lg font-semibold">
-                    {item.application?.name ?? item.project.name}
+                    {item.project.name}
+                    {item.application ? ` · ${item.application.name}` : ''}
                   </h3>
-                  <p className="mt-1 text-sm text-slate-400">
-                    {item.application
-                      ? `${item.project.name} · ${item.application.name}`
-                      : item.project.name}
-                  </p>
                   <RuntimeGroupIdentity item={item} />
                   <p className="mt-3 text-slate-200">
                     {reasonText(item.reason_code, item.facts, t)}
@@ -276,6 +299,7 @@ export function PriorityList({ items }: { items: AttentionPriorityItem[] }) {
                     reasonCode: item.reason_code,
                   })}
                   label={t('review')}
+                  showArrow={false}
                 />
               </div>
             </Card>
@@ -324,7 +348,8 @@ export function RecommendationList({
                     recommendationKind: item.kind,
                     reasonCode: item.reason_code,
                   })}
-                  label={t(recommendationKeys[item.kind])}
+                  label={t(recommendationActionKeys[item.kind] ?? recommendationKeys[item.kind])}
+                  showArrow={false}
                 />
               </div>
             </li>
@@ -437,6 +462,7 @@ export function NotificationProblems({ problems }: { problems: AttentionNotifica
               <AttentionActionLink
                 destination={{ kind: 'notifications', projectId: problem.project.id }}
                 label={t('review')}
+                showArrow={false}
               />
             </div>
           </Card>

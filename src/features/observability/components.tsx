@@ -141,8 +141,18 @@ export function PaginationControls({
   )
 }
 export function RuntimeGroupStatusBadge({ status }: { status: string }) {
+  const color =
+    status === 'open'
+      ? 'border-amber-700 bg-amber-950 text-amber-200'
+      : status === 'acknowledged'
+        ? 'border-sky-700 bg-sky-950 text-sky-200'
+        : status === 'resolved'
+          ? 'border-emerald-700 bg-emerald-950 text-emerald-200'
+          : 'border-slate-700 bg-slate-900 text-slate-200'
   return (
-    <span className="inline-flex rounded-full border border-cyan-700 bg-cyan-950 px-2 py-1 text-xs font-bold uppercase text-cyan-200">
+    <span
+      className={`inline-flex rounded-full border px-2 py-1 text-xs font-bold uppercase ${color}`}
+    >
       {status}
     </span>
   )
@@ -205,26 +215,9 @@ export function JsonDetailsViewer({
   value: unknown
   label?: string
 }) {
-  const [message, setMessage] = useState('')
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(JSON.stringify(value, null, 2))
-      setMessage('JSON copied')
-    } catch {
-      setMessage('Could not copy JSON')
-    }
-  }
   return (
     <div className="rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm" aria-label={label}>
-      <div className="mb-3 flex justify-end">
-        <Button variant="ghost" onClick={() => void copy()} aria-label={`Copy ${label}`}>
-          <Copy size={14} aria-hidden="true" /> Copy JSON
-        </Button>
-      </div>
       <div className="overflow-x-auto">{renderJson(value, 0, { count: 0 })}</div>
-      <p className="sr-only" aria-live="polite">
-        {message}
-      </p>
     </div>
   )
 }
@@ -244,7 +237,11 @@ const isFileActivitySummary = (
 const isProcessExitSummary = (
   value: RuntimeGroup['semantic_summary'],
 ): value is ProcessExitSemanticSummary =>
-  'evidence_source' in value && value.evidence_source === 'kernel' && 'termination' in value
+  'evidence_source' in value &&
+  value.evidence_source === 'kernel' &&
+  'identity' in value &&
+  typeof value.identity === 'string' &&
+  'termination' in value
 const isContainerTerminationSummary = (
   value: RuntimeGroup['semantic_summary'],
 ): value is ContainerTerminationSemanticSummary =>
@@ -291,8 +288,14 @@ const normalizeTerminationSummary = (
   )
     return value
   const source = 'source' in value ? value.source : undefined
-  if (source === 'kernel' && 'termination' in value && isProcessTermination(value.termination))
-    return { evidence_source: 'kernel', termination: value.termination }
+  if (
+    source === 'kernel' &&
+    'identity' in value &&
+    typeof value.identity === 'string' &&
+    'termination' in value &&
+    isProcessTermination(value.termination)
+  )
+    return { evidence_source: 'kernel', identity: value.identity, termination: value.termination }
   if (
     source === 'kubernetes' &&
     'container_name' in value &&
@@ -340,7 +343,7 @@ export function FilePathValue({ path, label = 'Syscall path' }: { path: string; 
         {path}
       </span>
       <Button variant="ghost" onClick={() => void copy()} aria-label={`Copy ${label}`}>
-        <Copy size={14} aria-hidden="true" /> Copy
+        <Copy size={14} aria-hidden="true" />
       </Button>
       <span className="sr-only" aria-live="polite">
         {message}
@@ -577,6 +580,10 @@ function TerminationSemanticSummary({
     return (
       <div className="rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm">
         <EvidenceSourceBadge source="kernel" />
+        <dl className="mt-3 grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3">
+          <dt className="text-slate-400">{t('processIdentity')}</dt>
+          <dd className="break-all font-mono">{value.identity}</dd>
+        </dl>
         <p className="mt-3 font-semibold">{copy.primary}</p>
         {copy.conventional && <p className="mt-1 text-slate-300">{copy.conventional}</p>}
         {copy.coreFlag && <p className="mt-1 text-slate-400">{copy.coreFlag}</p>}
@@ -1027,7 +1034,7 @@ export function RuntimeGroupList({
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <Link
-                  className="text-xl font-semibold text-cyan-200 underline"
+                  className="text-xl font-semibold text-cyan-200 transition hover:text-cyan-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
                   to="/projects/$projectId/applications/$applicationId/runtime-groups/$groupId"
                   params={{ projectId, applicationId, groupId: group.id }}
                   search={search}

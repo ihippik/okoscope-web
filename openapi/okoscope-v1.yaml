@@ -1994,9 +1994,10 @@ components:
     ProcessExitSemanticSummary:
       type: object
       additionalProperties: true
-      required: [evidence_source, termination]
+      required: [evidence_source, identity, termination]
       properties:
         evidence_source: { type: string, const: kernel }
+        identity: { type: string, minLength: 1 }
         termination: { $ref: '#/components/schemas/ProcessTermination' }
     ContainerTerminationSemanticSummary:
       type: object

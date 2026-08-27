@@ -60,6 +60,7 @@ describe('termination evidence presentation', () => {
         <SemanticSummary
           value={{
             evidence_source: 'kernel',
+            identity: '/app/payment-worker',
             termination: {
               type: 'signaled',
               signal: 11,
@@ -72,6 +73,8 @@ describe('termination evidence presentation', () => {
       </LocalizationProvider>,
     )
     expect(screen.getByText('Процесс завершён сигналом SIGSEGV (11)')).toBeVisible()
+    expect(screen.getByText('Процесс')).toBeVisible()
+    expect(screen.getByText('/app/payment-worker')).toBeVisible()
     expect(screen.getByText(/Условный код завершения 139/)).toBeVisible()
     expect(screen.getByText(/Установлен флаг core dump/)).toBeVisible()
     expect(screen.getByText(/не определяют его отправителя/)).toBeVisible()

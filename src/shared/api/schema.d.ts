@@ -1594,6 +1594,7 @@ export interface components {
         ProcessExitSemanticSummary: {
             /** @constant */
             evidence_source: "kernel";
+            identity: string;
             termination: components["schemas"]["ProcessTermination"];
         } & {
             [key: string]: unknown;

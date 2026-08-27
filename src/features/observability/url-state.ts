@@ -67,6 +67,10 @@ export const changeRuntimeGroupFilters = (
   delete withoutCursor.cursor
   return compact({ ...withoutCursor, ...updates, cursor: undefined })
 }
+export const toggleRuntimeGroupStatus = (
+  current: RuntimeGroupSearch,
+  status: NonNullable<RuntimeGroupSearch['status']>,
+) => changeRuntimeGroupFilters(current, { status: current.status === status ? undefined : status })
 export const changeBaseline = (
   current: RuntimeDiffSearch,
   baseline?: string,
