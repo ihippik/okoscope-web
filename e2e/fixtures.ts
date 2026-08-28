@@ -25,6 +25,14 @@ const application = {
   runtime_group_count: 3,
   latest_observed_at: null,
 }
+const policyEvaluation = {
+  state: 'current',
+  verdict: 'unclassified',
+  reason_code: 'no_matching_policy',
+  winning_revision_id: null,
+  explanation: { specificity: [], related_revision_ids: [] },
+  evaluated_at: '2026-08-17T12:00:00Z',
+}
 const group = {
   id: '00000000-0000-4000-8000-000000000004',
   project_id: project.id,
@@ -56,6 +64,9 @@ const group = {
   representative_event_id: '00000000-0000-4000-8000-000000000006',
   status_changed_at: null,
   status_changed_by: null,
+  policy_evaluation: policyEvaluation,
+  active_suppression: null,
+  actionable: true,
 }
 const occurrence = {
   id: '00000000-0000-4000-8000-000000000007',
@@ -196,6 +207,11 @@ const inventoryDetail = {
     sightings: `${inventoryBase}/${inventoryItemId}/sightings`,
     groups: `${inventoryBase}/${inventoryItemId}/groups`,
     occurrences: `${inventoryBase}/${inventoryItemId}/occurrences`,
+  },
+  policy_placement_summary: {
+    placement_count: 1,
+    evaluation_pending: 0,
+    verdicts: { expected: 0, requires_review: 0, policy_conflict: 0, unclassified: 1 },
   },
 }
 
@@ -676,6 +692,9 @@ export async function mockApi(page: Page, role: 'owner' | 'member' = 'owner') {
             occurrence_count: 12,
             first_seen_at: group.first_seen_at,
             last_seen_at: group.last_seen_at,
+            policy_evaluation: policyEvaluation,
+            active_suppression: null,
+            actionable: true,
           },
         ],
         next_cursor: null,
