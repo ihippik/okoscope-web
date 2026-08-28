@@ -272,7 +272,10 @@ test('uses a URL-backed attention window and follows typed investigation actions
   await expect(page.getByLabel('Attention window')).toHaveValue('7d')
   await page.getByLabel('Attention window').selectOption('24h')
   await expect(page).toHaveURL('/?window=24h')
-  await page.getByRole('link', { name: 'Review new discoveries', exact: true }).click()
+  await page
+    .getByLabel('Recommendations to review')
+    .getByRole('link', { name: 'Review', exact: true })
+    .click()
   await expect(page).toHaveURL(new RegExp(`/runtime-groups/${group.id}`))
   await page.goBack()
   await expect(page.getByLabel('Attention window')).toHaveValue('24h')
