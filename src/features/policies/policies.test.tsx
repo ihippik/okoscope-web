@@ -4,7 +4,12 @@ import { describe, expect, it, vi } from 'vitest'
 import { parseRuntimeGroupSearch } from '../observability/url-state'
 import { parseInventorySearch } from '../runtime-inventory/url-state'
 import { LocalizationProvider } from '../../shared/i18n'
-import { PolicyEffectBadge, PolicyFilters, PolicyState } from './components'
+import {
+  PolicyEffectBadge,
+  PolicyFilters,
+  PolicyState,
+  suppressionBehaviorSummary,
+} from './components'
 
 describe('managed runtime policy presentation', () => {
   it('localizes policy effects and renders them as badges', () => {
@@ -52,6 +57,20 @@ describe('managed runtime policy presentation', () => {
     expect(parseInventorySearch({ kind: 'process', verdict: 'unknown' })).toEqual({
       kind: 'process',
     })
+  })
+
+  it('describes the exact behavior targeted by a suppression', () => {
+    expect(
+      suppressionBehaviorSummary({
+        behavior_matcher: {
+          kind: 'destination',
+          process_command: '/usr/bin/payment-api',
+          address_family: 'ipv4',
+          destination_address: '10.0.0.8',
+          destination_port: 8081,
+        },
+      }),
+    ).toBe('/usr/bin/payment-api → 10.0.0.8:8081 (ipv4)')
   })
 
   it('emits policy filters independently', async () => {

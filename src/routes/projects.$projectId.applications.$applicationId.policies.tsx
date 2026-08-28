@@ -16,7 +16,11 @@ import {
   suppressionsOptions,
 } from '../features/policies/queries'
 import { formatTimestamp } from '../features/tenant/format'
-import { PolicyEffectBadge } from '../features/policies/components'
+import {
+  placementSummary,
+  PolicyEffectBadge,
+  suppressionBehaviorSummary,
+} from '../features/policies/components'
 
 export const Route = createFileRoute('/projects/$projectId/applications/$applicationId/policies')({
   component: PoliciesPage,
@@ -192,6 +196,36 @@ function PoliciesPage() {
                   </Button>
                 )}
               </div>
+              <dl className="details mt-3">
+                <dt>Suppressed observation</dt>
+                <dd className="break-all font-mono">{suppressionBehaviorSummary(suppression)}</dd>
+                <dt>Scope</dt>
+                <dd>
+                  {placementSummary({
+                    cluster_ids: suppression.cluster_ids,
+                    namespaces: suppression.namespaces,
+                    workload_kinds: suppression.workload_kinds,
+                    workload_names: suppression.workload_names,
+                  })}
+                </dd>
+                {(suppression.source_runtime_group_id || suppression.source_inventory_item_id) && (
+                  <>
+                    <dt>Source</dt>
+                    <dd>
+                      <a
+                        className="text-cyan-300 hover:text-cyan-200"
+                        href={
+                          suppression.source_runtime_group_id
+                            ? `/projects/${projectId}/applications/${applicationId}/runtime-groups/${suppression.source_runtime_group_id}`
+                            : `/projects/${projectId}/applications/${applicationId}/runtime-inventory/${suppression.source_inventory_item_id}?kind=${suppression.inventory_kind}`
+                        }
+                      >
+                        Open source observation
+                      </a>
+                    </dd>
+                  </>
+                )}
+              </dl>
             </Card>
           )
         })}

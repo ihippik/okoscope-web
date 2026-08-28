@@ -2,6 +2,7 @@ import type {
   ActivePolicySuppression,
   PolicyEvaluation,
   PolicyPlacementMatcher,
+  PolicySuppression,
 } from '../../shared/api/types'
 import { useT } from '../../shared/i18n'
 import { formatTimestamp } from '../tenant/format'
@@ -87,6 +88,36 @@ export const placementSummary = (placement: PolicyPlacementMatcher) => {
   return constrained.length
     ? constrained.map(([label, values]) => `${label}: ${values?.join(', ')}`).join(' · ')
     : 'All application placements'
+}
+
+export const suppressionBehaviorSummary = ({
+  behavior_matcher: matcher,
+}: Pick<PolicySuppression, 'behavior_matcher'>) => {
+  switch (matcher.kind) {
+    case 'process':
+      return matcher.executable
+    case 'destination':
+      return `${matcher.process_command} → ${matcher.destination_address}:${matcher.destination_port} (${matcher.address_family})`
+    case 'domain':
+      return `${matcher.process_command} → ${matcher.name} (${matcher.query_type})`
+    case 'syscall':
+      return `${matcher.process_command} → ${matcher.syscall}`
+    case 'inbound_endpoint':
+      return `${matcher.transport.toUpperCase()} ${matcher.local_address}:${matcher.local_port}`
+    case 'file_activity':
+      return `${matcher.process_command} → ${matcher.operation} ${matcher.path}${matcher.new_path ? ` → ${matcher.new_path}` : ''}`
+    case 'lifecycle_process_exit':
+    case 'lifecycle_container_termination':
+    case 'lifecycle_container_restart':
+      return [
+        matcher.kind.replaceAll('_', ' '),
+        matcher.identity,
+        matcher.container_name,
+        matcher.reason,
+      ]
+        .filter(Boolean)
+        .join(' · ')
+  }
 }
 
 export function PolicyFilters({

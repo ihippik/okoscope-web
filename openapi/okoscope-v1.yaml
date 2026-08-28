@@ -1388,7 +1388,18 @@ components:
         - { $ref: '#/components/schemas/InboundBehaviorMatcher' }
         - { $ref: '#/components/schemas/FileBehaviorMatcher' }
         - { $ref: '#/components/schemas/LifecycleBehaviorMatcher' }
-      discriminator: { propertyName: kind }
+      discriminator:
+        propertyName: kind
+        mapping:
+          process: '#/components/schemas/ProcessBehaviorMatcher'
+          destination: '#/components/schemas/DestinationBehaviorMatcher'
+          domain: '#/components/schemas/DomainBehaviorMatcher'
+          syscall: '#/components/schemas/SyscallBehaviorMatcher'
+          inbound_endpoint: '#/components/schemas/InboundBehaviorMatcher'
+          file_activity: '#/components/schemas/FileBehaviorMatcher'
+          lifecycle_process_exit: '#/components/schemas/LifecycleBehaviorMatcher'
+          lifecycle_container_termination: '#/components/schemas/LifecycleBehaviorMatcher'
+          lifecycle_container_restart: '#/components/schemas/LifecycleBehaviorMatcher'
     ProcessBehaviorMatcher:
       {
         type: object,

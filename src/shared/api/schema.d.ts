@@ -1237,7 +1237,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            kind: "ProcessBehaviorMatcher";
+            kind: "process";
             executable: string;
         };
         DestinationBehaviorMatcher: {
@@ -1245,7 +1245,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            kind: "DestinationBehaviorMatcher";
+            kind: "destination";
             process_command: string;
             /** @enum {string} */
             address_family: "ipv4" | "ipv6";
@@ -1257,7 +1257,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            kind: "DomainBehaviorMatcher";
+            kind: "domain";
             process_command: string;
             name: string;
             query_type: string;
@@ -1267,7 +1267,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            kind: "SyscallBehaviorMatcher";
+            kind: "syscall";
             process_command: string;
             syscall: string;
         };
@@ -1276,7 +1276,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            kind: "InboundBehaviorMatcher";
+            kind: "inbound_endpoint";
             transport: string;
             local_address: string;
             local_port: number;
@@ -1286,7 +1286,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            kind: "FileBehaviorMatcher";
+            kind: "file_activity";
             process_command: string;
             operation: string;
             path: string;
@@ -1298,7 +1298,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            kind: "LifecycleBehaviorMatcher";
+            kind: "lifecycle_process_exit" | "lifecycle_container_termination" | "lifecycle_container_restart";
             identity?: string;
             container_name?: string;
             reason?: string;
