@@ -24,6 +24,7 @@ export const legacyRussian: Record<string, string> = {
   Active: 'Активно',
   Expired: 'Истекло',
   'No suppressions recorded.': 'Подавления не зарегистрированы.',
+  expires: 'истекает',
   '· expires': '· истекает',
   'Cancel suppression': 'Отменить подавление',
   'Policy state': 'Состояние политики',

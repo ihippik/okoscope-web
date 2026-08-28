@@ -176,13 +176,25 @@ function PoliciesPage() {
         {suppressions.data.items.map((suppression) => {
           const active =
             !suppression.cancelled_at && Date.parse(suppression.expires_at) > renderedAt
+          const status = active ? 'Active' : suppression.cancelled_at ? 'Cancelled' : 'Expired'
+          const statusTone = active
+            ? 'border-emerald-700 bg-emerald-950 text-emerald-200'
+            : suppression.cancelled_at
+              ? 'border-slate-600 bg-slate-900 text-slate-200'
+              : 'border-amber-700 bg-amber-950 text-amber-200'
           return (
             <Card key={suppression.id}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h3 className="font-semibold">{suppression.reason}</h3>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-semibold">{suppression.reason}</h3>
+                    <span
+                      className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-semibold ${statusTone}`}
+                    >
+                      {status}
+                    </span>
+                  </div>
                   <p className="mt-1 text-sm text-slate-400">
-                    {active ? 'Active' : suppression.cancelled_at ? 'Cancelled' : 'Expired'} ·
                     expires {formatTimestamp(suppression.expires_at)}
                   </p>
                 </div>
