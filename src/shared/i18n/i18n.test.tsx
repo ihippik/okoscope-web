@@ -112,6 +112,20 @@ describe('localization', () => {
     expect(screen.getByText('Контейнер перезапущен')).toBeVisible()
     expect(screen.getByText('Обнаружен цикл перезапусков')).toBeVisible()
   })
+  it('translates the temporary suppression dialog', async () => {
+    render(
+      <LocalizationProvider initialLocale="ru">
+        <section>
+          <h2>Temporarily suppress observation</h2>
+          <p>All application placements</p>
+        </section>
+      </LocalizationProvider>,
+    )
+    expect(
+      await screen.findByRole('heading', { name: 'Временно подавить наблюдение' }),
+    ).toBeVisible()
+    expect(screen.getByText('Все размещения приложения')).toBeVisible()
+  })
   it('translates discovery empty states', async () => {
     render(
       <LocalizationProvider initialLocale="ru">

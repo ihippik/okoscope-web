@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { Button } from './button'
 import { useT } from '../i18n'
 
@@ -19,19 +20,27 @@ export function Modal({
 }) {
   const t = useT()
   const dialogRef = useRef<HTMLDivElement>(null)
+  const onCloseRef = useRef(onClose)
+  const closeDisabledRef = useRef(closeDisabled)
+
+  useEffect(() => {
+    onCloseRef.current = onClose
+    closeDisabledRef.current = closeDisabled
+  }, [closeDisabled, onClose])
+
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null
     const dialog = dialogRef.current
     const focusable = dialog?.querySelector<HTMLElement>(
-      'input, button, [href], [tabindex]:not([tabindex="-1"])',
+      'input, textarea, select, button, [href], [tabindex]:not([tabindex="-1"])',
     )
     focusable?.focus()
     const keydown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !closeDisabled) onClose()
+      if (event.key === 'Escape' && !closeDisabledRef.current) onCloseRef.current()
       if (event.key !== 'Tab' || !dialog) return
       const items = [
         ...dialog.querySelectorAll<HTMLElement>(
-          'input, button, [href], [tabindex]:not([tabindex="-1"])',
+          'input, textarea, select, button, [href], [tabindex]:not([tabindex="-1"])',
         ),
       ].filter((item) => !item.hasAttribute('disabled'))
       if (!items.length) return
@@ -50,8 +59,8 @@ export function Modal({
       document.removeEventListener('keydown', keydown)
       previous?.focus()
     }
-  }, [closeDisabled, onClose])
-  return (
+  }, [])
+  return createPortal(
     <div
       className="fixed inset-0 z-50 grid place-items-center bg-slate-950/80 p-4"
       role="presentation"
@@ -77,6 +86,7 @@ export function Modal({
           </Button>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

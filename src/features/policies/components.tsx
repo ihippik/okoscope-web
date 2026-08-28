@@ -3,7 +3,30 @@ import type {
   PolicyEvaluation,
   PolicyPlacementMatcher,
 } from '../../shared/api/types'
+import { useT } from '../../shared/i18n'
 import { formatTimestamp } from '../tenant/format'
+
+export function PolicyEffectBadge({
+  effect,
+}: {
+  effect: 'expected' | 'requires_review' | null | undefined
+}) {
+  const t = useT()
+  const presentation = effect
+    ? {
+        expected: [t('expected'), 'border-emerald-700 bg-emerald-950 text-emerald-200'],
+        requires_review: [t('requiresReview'), 'border-amber-700 bg-amber-950 text-amber-200'],
+      }[effect]
+    : [t('unclassified'), 'border-slate-600 bg-slate-900 text-slate-200']
+
+  return (
+    <span
+      className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-semibold ${presentation[1]}`}
+    >
+      {presentation[0]}
+    </span>
+  )
+}
 
 export function PolicyVerdictBadge({ evaluation }: { evaluation: PolicyEvaluation }) {
   if (evaluation.state === 'evaluation_pending')

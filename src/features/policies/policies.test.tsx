@@ -3,9 +3,20 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { parseRuntimeGroupSearch } from '../observability/url-state'
 import { parseInventorySearch } from '../runtime-inventory/url-state'
-import { PolicyFilters, PolicyState } from './components'
+import { LocalizationProvider } from '../../shared/i18n'
+import { PolicyEffectBadge, PolicyFilters, PolicyState } from './components'
 
 describe('managed runtime policy presentation', () => {
+  it('localizes policy effects and renders them as badges', () => {
+    render(
+      <LocalizationProvider initialLocale="ru">
+        <PolicyEffectBadge effect="expected" />
+      </LocalizationProvider>,
+    )
+
+    expect(screen.getByText('Ожидается')).toHaveClass('rounded-full', 'border')
+  })
+
   it('renders verdict and suppression as independent states', () => {
     render(
       <PolicyState

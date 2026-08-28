@@ -41,6 +41,7 @@ export const legacyRussian: Record<string, string> = {
   Current: 'Актуально',
   'Create policy from observation': 'Создать политику из наблюдения',
   'Temporarily suppress': 'Временно подавить',
+  'Temporarily suppress observation': 'Временно подавить наблюдение',
   'Manage policies': 'Управление политиками',
   'Policy seed unavailable': 'Источник политики недоступен',
   'Observed facts and discovery lifecycle remain unchanged.':
@@ -48,6 +49,7 @@ export const legacyRussian: Record<string, string> = {
   'This observation cannot seed a policy:': 'Из этого наблюдения нельзя создать политику:',
   'Policy name': 'Название политики',
   'Scope:': 'Область действия:',
+  'All application placements': 'Все размещения приложения',
   'Policy preview': 'Предпросмотр политики',
   'Preview at': 'Предпросмотр на',
   'groups and': 'групп и',

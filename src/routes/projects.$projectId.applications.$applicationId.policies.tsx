@@ -16,6 +16,7 @@ import {
   suppressionsOptions,
 } from '../features/policies/queries'
 import { formatTimestamp } from '../features/tenant/format'
+import { PolicyEffectBadge } from '../features/policies/components'
 
 export const Route = createFileRoute('/projects/$projectId/applications/$applicationId/policies')({
   component: PoliciesPage,
@@ -115,9 +116,13 @@ function PoliciesPage() {
             </div>
             <dl className="details mt-4">
               <dt>Inside scope</dt>
-              <dd>{policy.inside_effect ?? '—'}</dd>
+              <dd>
+                <PolicyEffectBadge effect={policy.inside_effect} />
+              </dd>
               <dt>Outside scope</dt>
-              <dd>{policy.outside_effect ?? 'Unclassified'}</dd>
+              <dd>
+                <PolicyEffectBadge effect={policy.outside_effect} />
+              </dd>
               <dt>Updated</dt>
               <dd>{formatTimestamp(policy.updated_at)}</dd>
             </dl>
@@ -143,9 +148,13 @@ function PoliciesPage() {
               </p>
               <dl className="details mt-3">
                 <dt>Inside scope</dt>
-                <dd>{revision.inside_effect}</dd>
+                <dd>
+                  <PolicyEffectBadge effect={revision.inside_effect} />
+                </dd>
                 <dt>Outside scope</dt>
-                <dd>{revision.outside_effect ?? 'Unclassified'}</dd>
+                <dd>
+                  <PolicyEffectBadge effect={revision.outside_effect} />
+                </dd>
               </dl>
             </Card>
           ))}
