@@ -176,7 +176,10 @@ describe('runtime inventory safe presentation', () => {
           semantic_summary: {
             event_kind: 'container.terminated',
             evidence_source: 'kubernetes',
-          },
+            container_name: 'api',
+            reason: 'OOMKilled',
+            exit_code: 137,
+          } as unknown as typeof contractFixture.inventoryItemDetail.semantic_summary,
         }}
       />,
     )

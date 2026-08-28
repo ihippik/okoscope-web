@@ -32,6 +32,7 @@ import { Card } from '../shared/ui/card'
 import { Loading } from '../shared/ui/loading'
 import { formatCount, formatTimestamp } from '../features/tenant/format'
 import { getActivityPresentation } from '../features/observability/presentation'
+import { ObservationPolicyActions } from '../features/policies/from-observation'
 
 export const Route = createFileRoute(
   '/projects/$projectId/applications/$applicationId/runtime-inventory/$itemId',
@@ -182,6 +183,11 @@ function RuntimeInventoryDetailPage() {
           <dt>Last observed</dt>
           <dd>{formatTimestamp(item.data.last_seen_at)}</dd>
         </dl>
+        <ObservationPolicyActions
+          projectId={projectId}
+          applicationId={applicationId}
+          source={{ itemId }}
+        />
       </Card>
       <div role="tablist" aria-label="Observation details" className="flex flex-wrap gap-2">
         {evidenceTabs.map(({ kind, label }) => (

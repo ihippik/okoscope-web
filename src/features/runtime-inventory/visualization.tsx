@@ -20,6 +20,12 @@ import {
 import { useLocalization } from '../../shared/i18n'
 import { legacyRussian } from '../../shared/i18n/legacy'
 
+const byOccurrenceCountDescending = <T extends { value: number }>(items: T[]) =>
+  items
+    .map((item, index) => ({ item, index }))
+    .sort((left, right) => right.item.value - left.item.value || left.index - right.index)
+    .map(({ item }) => item)
+
 export function inventoryIdentityText(
   kind: InventoryKind,
   value: InventoryDistribution['entries'][number]['semantic_summary'],
@@ -38,7 +44,7 @@ export function inventoryIdentityText(
       ? `${value.process_command} · rename · ${value.path} → ${value.new_path}`
       : `${value.process_command} · ${value.operation} · ${value.path}`
   if (kind === 'lifecycle' && isInventoryLifecycle(value))
-    return `${getEventKindLabel(value.event_kind)} · ${value.evidence_source}`
+    return `${getEventKindLabel(value.event_kind ?? 'lifecycle')} · ${value.evidence_source}`
   return 'Unsupported identity'
 }
 
@@ -66,18 +72,20 @@ export function InventoryKindDistribution({
       <HorizontalBars
         ariaLabel="Application activity by kind"
         total={summary.occurrence_count}
-        items={inventoryKinds.map(({ kind, label }) => {
-          const value = counts.get(kind)
-          return {
-            id: kind,
-            label,
-            accessibleLabel: localized(label),
-            value: value?.occurrence_count ?? 0,
-            selected: kind === activeKind,
-            meta: `${formatCount(value?.item_count ?? 0)} unique behaviors`,
-            onSelect: () => onKind(kind),
-          }
-        })}
+        items={byOccurrenceCountDescending(
+          inventoryKinds.map(({ kind, label }) => {
+            const value = counts.get(kind)
+            return {
+              id: kind,
+              label,
+              accessibleLabel: localized(label),
+              value: value?.occurrence_count ?? 0,
+              selected: kind === activeKind,
+              meta: `${formatCount(value?.item_count ?? 0)} unique behaviors`,
+              onSelect: () => onKind(kind),
+            }
+          }),
+        )}
       />
     </Card>
   )
@@ -116,6 +124,7 @@ export function TopBehaviorDistribution({
       meta: `${formatCount(distribution.other.item_count)} unique identities`,
       onSelect: () => onIdentity(undefined),
     })
+  const sortedEntries = byOccurrenceCountDescending(entries)
   return (
     <Card className="h-full">
       <h2 className="text-xl font-semibold">Most observed {copy.behaviorLabel.toLowerCase()}</h2>
@@ -127,7 +136,7 @@ export function TopBehaviorDistribution({
         <HorizontalBars
           ariaLabel={`Most observed ${copy.behaviorLabel.toLowerCase()}`}
           total={distribution.total_occurrence_count}
-          items={entries}
+          items={sortedEntries}
         />
       </div>
     </Card>

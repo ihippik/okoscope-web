@@ -13,6 +13,9 @@ export type InventorySearch = {
   observed_to?: string | undefined
   search?: string | undefined
   identity_token?: string | undefined
+  verdict?: 'unclassified' | 'expected' | 'requires_review' | 'policy_conflict' | undefined
+  suppressed?: boolean | undefined
+  evaluation_pending?: boolean | undefined
   cursor?: string | undefined
 }
 export type InventoryEvidence = 'releases' | 'sightings' | 'groups' | 'occurrences'
@@ -54,6 +57,23 @@ export function parseInventorySearch(input: Record<string, unknown>): InventoryS
     observed_to: timestamp(input.observed_to),
     search: text(input.search, 200),
     identity_token: text(input.identity_token, 1000),
+    verdict: ['unclassified', 'expected', 'requires_review', 'policy_conflict'].includes(
+      String(input.verdict),
+    )
+      ? (input.verdict as InventorySearch['verdict'])
+      : undefined,
+    suppressed:
+      input.suppressed === true || input.suppressed === 'true'
+        ? true
+        : input.suppressed === false || input.suppressed === 'false'
+          ? false
+          : undefined,
+    evaluation_pending:
+      input.evaluation_pending === true || input.evaluation_pending === 'true'
+        ? true
+        : input.evaluation_pending === false || input.evaluation_pending === 'false'
+          ? false
+          : undefined,
     cursor: text(input.cursor, 2000),
   })
 }
@@ -101,6 +121,9 @@ export const summarySearch = (scope: InventorySearch) => {
     observed_to,
     search,
     operation,
+    verdict,
+    suppressed,
+    evaluation_pending,
   } = scope
   return compact({
     release_id,
@@ -113,5 +136,8 @@ export const summarySearch = (scope: InventorySearch) => {
     observed_to,
     search,
     operation,
+    verdict,
+    suppressed,
+    evaluation_pending,
   })
 }

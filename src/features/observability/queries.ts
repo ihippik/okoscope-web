@@ -11,7 +11,7 @@ import type {
 } from '../../shared/api/types'
 import type { ReleaseSearch, RuntimeDiffSearch, RuntimeGroupSearch } from './url-state'
 
-const params = (input: Record<string, string | number | undefined>) => {
+const params = (input: Record<string, string | number | boolean | undefined>) => {
   const value = new URLSearchParams()
   Object.entries(input).forEach(([key, item]) => {
     if (item !== undefined) value.set(key, String(item))

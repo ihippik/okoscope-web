@@ -40,7 +40,7 @@ export function OrganizationAttention({
   const summary = query.data
   const totals = summary.totals
   const allClear =
-    Object.values(totals).every((value) => value === 0) &&
+    Object.values(totals).every((value) => typeof value !== 'number' || value === 0) &&
     summary.priority_items.length === 0 &&
     summary.changed_applications.length === 0 &&
     summary.notification_problems.length === 0 &&

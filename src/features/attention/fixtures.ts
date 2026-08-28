@@ -42,6 +42,15 @@ const comparison = {
     },
   ],
 }
+const policyTotals = {
+  factual_total: 12,
+  actionable_total: 12,
+  evaluation_pending: 0,
+  expected: 0,
+  requires_review: 0,
+  policy_conflict: 0,
+  unclassified: 12,
+}
 
 export const populatedOrganizationAttentionFixture = {
   generated_at: '2026-08-22T12:00:00Z',
@@ -53,6 +62,7 @@ export const populatedOrganizationAttentionFixture = {
     changed_applications: 1,
     projects_with_notification_problems: 1,
     failed_notification_deliveries: 14,
+    policy: policyTotals,
   },
   priority_items: [
     {
@@ -185,6 +195,7 @@ export const allClearOrganizationAttentionFixture = {
     changed_applications: 0,
     projects_with_notification_problems: 0,
     failed_notification_deliveries: 0,
+    policy: { ...policyTotals, factual_total: 0, actionable_total: 0, unclassified: 0 },
   },
   priority_items: [],
   changed_applications: [],
@@ -205,6 +216,7 @@ export const populatedApplicationAttentionFixture = {
     disappeared_runtime_items: 2,
     unchanged_runtime_items: 20,
     total_runtime_items: 26,
+    policy: policyTotals,
   },
   release_comparison: comparison,
   priority_items: [
@@ -222,6 +234,7 @@ export const unavailableApplicationAttentionFixture = {
     disappeared_runtime_items: 0,
     unchanged_runtime_items: 0,
     total_runtime_items: 0,
+    policy: { ...policyTotals, factual_total: 0, actionable_total: 0, unclassified: 0 },
   },
   release_comparison: null,
   priority_items: [],

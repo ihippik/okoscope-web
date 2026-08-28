@@ -19,6 +19,7 @@ import { Route as ProjectsProjectIdApplicationsApplicationIdRouteImport } from '
 import { Route as ProjectsProjectIdNotificationsRecoveryRouteImport } from './routes/projects.$projectId.notifications.recovery'
 import { Route as AdminProjectsProjectIdApplicationsApplicationIdRouteImport } from './routes/admin.projects.$projectId.applications.$applicationId'
 import { Route as ProjectsProjectIdApplicationsApplicationIdAttentionRouteImport } from './routes/projects.$projectId.applications.$applicationId.attention'
+import { Route as ProjectsProjectIdApplicationsApplicationIdPoliciesRouteImport } from './routes/projects.$projectId.applications.$applicationId.policies'
 import { Route as ProjectsProjectIdApplicationsApplicationIdReleasesRouteImport } from './routes/projects.$projectId.applications.$applicationId.releases'
 import { Route as ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteImport } from './routes/projects.$projectId.applications.$applicationId.runtime-groups'
 import { Route as ProjectsProjectIdApplicationsApplicationIdRuntimeInventoryRouteImport } from './routes/projects.$projectId.applications.$applicationId.runtime-inventory'
@@ -82,6 +83,12 @@ const ProjectsProjectIdApplicationsApplicationIdAttentionRoute =
   ProjectsProjectIdApplicationsApplicationIdAttentionRouteImport.update({
     id: '/attention',
     path: '/attention',
+    getParentRoute: () => ProjectsProjectIdApplicationsApplicationIdRoute,
+  } as any)
+const ProjectsProjectIdApplicationsApplicationIdPoliciesRoute =
+  ProjectsProjectIdApplicationsApplicationIdPoliciesRouteImport.update({
+    id: '/policies',
+    path: '/policies',
     getParentRoute: () => ProjectsProjectIdApplicationsApplicationIdRoute,
   } as any)
 const ProjectsProjectIdApplicationsApplicationIdReleasesRoute =
@@ -159,6 +166,7 @@ export interface FileRoutesByFullPath {
   '/projects/$projectId/notifications/recovery': typeof ProjectsProjectIdNotificationsRecoveryRouteWithChildren
   '/admin/projects/$projectId/applications/$applicationId': typeof AdminProjectsProjectIdApplicationsApplicationIdRoute
   '/projects/$projectId/applications/$applicationId/attention': typeof ProjectsProjectIdApplicationsApplicationIdAttentionRoute
+  '/projects/$projectId/applications/$applicationId/policies': typeof ProjectsProjectIdApplicationsApplicationIdPoliciesRoute
   '/projects/$projectId/applications/$applicationId/releases': typeof ProjectsProjectIdApplicationsApplicationIdReleasesRouteWithChildren
   '/projects/$projectId/applications/$applicationId/runtime-groups': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteWithChildren
   '/projects/$projectId/applications/$applicationId/runtime-inventory': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeInventoryRouteWithChildren
@@ -180,6 +188,7 @@ export interface FileRoutesByTo {
   '/projects/$projectId/notifications/recovery': typeof ProjectsProjectIdNotificationsRecoveryRouteWithChildren
   '/admin/projects/$projectId/applications/$applicationId': typeof AdminProjectsProjectIdApplicationsApplicationIdRoute
   '/projects/$projectId/applications/$applicationId/attention': typeof ProjectsProjectIdApplicationsApplicationIdAttentionRoute
+  '/projects/$projectId/applications/$applicationId/policies': typeof ProjectsProjectIdApplicationsApplicationIdPoliciesRoute
   '/projects/$projectId/applications/$applicationId/releases': typeof ProjectsProjectIdApplicationsApplicationIdReleasesRouteWithChildren
   '/projects/$projectId/applications/$applicationId/runtime-groups': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteWithChildren
   '/projects/$projectId/applications/$applicationId/runtime-inventory': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeInventoryRouteWithChildren
@@ -202,6 +211,7 @@ export interface FileRoutesById {
   '/projects/$projectId/notifications/recovery': typeof ProjectsProjectIdNotificationsRecoveryRouteWithChildren
   '/admin/projects/$projectId/applications/$applicationId': typeof AdminProjectsProjectIdApplicationsApplicationIdRoute
   '/projects/$projectId/applications/$applicationId/attention': typeof ProjectsProjectIdApplicationsApplicationIdAttentionRoute
+  '/projects/$projectId/applications/$applicationId/policies': typeof ProjectsProjectIdApplicationsApplicationIdPoliciesRoute
   '/projects/$projectId/applications/$applicationId/releases': typeof ProjectsProjectIdApplicationsApplicationIdReleasesRouteWithChildren
   '/projects/$projectId/applications/$applicationId/runtime-groups': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteWithChildren
   '/projects/$projectId/applications/$applicationId/runtime-inventory': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeInventoryRouteWithChildren
@@ -225,6 +235,7 @@ export interface FileRouteTypes {
     | '/projects/$projectId/notifications/recovery'
     | '/admin/projects/$projectId/applications/$applicationId'
     | '/projects/$projectId/applications/$applicationId/attention'
+    | '/projects/$projectId/applications/$applicationId/policies'
     | '/projects/$projectId/applications/$applicationId/releases'
     | '/projects/$projectId/applications/$applicationId/runtime-groups'
     | '/projects/$projectId/applications/$applicationId/runtime-inventory'
@@ -246,6 +257,7 @@ export interface FileRouteTypes {
     | '/projects/$projectId/notifications/recovery'
     | '/admin/projects/$projectId/applications/$applicationId'
     | '/projects/$projectId/applications/$applicationId/attention'
+    | '/projects/$projectId/applications/$applicationId/policies'
     | '/projects/$projectId/applications/$applicationId/releases'
     | '/projects/$projectId/applications/$applicationId/runtime-groups'
     | '/projects/$projectId/applications/$applicationId/runtime-inventory'
@@ -267,6 +279,7 @@ export interface FileRouteTypes {
     | '/projects/$projectId/notifications/recovery'
     | '/admin/projects/$projectId/applications/$applicationId'
     | '/projects/$projectId/applications/$applicationId/attention'
+    | '/projects/$projectId/applications/$applicationId/policies'
     | '/projects/$projectId/applications/$applicationId/releases'
     | '/projects/$projectId/applications/$applicationId/runtime-groups'
     | '/projects/$projectId/applications/$applicationId/runtime-inventory'
@@ -359,6 +372,13 @@ declare module '@tanstack/react-router' {
       path: '/attention'
       fullPath: '/projects/$projectId/applications/$applicationId/attention'
       preLoaderRoute: typeof ProjectsProjectIdApplicationsApplicationIdAttentionRouteImport
+      parentRoute: typeof ProjectsProjectIdApplicationsApplicationIdRoute
+    }
+    '/projects/$projectId/applications/$applicationId/policies': {
+      id: '/projects/$projectId/applications/$applicationId/policies'
+      path: '/policies'
+      fullPath: '/projects/$projectId/applications/$applicationId/policies'
+      preLoaderRoute: typeof ProjectsProjectIdApplicationsApplicationIdPoliciesRouteImport
       parentRoute: typeof ProjectsProjectIdApplicationsApplicationIdRoute
     }
     '/projects/$projectId/applications/$applicationId/releases': {
@@ -510,6 +530,7 @@ const ProjectsProjectIdApplicationsApplicationIdRuntimeInventoryRouteWithChildre
 
 interface ProjectsProjectIdApplicationsApplicationIdRouteChildren {
   ProjectsProjectIdApplicationsApplicationIdAttentionRoute: typeof ProjectsProjectIdApplicationsApplicationIdAttentionRoute
+  ProjectsProjectIdApplicationsApplicationIdPoliciesRoute: typeof ProjectsProjectIdApplicationsApplicationIdPoliciesRoute
   ProjectsProjectIdApplicationsApplicationIdReleasesRoute: typeof ProjectsProjectIdApplicationsApplicationIdReleasesRouteWithChildren
   ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRoute: typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteWithChildren
   ProjectsProjectIdApplicationsApplicationIdRuntimeInventoryRoute: typeof ProjectsProjectIdApplicationsApplicationIdRuntimeInventoryRouteWithChildren
@@ -519,6 +540,8 @@ const ProjectsProjectIdApplicationsApplicationIdRouteChildren: ProjectsProjectId
   {
     ProjectsProjectIdApplicationsApplicationIdAttentionRoute:
       ProjectsProjectIdApplicationsApplicationIdAttentionRoute,
+    ProjectsProjectIdApplicationsApplicationIdPoliciesRoute:
+      ProjectsProjectIdApplicationsApplicationIdPoliciesRoute,
     ProjectsProjectIdApplicationsApplicationIdReleasesRoute:
       ProjectsProjectIdApplicationsApplicationIdReleasesRouteWithChildren,
     ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRoute:

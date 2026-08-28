@@ -9,6 +9,9 @@ export type RuntimeGroupSearch = {
   first_seen_to?: string | undefined
   last_seen_to?: string | undefined
   release_id?: string | undefined
+  verdict?: 'unclassified' | 'expected' | 'requires_review' | 'policy_conflict' | undefined
+  suppressed?: boolean | undefined
+  evaluation_pending?: boolean | undefined
   cursor?: string | undefined
 }
 export type RuntimeGroupDetailSearch = RuntimeGroupSearch & {
@@ -39,6 +42,23 @@ export function parseRuntimeGroupSearch(input: Record<string, unknown>): Runtime
     first_seen_to: timestamp(input.first_seen_to),
     last_seen_to: timestamp(input.last_seen_to),
     release_id: text(input.release_id),
+    verdict: ['unclassified', 'expected', 'requires_review', 'policy_conflict'].includes(
+      String(input.verdict),
+    )
+      ? (input.verdict as RuntimeGroupSearch['verdict'])
+      : undefined,
+    suppressed:
+      input.suppressed === true || input.suppressed === 'true'
+        ? true
+        : input.suppressed === false || input.suppressed === 'false'
+          ? false
+          : undefined,
+    evaluation_pending:
+      input.evaluation_pending === true || input.evaluation_pending === 'true'
+        ? true
+        : input.evaluation_pending === false || input.evaluation_pending === 'false'
+          ? false
+          : undefined,
     cursor: text(input.cursor),
   })
 }

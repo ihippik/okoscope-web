@@ -566,6 +566,243 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/applications/{application_id}/policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        get: operations["listRuntimePolicies"];
+        put?: never;
+        post: operations["createRuntimePolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/policies/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["previewRuntimePolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/policies/{policy_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                policy_id: components["parameters"]["PolicyId"];
+            };
+            cookie?: never;
+        };
+        get: operations["getRuntimePolicy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/policies/{policy_id}/revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                policy_id: components["parameters"]["PolicyId"];
+            };
+            cookie?: never;
+        };
+        get: operations["listRuntimePolicyRevisions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/policies/{policy_id}/replace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                policy_id: components["parameters"]["PolicyId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["replaceRuntimePolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/policies/{policy_id}/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                policy_id: components["parameters"]["PolicyId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["enableRuntimePolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/policies/{policy_id}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                policy_id: components["parameters"]["PolicyId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["disableRuntimePolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/runtime-inventory/{item_id}/policy-seed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                item_id: components["parameters"]["InventoryItemId"];
+            };
+            cookie?: never;
+        };
+        get: operations["getInventoryPolicySeed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/runtime-groups/{group_id}/policy-seed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                group_id: components["parameters"]["GroupId"];
+            };
+            cookie?: never;
+        };
+        get: operations["getRuntimeGroupPolicySeed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/policy-suppressions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        get: operations["listPolicySuppressions"];
+        put?: never;
+        post: operations["createPolicySuppression"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/policy-suppressions/{suppression_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                suppression_id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cancelPolicySuppression"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/policy-recomputations/{recomputation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                recomputation_id: string;
+            };
+            cookie?: never;
+        };
+        get: operations["getPolicyRecomputation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/runtime-groups/{group_id}": {
         parameters: {
             query?: never;
@@ -983,6 +1220,261 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /** @enum {string} */
+        PolicyVerdict: "unclassified" | "expected" | "requires_review" | "policy_conflict";
+        /** @enum {string} */
+        PolicyEvaluationState: "current" | "evaluation_pending";
+        /** @enum {string} */
+        PolicyEffect: "expected" | "requires_review";
+        PolicyPlacementMatcher: {
+            cluster_ids?: components["schemas"]["Uuid"][];
+            namespaces?: string[];
+            workload_kinds?: string[];
+            workload_names?: string[];
+        };
+        BehaviorMatcher: components["schemas"]["ProcessBehaviorMatcher"] | components["schemas"]["DestinationBehaviorMatcher"] | components["schemas"]["DomainBehaviorMatcher"] | components["schemas"]["SyscallBehaviorMatcher"] | components["schemas"]["InboundBehaviorMatcher"] | components["schemas"]["FileBehaviorMatcher"] | components["schemas"]["LifecycleBehaviorMatcher"];
+        ProcessBehaviorMatcher: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "ProcessBehaviorMatcher";
+            executable: string;
+        };
+        DestinationBehaviorMatcher: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "DestinationBehaviorMatcher";
+            process_command: string;
+            /** @enum {string} */
+            address_family: "ipv4" | "ipv6";
+            destination_address: string;
+            destination_port: number;
+        };
+        DomainBehaviorMatcher: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "DomainBehaviorMatcher";
+            process_command: string;
+            name: string;
+            query_type: string;
+        };
+        SyscallBehaviorMatcher: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "SyscallBehaviorMatcher";
+            process_command: string;
+            syscall: string;
+        };
+        InboundBehaviorMatcher: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "InboundBehaviorMatcher";
+            transport: string;
+            local_address: string;
+            local_port: number;
+        };
+        FileBehaviorMatcher: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "FileBehaviorMatcher";
+            process_command: string;
+            operation: string;
+            path: string;
+            new_path?: string;
+            replaced?: boolean;
+        };
+        LifecycleBehaviorMatcher: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "LifecycleBehaviorMatcher";
+            identity?: string;
+            container_name?: string;
+            reason?: string;
+            exit_code?: number;
+        };
+        PolicyRevisionInput: {
+            source_inventory_item_id: components["schemas"]["Uuid"];
+            source_runtime_group_id?: components["schemas"]["Uuid"];
+            placement: components["schemas"]["PolicyPlacementMatcher"];
+            inside_effect: components["schemas"]["PolicyEffect"];
+            /** @enum {string} */
+            outside_effect?: "requires_review";
+        };
+        PolicyMutation: {
+            name: string;
+            revision: components["schemas"]["PolicyRevisionInput"];
+        };
+        PolicyReplacement: {
+            name?: string;
+            revision: components["schemas"]["PolicyRevisionInput"];
+        };
+        SuppressionMutation: {
+            source_inventory_item_id: components["schemas"]["Uuid"];
+            source_runtime_group_id?: components["schemas"]["Uuid"];
+            placement: components["schemas"]["PolicyPlacementMatcher"];
+            reason: string;
+            expires_at: components["schemas"]["Timestamp"];
+        };
+        RuntimePolicy: {
+            id: components["schemas"]["Uuid"];
+            project_id: components["schemas"]["Uuid"];
+            application_id: components["schemas"]["Uuid"];
+            name: string;
+            current_revision_id: components["schemas"]["NullableUuid"];
+            /** Format: int64 */
+            revision_number: number | null;
+            enabled: boolean | null;
+            inventory_kind: components["schemas"]["InventoryKind"] | null;
+            identity_version: number | null;
+            behavior_matcher: components["schemas"]["BehaviorMatcher"] | null;
+            cluster_ids: components["schemas"]["Uuid"][] | null;
+            namespaces: string[] | null;
+            workload_kinds: string[] | null;
+            workload_names: string[] | null;
+            inside_effect: components["schemas"]["PolicyEffect"] | null;
+            /** @enum {string|null} */
+            outside_effect: "requires_review" | null;
+            created_by_user_id: components["schemas"]["Uuid"];
+            created_at: components["schemas"]["Timestamp"];
+            updated_at: components["schemas"]["Timestamp"];
+        };
+        PolicyRevision: {
+            id: components["schemas"]["Uuid"];
+            policy_id: components["schemas"]["Uuid"];
+            /** Format: int64 */
+            revision_number: number;
+            prior_revision_id: components["schemas"]["NullableUuid"];
+            enabled: boolean;
+            inventory_kind: components["schemas"]["InventoryKind"];
+            identity_version: number;
+            identity_digest: number[];
+            behavior_matcher: components["schemas"]["BehaviorMatcher"];
+            cluster_ids: components["schemas"]["Uuid"][];
+            namespaces: string[];
+            workload_kinds: string[];
+            workload_names: string[];
+            inside_effect: components["schemas"]["PolicyEffect"];
+            /** @enum {string|null} */
+            outside_effect: "requires_review" | null;
+            source_inventory_item_id: components["schemas"]["NullableUuid"];
+            source_runtime_group_id: components["schemas"]["NullableUuid"];
+            created_by_user_id: components["schemas"]["Uuid"];
+            created_at: components["schemas"]["Timestamp"];
+        };
+        PolicyPage: {
+            items: components["schemas"]["RuntimePolicy"][];
+            next_cursor: components["schemas"]["NullableUuid"];
+        };
+        PolicyRevisionPage: {
+            items: components["schemas"]["PolicyRevision"][];
+            next_cursor: components["schemas"]["NullableUuid"];
+        };
+        PolicyPreview: {
+            snapshot_at: components["schemas"]["Timestamp"];
+            group_count: number;
+            sighting_count: number;
+            cluster_count: number;
+            namespace_count: number;
+            workload_count: number;
+            expected_count: number;
+            requires_review_count: number;
+            representative_group_ids: components["schemas"]["Uuid"][];
+            representative_sightings: components["schemas"]["PolicyPreviewSighting"][];
+        };
+        PolicyPreviewSighting: {
+            cluster_id: components["schemas"]["Uuid"];
+            namespace: string;
+            workload_kind: string;
+            workload_name: string;
+            pod_uid: string;
+            container_name: string;
+        };
+        PolicyCommandResult: {
+            resource_id: components["schemas"]["Uuid"];
+            revision_id?: components["schemas"]["Uuid"];
+            recomputation_id?: components["schemas"]["Uuid"];
+            /** Format: int64 */
+            policy_state_version: number;
+        };
+        PolicyRecomputation: {
+            id: components["schemas"]["Uuid"];
+            /** @enum {string} */
+            state: "pending" | "running" | "completed" | "failed";
+            attempt_count: number;
+            requested_policy_revision_id?: components["schemas"]["Uuid"] | null;
+            created_at: components["schemas"]["Timestamp"];
+            started_at?: components["schemas"]["Timestamp"] | null;
+            completed_at?: components["schemas"]["Timestamp"] | null;
+            updated_at: components["schemas"]["Timestamp"];
+        };
+        PolicySeed: components["schemas"]["AvailablePolicySeed"] | components["schemas"]["UnavailablePolicySeed"];
+        AvailablePolicySeed: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            state: "available";
+            seed: components["schemas"]["PolicySeedValue"];
+        };
+        UnavailablePolicySeed: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            state: "unavailable";
+            /** @enum {string} */
+            reason: "unsupported_identity_version" | "unsupported_inventory_kind" | "invalid_semantic_identity" | "invalid_identity_digest";
+        };
+        PolicySeedValue: {
+            behavior: components["schemas"]["BehaviorIdentity"];
+            placement: components["schemas"]["PolicyPlacementMatcher"];
+            source_inventory_item_id?: components["schemas"]["Uuid"];
+            source_runtime_group_id?: components["schemas"]["Uuid"];
+            inside_effect: components["schemas"]["PolicyEffect"];
+            /** @enum {string} */
+            outside_effect?: "requires_review";
+        };
+        BehaviorIdentity: {
+            identity_version: number;
+            identity_digest: number[];
+            matcher: components["schemas"]["BehaviorMatcher"];
+        };
+        PolicySuppression: {
+            id: components["schemas"]["Uuid"];
+            inventory_kind: components["schemas"]["InventoryKind"];
+            identity_version: number;
+            identity_digest: number[];
+            behavior_matcher: components["schemas"]["BehaviorMatcher"];
+            cluster_ids: components["schemas"]["Uuid"][];
+            namespaces: string[];
+            workload_kinds: string[];
+            workload_names: string[];
+            reason: string;
+            expires_at: components["schemas"]["Timestamp"];
+            cancelled_at: components["schemas"]["NullableTimestamp"];
+            cancelled_by_user_id: components["schemas"]["NullableUuid"];
+            source_inventory_item_id: components["schemas"]["NullableUuid"];
+            source_runtime_group_id: components["schemas"]["NullableUuid"];
+            created_by_user_id: components["schemas"]["Uuid"];
+            created_at: components["schemas"]["Timestamp"];
+        };
+        SuppressionPage: {
+            items: components["schemas"]["PolicySuppression"][];
+            next_cursor: components["schemas"]["NullableUuid"];
+        };
+        /** @enum {string} */
         OrganizationRole: "owner" | "member";
         RegisterRequest: {
             /** Format: email */
@@ -1023,7 +1515,7 @@ export interface components {
         /** @enum {string} */
         AttentionItemKind: "notification_delivery_failing" | "notification_delivery_backlogged" | "notification_destination_missing" | "release_runtime_changed" | "new_discovery" | "open_discovery" | "container_restart_loop";
         /** @enum {string} */
-        AttentionReasonCode: "terminal_deliveries_failed" | "notification_health_failing" | "notification_health_backlogged" | "notification_health_retrying" | "enabled_destination_missing" | "release_runtime_changed" | "discovery_first_seen_in_window" | "discovery_open" | "container_restart_loop_observed";
+        AttentionReasonCode: "terminal_deliveries_failed" | "notification_health_failing" | "notification_health_backlogged" | "notification_health_retrying" | "enabled_destination_missing" | "release_runtime_changed" | "discovery_first_seen_in_window" | "discovery_open" | "container_restart_loop_observed" | "policy_review_required" | "policy_conflict" | "policy_unclassified" | "policy_evaluation_pending";
         /** @enum {string} */
         AttentionRecommendationKind: "review_failed_deliveries" | "configure_webhook_destination" | "review_notification_backlog" | "review_release_changes" | "review_new_discoveries";
         AttentionWindow: {
@@ -1198,6 +1690,7 @@ export interface components {
             projects_with_notification_problems: number;
             /** Format: int64 */
             failed_notification_deliveries: number;
+            policy: components["schemas"]["AttentionPolicyTotals"];
         };
         /**
          * @example {
@@ -1245,6 +1738,16 @@ export interface components {
             unchanged_runtime_items: number;
             /** Format: int64 */
             total_runtime_items: number;
+            policy: components["schemas"]["AttentionPolicyTotals"];
+        };
+        AttentionPolicyTotals: {
+            factual_total: number;
+            actionable_total: number;
+            evaluation_pending: number;
+            expected: number;
+            requires_review: number;
+            policy_conflict: number;
+            unclassified: number;
         };
         /**
          * @example {
@@ -1309,7 +1812,7 @@ export interface components {
             api_version: "v1";
             /**
              * Format: int64
-             * @example 15
+             * @example 18
              */
             required_database_migration: number;
         };
@@ -1441,8 +1944,29 @@ export interface components {
             /** Format: int64 */
             occurrence_count: number;
             representative_event_id: components["schemas"]["Uuid"];
+            policy_evaluation: components["schemas"]["PolicyEvaluation"];
+            active_suppression: components["schemas"]["ActivePolicySuppression"] | null;
+            actionable: boolean;
             status_changed_at: components["schemas"]["NullableTimestamp"];
             status_changed_by: components["schemas"]["NullableUuid"];
+        };
+        PolicyEvaluation: {
+            state: components["schemas"]["PolicyEvaluationState"];
+            verdict: components["schemas"]["PolicyVerdict"] | null;
+            /** @enum {string} */
+            reason_code: "no_matching_policy" | "inside_placement" | "outside_placement" | "equal_specificity_conflict" | "evaluation_pending";
+            winning_revision_id?: components["schemas"]["Uuid"] | null;
+            explanation: {
+                specificity?: number[];
+                related_revision_ids?: components["schemas"]["Uuid"][];
+            };
+            evaluated_at?: components["schemas"]["Timestamp"] | null;
+        };
+        ActivePolicySuppression: {
+            id: components["schemas"]["Uuid"];
+            reason: string;
+            expires_at: components["schemas"]["Timestamp"];
+            created_at: components["schemas"]["Timestamp"];
         };
         RuntimeGroupPage: {
             items: components["schemas"]["RuntimeGroup"][];
@@ -1593,6 +2117,8 @@ export interface components {
         };
         ProcessExitSemanticSummary: {
             /** @constant */
+            event_kind?: "process.exit";
+            /** @constant */
             evidence_source: "kernel";
             identity: string;
             termination: components["schemas"]["ProcessTermination"];
@@ -1600,6 +2126,8 @@ export interface components {
             [key: string]: unknown;
         };
         ContainerTerminationSemanticSummary: {
+            /** @constant */
+            event_kind?: "container.terminated";
             /** @constant */
             evidence_source: "kubernetes";
             container_name: string;
@@ -1610,12 +2138,16 @@ export interface components {
         };
         ContainerRestartSemanticSummary: {
             /** @constant */
+            event_kind?: "container.restart";
+            /** @constant */
             evidence_source: "kubernetes";
             container_name: string;
         } & {
             [key: string]: unknown;
         };
         RestartLoopSemanticSummary: {
+            /** @constant */
+            event_kind?: "container.restart_loop";
             /** @constant */
             evidence_source: "derived";
             projection_version: number;
@@ -1824,7 +2356,7 @@ export interface components {
         };
         FirstSeenNotificationSummary: {
             /** @enum {string} */
-            state: "pending" | "not_configured" | "delivering" | "delivered" | "terminally_failed" | "backfill_suppressed";
+            state: "pending" | "not_configured" | "delivering" | "delivered" | "terminally_failed" | "backfill_suppressed" | "policy_expected" | "temporary_policy_suppressed";
             /** Format: int64 */
             delivery_count: number;
             /** Format: int64 */
@@ -2113,14 +2645,8 @@ export interface components {
          */
         InventoryReleasePresence: "observed" | "not_observed" | "unknown";
         InventorySemanticSummary: components["schemas"]["InventoryProcessIdentity"] | components["schemas"]["InventoryDestinationIdentity"] | components["schemas"]["InventoryDomainIdentity"] | components["schemas"]["InventorySyscallIdentity"] | components["schemas"]["InventoryInboundEndpointIdentity"] | components["schemas"]["FileActivitySemanticSummary"] | components["schemas"]["InventoryLifecycleSemanticSummary"];
-        InventoryLifecycleSemanticSummary: {
-            /** @enum {string} */
-            event_kind: "process.exit" | "container.terminated" | "container.restart" | "container.restart_loop";
-            /** @enum {string} */
-            evidence_source: "kernel" | "kubernetes" | "derived";
-        } & {
-            [key: string]: unknown;
-        };
+        /** @description User-visible lifecycle identity and termination context; identity_token remains an opaque filtering mechanism. */
+        InventoryLifecycleSemanticSummary: (components["schemas"]["ProcessExitSemanticSummary"] & Record<string, never>) | (components["schemas"]["ContainerTerminationSemanticSummary"] & Record<string, never>) | (components["schemas"]["ContainerRestartSemanticSummary"] & Record<string, never>) | (components["schemas"]["RestartLoopSemanticSummary"] & Record<string, never>);
         InventoryProcessIdentity: {
             /** @example /app/payments */
             executable: string;
@@ -2267,6 +2793,18 @@ export interface components {
         };
         InventoryItemDetail: components["schemas"]["InventoryItem"] & {
             evidence: components["schemas"]["InventoryEvidenceLinks"];
+            policy_placement_summary: components["schemas"]["InventoryPolicyPlacementSummary"];
+        };
+        InventoryPolicyVerdictCounts: {
+            expected: number;
+            requires_review: number;
+            policy_conflict: number;
+            unclassified: number;
+        };
+        InventoryPolicyPlacementSummary: {
+            placement_count: number;
+            evaluation_pending: number;
+            verdicts: components["schemas"]["InventoryPolicyVerdictCounts"];
         };
         InventoryReleaseEvidence: {
             release_id: components["schemas"]["Uuid"];
@@ -2296,6 +2834,9 @@ export interface components {
             occurrence_count: number;
             first_seen_at: components["schemas"]["Timestamp"];
             last_seen_at: components["schemas"]["Timestamp"];
+            policy_evaluation: components["schemas"]["PolicyEvaluation"];
+            active_suppression: components["schemas"]["ActivePolicySuppression"] | null;
+            actionable: boolean;
         };
         InventorySightingPage: {
             items: components["schemas"]["InventorySighting"][];
@@ -2757,6 +3298,7 @@ export interface components {
         ApplicationId: string;
         CredentialId: string;
         InventoryItemId: string;
+        PolicyId: string;
         GroupId: string;
         ReleaseId: string;
         TargetId: string;
@@ -3345,6 +3887,9 @@ export interface operations {
                 search?: string;
                 /** @description Opaque server-issued token selecting one typed inventory identity. */
                 identity_token?: string;
+                verdict?: components["schemas"]["PolicyVerdict"];
+                suppressed?: boolean;
+                evaluation_pending?: boolean;
                 /** @description Opaque cursor scoped to the authenticated collection. */
                 cursor?: components["parameters"]["Cursor"];
                 limit?: components["parameters"]["Limit"];
@@ -3585,6 +4130,9 @@ export interface operations {
                 first_seen_to?: string;
                 last_seen_to?: string;
                 release_id?: string;
+                verdict?: components["schemas"]["PolicyVerdict"];
+                suppressed?: boolean;
+                evaluation_pending?: boolean;
                 /** @description Opaque cursor scoped to the authenticated collection. */
                 cursor?: components["parameters"]["Cursor"];
                 limit?: components["parameters"]["Limit"];
@@ -3596,6 +4144,437 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["RuntimeGroupPage"];
+        };
+    };
+    listRuntimePolicies: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor scoped to the authenticated collection. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Policy page */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicyPage"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    createRuntimePolicy: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PolicyMutation"];
+            };
+        };
+        responses: {
+            /** @description Policy command result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicyCommandResult"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    previewRuntimePolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PolicyRevisionInput"];
+            };
+        };
+        responses: {
+            /** @description Non-mutating policy preview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicyPreview"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    getRuntimePolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                policy_id: components["parameters"]["PolicyId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Policy */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuntimePolicy"];
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    listRuntimePolicyRevisions: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor scoped to the authenticated collection. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                policy_id: components["parameters"]["PolicyId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Immutable revision page */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicyRevisionPage"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    replaceRuntimePolicy: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                policy_id: components["parameters"]["PolicyId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PolicyReplacement"];
+            };
+        };
+        responses: {
+            /** @description Replaced policy */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicyCommandResult"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    enableRuntimePolicy: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                policy_id: components["parameters"]["PolicyId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Enabled policy */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicyCommandResult"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    disableRuntimePolicy: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                policy_id: components["parameters"]["PolicyId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Disabled policy */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicyCommandResult"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    getInventoryPolicySeed: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                item_id: components["parameters"]["InventoryItemId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Typed inventory policy seed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicySeed"];
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    getRuntimeGroupPolicySeed: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                group_id: components["parameters"]["GroupId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Typed group policy seed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicySeed"];
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    listPolicySuppressions: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor scoped to the authenticated collection. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+                active?: boolean;
+            };
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Suppression page */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuppressionPage"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    createPolicySuppression: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SuppressionMutation"];
+            };
+        };
+        responses: {
+            /** @description Suppression */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicyCommandResult"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    cancelPolicySuppression: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                suppression_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cancelled suppression */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicyCommandResult"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    getPolicyRecomputation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                recomputation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recomputation status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicyRecomputation"];
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            500: components["responses"]["Error"];
         };
     };
     getRuntimeGroup: {

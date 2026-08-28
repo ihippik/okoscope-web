@@ -29,6 +29,8 @@ import { Button } from '../shared/ui/button'
 import { formatCount, formatTimestamp } from '../features/tenant/format'
 import { getEventKindLabel } from '../features/observability/presentation'
 import { LayoutGrid, List } from 'lucide-react'
+import { PolicyState } from '../features/policies/components'
+import { ObservationPolicyActions } from '../features/policies/from-observation'
 
 export const Route = createFileRoute(
   '/projects/$projectId/applications/$applicationId/runtime-groups/$groupId',
@@ -126,6 +128,10 @@ function RuntimeGroupDetailPage() {
             {getEventKindLabel(group.data.event_kind, group.data.semantic_summary)}
           </h1>
           <RuntimeGroupStatusBadge status={group.data.status} />
+          <PolicyState
+            evaluation={group.data.policy_evaluation}
+            suppression={group.data.active_suppression}
+          />
         </div>
         <p className="mt-2 text-slate-400">
           {group.data.namespace} · {group.data.workload_kind}/{group.data.workload_name}
@@ -164,6 +170,11 @@ function RuntimeGroupDetailPage() {
               resolveTrigger.current = document.activeElement
             setConfirmResolve(true)
           }}
+        />
+        <ObservationPolicyActions
+          projectId={projectId}
+          applicationId={applicationId}
+          source={{ groupId }}
         />
         {lifecycle.isError && (
           <div className="mt-4">

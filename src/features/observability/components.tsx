@@ -41,6 +41,7 @@ import { Card } from '../../shared/ui/card'
 import { ErrorState } from '../../shared/ui/error-state'
 import { formatCount, formatTimestamp } from '../tenant/format'
 import { useLocalization, type MessageKey } from '../../shared/i18n'
+import { PolicyState } from '../policies/components'
 import {
   directionLabel,
   formatEndpoint,
@@ -87,6 +88,14 @@ const notificationCopy: Record<
   backfill_suppressed: {
     label: 'Backfill suppressed',
     description: 'Notification was intentionally suppressed for backfilled data.',
+  },
+  policy_expected: {
+    label: 'Expected by policy',
+    description: 'No delivery was created because the observation was expected by policy.',
+  },
+  temporary_policy_suppressed: {
+    label: 'Temporarily suppressed',
+    description: 'No delivery was created while a time-bounded suppression was active.',
   },
 }
 export const getNotificationPresentation = (state: FirstSeenNotificationSummary['state']) =>
@@ -1043,6 +1052,10 @@ export function RuntimeGroupList({
                 </Link>
                 <InboundEventBadge eventKind={group.event_kind} />
                 <RuntimeGroupStatusBadge status={group.status} />
+                <PolicyState
+                  evaluation={group.policy_evaluation}
+                  suppression={group.active_suppression}
+                />
                 {isRecentlyFirstSeen(group.first_seen_at) && (
                   <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-300">
                     <Sparkles size={14} aria-hidden="true" /> Newly observed

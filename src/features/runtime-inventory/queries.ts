@@ -23,7 +23,7 @@ const normalized = <T extends object>(value: T) =>
       .sort()
       .filter(([, item]) => item !== undefined),
   )
-const query = (input: Record<string, string | number | undefined>) => {
+const query = (input: Record<string, string | number | boolean | undefined>) => {
   const params = new URLSearchParams()
   Object.entries(input).forEach(
     ([key, value]) => value !== undefined && params.set(key, String(value)),

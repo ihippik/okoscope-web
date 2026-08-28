@@ -25,6 +25,7 @@ import { Button } from '../shared/ui/button'
 import { Card } from '../shared/ui/card'
 import { Loading } from '../shared/ui/loading'
 import { LayoutGrid, List } from 'lucide-react'
+import { PolicyFilters } from '../features/policies/components'
 
 export const Route = createFileRoute(
   '/projects/$projectId/applications/$applicationId/runtime-inventory',
@@ -178,6 +179,17 @@ function RuntimeInventoryPage() {
           intent, cause, or risk.
         </p>
       </header>
+      <Card>
+        <h2 className="text-lg font-semibold">Policy state</h2>
+        <div className="mt-3">
+          <PolicyFilters
+            verdict={search.verdict}
+            suppressed={search.suppressed}
+            evaluationPending={search.evaluation_pending}
+            onChange={setScope}
+          />
+        </div>
+      </Card>
       <div className="grid gap-6 lg:grid-cols-2">
         {summary.isPending ? (
           <Loading label="Loading inventory summary…" />
@@ -327,12 +339,6 @@ function RuntimeInventoryPage() {
           Return to first page
         </Button>
       )}
-      <details className="text-sm text-slate-400">
-        <summary>Active scope</summary>
-        <pre className="mt-2 overflow-auto whitespace-pre-wrap">
-          {JSON.stringify(search, null, 2)}
-        </pre>
-      </details>
     </div>
   )
 }

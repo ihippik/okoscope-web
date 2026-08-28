@@ -18,6 +18,7 @@ import { applicationOptions, projectOptions } from '../shared/api/queries'
 import { useApi } from '../shared/api/context'
 import { Button } from '../shared/ui/button'
 import { Loading } from '../shared/ui/loading'
+import { PolicyFilters } from '../features/policies/components'
 
 export const Route = createFileRoute(
   '/projects/$projectId/applications/$applicationId/runtime-groups',
@@ -142,7 +143,7 @@ function StatusQuickFilters({
     ['resolved', 'Resolved'],
   ] as const
   return (
-    <div role="group" aria-label="Discovery status" className="flex flex-wrap items-center gap-2">
+    <div role="group" aria-label="Discovery status" className="flex flex-wrap items-center gap-1.5">
       {statuses.map(([status, label]) => {
         const active = activeStatus === status
         const color = {
@@ -162,7 +163,7 @@ function StatusQuickFilters({
             type="button"
             aria-pressed={active}
             onClick={() => toggle(status)}
-            className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-200 ${color}`}
+            className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-200 ${color}`}
           >
             {label}
           </button>
@@ -211,6 +212,14 @@ function Filters({
           )
         }}
       >
+        <div className="sm:col-span-2 lg:col-span-4">
+          <PolicyFilters
+            verdict={search.verdict}
+            suppressed={search.suppressed}
+            evaluationPending={search.evaluation_pending}
+            onChange={apply}
+          />
+        </div>
         {fields.map(([key, label]) => (
           <label key={key} className="text-sm">
             {label}

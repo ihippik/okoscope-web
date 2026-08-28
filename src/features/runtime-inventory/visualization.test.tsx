@@ -68,11 +68,52 @@ describe('data visualization presentation', () => {
     render(<InventoryKindDistribution summary={summary} activeKind="process" onKind={onKind} />)
 
     expect(screen.getByText(/Share of 126 matching recorded observations/)).toBeInTheDocument()
+    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      expect.stringContaining('System calls60'),
+      expect.stringContaining('Domains30'),
+      expect.stringContaining('Outbound connections24'),
+      expect.stringContaining('Inbound connections18'),
+      expect.stringContaining('Process launches12'),
+      expect.stringContaining('File Activity0'),
+      expect.stringContaining('Lifecycle0'),
+    ])
     const domains = screen.getByRole('button', { name: /Domains: 30 observations/ })
     domains.focus()
     expect(domains).toHaveFocus()
     await user.keyboard('{Enter}')
     expect(onKind).toHaveBeenCalledWith('domain')
+  })
+
+  it('sorts top behaviors and other by occurrence count descending', () => {
+    const distribution: InventoryDistribution = {
+      identity_version: 1,
+      kind: 'process',
+      total_item_count: 4,
+      total_occurrence_count: 30,
+      entries: [
+        {
+          identity_token: 'low',
+          semantic_summary: { executable: 'low' },
+          item_count: 1,
+          occurrence_count: 5,
+        },
+        {
+          identity_token: 'high',
+          semantic_summary: { executable: 'high' },
+          item_count: 1,
+          occurrence_count: 20,
+        },
+      ],
+      other: { item_count: 2, occurrence_count: 5 },
+    }
+
+    render(<TopBehaviorDistribution distribution={distribution} onIdentity={vi.fn()} />)
+
+    expect(screen.getAllByRole('listitem').map((item) => item.textContent)).toEqual([
+      expect.stringContaining('high20'),
+      expect.stringContaining('low5'),
+      expect.stringContaining('Other observed process launch5'),
+    ])
   })
 
   it('renders hostile typed identities as inert text and exposes other', async () => {

@@ -92,6 +92,17 @@ function ApplicationPage() {
         <div className="mt-7 grid gap-3 sm:grid-cols-2">
           <Link
             className="rounded-xl border border-slate-700 p-4 transition hover:border-slate-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
+            to="/projects/$projectId/applications/$applicationId/policies"
+            params={{ projectId, applicationId }}
+          >
+            <strong className="block text-lg">Managed runtime policies</strong>
+            <span className="mt-1 block text-sm text-slate-400">
+              Classify expected behavior, review policy revisions, and manage temporary
+              suppressions.
+            </span>
+          </Link>
+          <Link
+            className="rounded-xl border border-slate-700 p-4 transition hover:border-slate-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
             to="/projects/$projectId/applications/$applicationId/runtime-inventory"
             params={{ projectId, applicationId }}
           >

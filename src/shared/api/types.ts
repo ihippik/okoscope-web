@@ -50,6 +50,25 @@ export type IssueCredentialRequest = components['schemas']['IssueCredentialReque
 export type IssuedApplicationCredential = components['schemas']['IssuedApplicationCredential']
 export type CreatedApplication = components['schemas']['CreatedApplication']
 export type RuntimeGroup = components['schemas']['RuntimeGroup']
+export type PolicyVerdict = components['schemas']['PolicyVerdict']
+export type PolicyEvaluation = components['schemas']['PolicyEvaluation']
+export type ActivePolicySuppression = components['schemas']['ActivePolicySuppression']
+export type PolicyEffect = components['schemas']['PolicyEffect']
+export type PolicyPlacementMatcher = components['schemas']['PolicyPlacementMatcher']
+export type PolicyRevisionInput = components['schemas']['PolicyRevisionInput']
+export type PolicyMutation = components['schemas']['PolicyMutation']
+export type PolicyReplacement = components['schemas']['PolicyReplacement']
+export type PolicyPreview = components['schemas']['PolicyPreview']
+export type PolicySeed = components['schemas']['PolicySeed']
+export type RuntimePolicy = components['schemas']['RuntimePolicy']
+export type PolicyPage = components['schemas']['PolicyPage']
+export type PolicyRevision = components['schemas']['PolicyRevision']
+export type PolicyRevisionPage = components['schemas']['PolicyRevisionPage']
+export type PolicySuppression = components['schemas']['PolicySuppression']
+export type SuppressionMutation = components['schemas']['SuppressionMutation']
+export type SuppressionPage = components['schemas']['SuppressionPage']
+export type PolicyCommandResult = components['schemas']['PolicyCommandResult']
+export type PolicyRecomputation = components['schemas']['PolicyRecomputation']
 export type RuntimeGroupPage = components['schemas']['RuntimeGroupPage']
 export type RuntimeGroupDetail = components['schemas']['RuntimeGroupDetail']
 export type EventOccurrence = components['schemas']['EventOccurrence']
@@ -482,6 +501,11 @@ export const contractFixture = {
       groups: '/groups',
       occurrences: '/occurrences',
     },
+    policy_placement_summary: {
+      placement_count: 1,
+      evaluation_pending: 0,
+      verdicts: { expected: 0, requires_review: 0, policy_conflict: 0, unclassified: 1 },
+    },
   } satisfies InventoryItemDetail,
   inventoryReleasePage: {
     items: [
@@ -511,6 +535,14 @@ export const contractFixture = {
         occurrence_count: 8,
         first_seen_at: '2026-08-18T00:00:00Z',
         last_seen_at: '2026-08-18T01:00:00Z',
+        policy_evaluation: {
+          state: 'current',
+          verdict: 'unclassified',
+          reason_code: 'no_matching_policy',
+          explanation: {},
+        },
+        active_suppression: null,
+        actionable: true,
       },
     ],
     next_cursor: null,

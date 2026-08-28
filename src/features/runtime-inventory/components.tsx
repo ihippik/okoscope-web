@@ -31,6 +31,7 @@ import type {
 import { Button } from '../../shared/ui/button'
 import { Card } from '../../shared/ui/card'
 import type { InventorySearch } from './url-state'
+import { PolicyState } from '../policies/components'
 import { getActivityPresentation, getEventKindLabel } from '../observability/presentation'
 
 type InventorySummaryValue = InventoryItem['semantic_summary']
@@ -196,7 +197,7 @@ export function InventoryIdentity({ item }: { item: InventoryItem }) {
   if (item.inventory_kind === 'lifecycle' && isInventoryLifecycle(value))
     return (
       <span className="inline-flex flex-wrap items-center gap-2">
-        <span>{getEventKindLabel(value.event_kind)}</span>
+        <span>{getEventKindLabel(value.event_kind ?? 'lifecycle')}</span>
         <EvidenceSourceBadge source={value.evidence_source} />
       </span>
     )
@@ -268,7 +269,7 @@ export function InventoryList({
             <dt>{getActivityPresentation(item.inventory_kind).countLabel}</dt>
             <dd>{formatCount(item.occurrence_count)}</dd>
           </dl>
-          <div className="mt-5 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4 lg:grid-cols-7">
+          <div className="mt-5 grid grid-cols-[repeat(auto-fit,minmax(5.5rem,1fr))] gap-2 text-sm">
             {[
               ['Releases', item.release_count],
               ['Clusters', item.cluster_count],
@@ -278,8 +279,10 @@ export function InventoryList({
               ['Containers', item.container_count],
               ['Discoveries', item.group_count],
             ].map(([label, value]) => (
-              <div key={String(label)} className="rounded-lg bg-slate-950 p-2">
-                <span className="block text-xs text-slate-400">{label}</span>
+              <div key={String(label)} className="min-w-0 rounded-lg bg-slate-950 p-2">
+                <span className="block break-words text-xs leading-tight text-slate-400">
+                  {label}
+                </span>
                 <strong>{formatCount(Number(value))}</strong>
               </div>
             ))}
@@ -419,7 +422,7 @@ export function InventoryFilterFields({
               key={facet}
               label={label}
               field={field}
-              value={search[field]}
+              value={typeof search[field] === 'string' ? search[field] : undefined}
               page={facets[facet]}
               onChange={(value) => onField(field, value)}
               onNext={(cursor) => onFacetNext?.(facet, cursor)}
@@ -522,9 +525,15 @@ export function EvidenceList(props: EvidenceProps) {
       <div className="space-y-3">
         {props.page.items.map((item) => (
           <Card key={`${item.cluster_id}:${item.pod_uid}:${item.container_name}`}>
-            <h2 className="break-all font-semibold">
-              {item.workload_kind}/{item.workload_name}
-            </h2>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <h2 className="break-all font-semibold">
+                {item.workload_kind}/{item.workload_name}
+              </h2>
+              <PolicyState
+                evaluation={item.policy_evaluation}
+                suppression={item.active_suppression}
+              />
+            </div>
             <dl className="details mt-3">
               <dt>Cluster</dt>
               <dd className="break-all">{item.cluster_id}</dd>
