@@ -11,8 +11,8 @@ describe('attention URL state', () => {
     expect(parseAttentionSearch({ window: '30d' })).toEqual({ window: '24h' })
   })
 
-  it('accepts Application sections and defaults missing or invalid values to overview', () => {
-    expect(parseApplicationAttentionSearch({})).toEqual({ section: 'overview' })
+  it('accepts Application sections and defaults missing or invalid values to recommendations', () => {
+    expect(parseApplicationAttentionSearch({})).toEqual({ section: 'recommendations' })
     expect(parseApplicationAttentionSearch({ section: 'overview' })).toEqual({
       section: 'overview',
     })
@@ -23,7 +23,7 @@ describe('attention URL state', () => {
       section: 'priority',
     })
     expect(parseApplicationAttentionSearch({ section: 'unknown' })).toEqual({
-      section: 'overview',
+      section: 'recommendations',
     })
   })
 })

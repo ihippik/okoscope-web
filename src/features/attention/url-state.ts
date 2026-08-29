@@ -17,5 +17,5 @@ export const parseApplicationAttentionSearch = (
     search.section === 'recommendations' ||
     search.section === 'priority'
       ? search.section
-      : 'overview',
+      : 'recommendations',
 })

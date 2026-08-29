@@ -69,9 +69,9 @@ test('explores Application Activity scope, views, cursors, and observation histo
   await expect(page.getByRole('link', { name: /javascript:alert/ })).toHaveCount(0)
   const occurrencesTab = page.getByRole('tab', { name: 'Observation history' })
   await occurrencesTab.click()
+  await expect(occurrencesTab).toHaveAttribute('aria-selected', 'true')
   await page.getByText('Technical details').first().click()
   await expect(page.getByText('203.0.113.7')).toBeVisible()
-  await expect(occurrencesTab).toHaveCSS('color', 'oklch(0.129 0.042 264.695)')
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
 
   await page.goBack()
