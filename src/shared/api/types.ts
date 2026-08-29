@@ -31,6 +31,7 @@ export type AttentionNotificationProblem = components['schemas']['AttentionNotif
 export type AttentionRecommendation = components['schemas']['AttentionRecommendation']
 export type OrganizationAttentionSummary = components['schemas']['OrganizationAttentionSummary']
 export type ApplicationAttentionSummary = components['schemas']['ApplicationAttentionSummary']
+export type AttentionPolicyTotals = components['schemas']['AttentionPolicyTotals']
 export type OrganizationAttentionQuery = NonNullable<
   operations['getOrganizationAttentionSummary']['parameters']['query']
 >

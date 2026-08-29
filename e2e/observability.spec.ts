@@ -97,6 +97,61 @@ test('observability routes are keyboard accessible at a narrow viewport and axe-
   await expect(page.getByRole('heading', { name: 'New discoveries' })).toBeVisible()
 })
 
+test('shows policy attention facts and opens a canonical review filter', async ({ page }) => {
+  const { project, application } = await mockApi(page)
+  await page.setViewportSize({ width: 375, height: 800 })
+  await page.goto(
+    `/projects/${project.id}/applications/${application.id}/attention?section=overview`,
+  )
+  await authenticate(page)
+  await expect(page.getByRole('heading', { name: 'Policy classification' })).toBeVisible()
+  await page.getByLabel('Language').selectOption('ru')
+  await expect(page.getByRole('heading', { name: 'Классификация политиками' })).toBeVisible()
+  await page.getByRole('link', { name: /Не классифицировано: 2/ }).click()
+  await expect(page).toHaveURL(/verdict=unclassified/)
+  await expect(page).toHaveURL(/suppressed=false/)
+  await expect(page.getByRole('heading', { name: 'Новые обнаружения' })).toBeVisible()
+})
+
+test('navigates Application attention tabs through URL history at mobile width', async ({
+  page,
+}) => {
+  const { project, application } = await mockApi(page)
+  await page.setViewportSize({ width: 375, height: 800 })
+  await page.goto(`/projects/${project.id}/applications/${application.id}/attention`)
+  await authenticate(page)
+
+  await expect(page.getByRole('tab', { name: /Recommendations \(\d+\)/ })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  )
+  await page.getByRole('tab', { name: 'Overview' }).click()
+  await expect(page).toHaveURL(/section=overview/)
+  await expect(page.getByRole('heading', { name: 'Observed actions' })).toBeVisible()
+  await page.getByRole('tab', { name: /Priority queue \(\d+\)/ }).click()
+  await expect(page).toHaveURL(/section=priority/)
+  await page.reload()
+  await expect(page.getByRole('tab', { name: /Priority queue \(\d+\)/ })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  )
+  await page.goBack()
+  await expect(page.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true')
+  await page.goForward()
+  await expect(page.getByRole('tab', { name: /Priority queue \(\d+\)/ })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  )
+  await page.getByLabel('Language').selectOption('ru')
+  await expect(page.getByRole('tab', { name: /Приоритетная очередь \(\d+\)/ })).toBeVisible()
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+    ),
+  ).toBe(true)
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+})
+
 test('restores all first-seen filters and cursor through detail navigation', async ({ page }) => {
   const { project, application } = await mockApi(page)
   const search = new URLSearchParams({
@@ -195,6 +250,15 @@ test('investigates a restart loop from Requires attention with source-qualified 
             disappeared_runtime_items: 0,
             unchanged_runtime_items: 0,
             total_runtime_items: 0,
+            policy: {
+              factual_total: 1,
+              actionable_total: 1,
+              evaluation_pending: 1,
+              expected: 0,
+              requires_review: 0,
+              policy_conflict: 0,
+              unclassified: 0,
+            },
           },
           release_comparison: null,
           priority_items: [
@@ -256,12 +320,14 @@ test('investigates a restart loop from Requires attention with source-qualified 
       }),
     }),
   )
-  await page.goto(`/projects/${project.id}/applications/${application.id}/attention`)
+  await page.goto(
+    `/projects/${project.id}/applications/${application.id}/attention?section=priority`,
+  )
   await authenticate(page)
   await expect(
     page.getByText('gateway restarted 4 times in the bounded investigation window.'),
   ).toBeVisible()
-  await page.getByRole('link', { name: 'Review' }).click()
+  await page.getByRole('link', { name: 'Review', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Restart loop observed' })).toBeVisible()
   await expect(page.getByText('Derived finding').first()).toBeVisible()
   await page

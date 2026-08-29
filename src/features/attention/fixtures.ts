@@ -226,6 +226,61 @@ export const populatedApplicationAttentionFixture = {
   recommendations: [populatedOrganizationAttentionFixture.recommendations[1]!],
 } satisfies ApplicationAttentionSummary
 
+const policyReasons = [
+  ['policy_review_required', 4],
+  ['policy_conflict', 2],
+  ['policy_unclassified', 6],
+  ['policy_evaluation_pending', 2],
+] as const
+
+export const policyAwareApplicationAttentionFixture = {
+  ...populatedApplicationAttentionFixture,
+  totals: {
+    ...populatedApplicationAttentionFixture.totals,
+    policy: {
+      factual_total: 20,
+      actionable_total: 12,
+      evaluation_pending: 2,
+      expected: 6,
+      requires_review: 4,
+      policy_conflict: 2,
+      unclassified: 6,
+    },
+  },
+  priority_items: [
+    ...populatedApplicationAttentionFixture.priority_items,
+    {
+      id: 'policy-priority:checkout',
+      kind: 'open_discovery',
+      priority: 'high',
+      reason_code: 'policy_conflict',
+      facts: { reason_count: 2 },
+      occurred_at: '2026-08-22T11:45:00Z',
+      project,
+      application,
+      resource: { type: 'application', project_id: project.id, application_id: application.id },
+    },
+  ],
+  recommendations: [
+    ...populatedApplicationAttentionFixture.recommendations,
+    ...policyReasons.map(([reason_code, reason_count]) => ({
+      id: `policy-recommendation:${reason_code}`,
+      kind: 'review_new_discoveries' as const,
+      priority: reason_code === 'policy_conflict' ? ('high' as const) : ('normal' as const),
+      reason_code,
+      facts: { reason_count },
+      project,
+      application,
+      resource: {
+        type: 'application' as const,
+        project_id: project.id,
+        application_id: application.id,
+      },
+      created_from_snapshot_at: '2026-08-22T12:00:00Z',
+    })),
+  ],
+} satisfies ApplicationAttentionSummary
+
 export const unavailableApplicationAttentionFixture = {
   ...populatedApplicationAttentionFixture,
   totals: {

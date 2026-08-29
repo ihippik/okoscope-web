@@ -12,6 +12,16 @@ export type AttentionActionContext = {
 export type AttentionDestination =
   | { kind: 'project'; projectId: string }
   | { kind: 'application'; projectId: string; applicationId: string }
+  | {
+      kind: 'runtime-groups'
+      projectId: string
+      applicationId: string
+      search: {
+        verdict?: 'requires_review' | 'policy_conflict' | 'unclassified'
+        suppressed?: false
+        evaluation_pending?: true
+      }
+    }
   | { kind: 'notifications'; projectId: string }
   | {
       kind: 'runtime-group'
@@ -35,6 +45,16 @@ const notificationReasons = new Set<AttentionReasonCode>([
   'enabled_destination_missing',
 ])
 
+const policySearch = (
+  reason: AttentionReasonCode | undefined,
+): Extract<AttentionDestination, { kind: 'runtime-groups' }>['search'] | null => {
+  if (reason === 'policy_review_required') return { verdict: 'requires_review', suppressed: false }
+  if (reason === 'policy_conflict') return { verdict: 'policy_conflict', suppressed: false }
+  if (reason === 'policy_unclassified') return { verdict: 'unclassified', suppressed: false }
+  if (reason === 'policy_evaluation_pending') return { evaluation_pending: true }
+  return null
+}
+
 export function attentionDestination(
   resource: unknown,
   context: AttentionActionContext = {},
@@ -51,12 +71,21 @@ export function attentionDestination(
       return { kind: 'notifications', projectId: value.project_id }
     return { kind: 'project', projectId: value.project_id }
   }
-  if (value.type === 'application')
+  if (value.type === 'application') {
+    const search = policySearch(context.reasonCode)
+    if (search)
+      return {
+        kind: 'runtime-groups',
+        projectId: value.project_id,
+        applicationId: value.application_id,
+        search,
+      }
     return {
       kind: 'application',
       projectId: value.project_id,
       applicationId: value.application_id,
     }
+  }
   if (value.type === 'runtime_group')
     return {
       kind: 'runtime-group',

@@ -8,12 +8,20 @@ import {
   RouterProvider,
 } from '@tanstack/react-router'
 import { describe, expect, it, vi } from 'vitest'
+import { useState } from 'react'
 import type { ApiClient } from '../../shared/api/client'
 import { ApiProvider } from '../../shared/api/context'
 import { LocalizationProvider, translate } from '../../shared/i18n'
-import { ApplicationAttention, observedVolumeTone, restartLoopTone } from './application-attention'
+import {
+  ApplicationAttention,
+  ApplicationAttentionTabs,
+  observedVolumeTone,
+  restartLoopTone,
+} from './application-attention'
+import type { ApplicationAttentionSection } from './url-state'
 import {
   populatedApplicationAttentionFixture,
+  policyAwareApplicationAttentionFixture,
   allClearOrganizationAttentionFixture,
   populatedOrganizationAttentionFixture,
   unavailableApplicationAttentionFixture,
@@ -58,6 +66,43 @@ const runtimeGroupIdentity = {
 }
 
 describe('attention presentation', () => {
+  it('renders counted semantic tabs and supports wrapping keyboard selection', async () => {
+    function Harness() {
+      const [section, setSection] = useState<ApplicationAttentionSection>('recommendations')
+      return (
+        <ApplicationAttentionTabs
+          section={section}
+          recommendationCount={3}
+          priorityCount={0}
+          onSection={setSection}
+        />
+      )
+    }
+    render(
+      <LocalizationProvider initialLocale="en">
+        <Harness />
+      </LocalizationProvider>,
+    )
+    const tabs = screen.getAllByRole('tab')
+    expect(tabs).toHaveLength(3)
+    expect(tabs[0]).toHaveTextContent('Overview')
+    expect(tabs[1]).toHaveTextContent('Recommendations (3)')
+    expect(tabs[2]).toHaveTextContent('Priority queue (0)')
+    expect(tabs[1]).toHaveAttribute('aria-selected', 'true')
+    tabs[1]!.focus()
+    await userEvent.keyboard('{ArrowRight}')
+    expect(tabs[2]).toHaveAttribute('aria-selected', 'true')
+    await waitFor(() => expect(tabs[2]).toHaveFocus())
+    await userEvent.keyboard('{ArrowRight}')
+    expect(tabs[0]).toHaveAttribute('aria-selected', 'true')
+    await waitFor(() => expect(tabs[0]).toHaveFocus())
+    await userEvent.keyboard('{End}')
+    expect(tabs[2]).toHaveAttribute('aria-selected', 'true')
+    await waitFor(() => expect(tabs[2]).toHaveFocus())
+    await userEvent.keyboard('{Home}')
+    expect(tabs[0]).toHaveAttribute('aria-selected', 'true')
+  })
+
   it('maps observed event volume from green through red without treating it as risk', () => {
     expect(observedVolumeTone(0)).toContain('emerald')
     expect(observedVolumeTone(1)).toContain('emerald')
@@ -122,6 +167,10 @@ describe('attention presentation', () => {
       'discovery_first_seen_in_window',
       'discovery_open',
       'container_restart_loop_observed',
+      'policy_review_required',
+      'policy_conflict',
+      'policy_unclassified',
+      'policy_evaluation_pending',
     ] as const
     const copy = reasons
       .map((reason) =>
@@ -231,6 +280,7 @@ describe('attention presentation', () => {
       <ApplicationAttention
         projectId={populatedApplicationAttentionFixture.project.id}
         applicationId={populatedApplicationAttentionFixture.application.id}
+        section="recommendations"
       />,
       vi.fn().mockResolvedValue(unavailableApplicationAttentionFixture),
     )
@@ -247,21 +297,14 @@ describe('attention presentation', () => {
       <ApplicationAttention
         projectId={populatedApplicationAttentionFixture.project.id}
         applicationId={populatedApplicationAttentionFixture.application.id}
+        section="overview"
       />,
       vi.fn().mockResolvedValue(populatedApplicationAttentionFixture),
     )
     const observed = await screen.findByRole('heading', { name: 'Observed actions' })
-    const recommendations = screen.getByRole('heading', { name: 'Recommendations to review' })
-    const priority = screen.getByRole('heading', { name: 'Priority queue' })
-    expect(
-      screen.getAllByRole('heading', {
-        name: 'Commerce <script>alert(1)</script> · Checkout & API',
-      }).length,
-    ).toBeGreaterThan(0)
+    expect(screen.queryByRole('heading', { name: 'Recommendations to review' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Priority queue' })).toBeNull()
     expect(observed).toHaveClass('text-2xl')
-    expect(recommendations).toHaveClass('text-2xl')
-    expect(observed.compareDocumentPosition(recommendations)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
-    expect(recommendations.compareDocumentPosition(priority)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
     const card = screen.getByRole('link', {
       name: /Restart loops1Open the server-derived restart-loop investigation/,
     })
@@ -270,6 +313,76 @@ describe('attention presentation', () => {
       expect.stringContaining('40000000-0000-4000-8000-000000000009'),
     )
     expect(card).toHaveClass('border-amber-600', 'bg-amber-950/35')
+  })
+
+  it('shows backend policy totals and policy-specific recommendations without synthesis', async () => {
+    const { unmount } = renderWithProviders(
+      <ApplicationAttention
+        projectId={policyAwareApplicationAttentionFixture.project.id}
+        applicationId={policyAwareApplicationAttentionFixture.application.id}
+        section="overview"
+      />,
+      vi.fn().mockResolvedValue(policyAwareApplicationAttentionFixture),
+    )
+    expect(await screen.findByRole('heading', { name: 'Policy classification' })).toBeVisible()
+    expect(screen.getByText('Observed facts').parentElement).toHaveTextContent('20')
+    expect(screen.getByText('Require attention').parentElement).toHaveTextContent('12')
+    expect(screen.getByRole('link', { name: /Requires review: 4/ })).toHaveAttribute(
+      'href',
+      expect.stringMatching(
+        /verdict=requires_review.*suppressed=false|suppressed=false.*verdict=requires_review/,
+      ),
+    )
+    expect(screen.getByRole('link', { name: /Evaluation pending: 2/ })).toHaveAttribute(
+      'href',
+      expect.stringContaining('evaluation_pending=true'),
+    )
+    unmount()
+
+    const recommendations = renderWithProviders(
+      <ApplicationAttention
+        projectId={policyAwareApplicationAttentionFixture.project.id}
+        applicationId={policyAwareApplicationAttentionFixture.application.id}
+        section="recommendations"
+      />,
+      vi.fn().mockResolvedValue(policyAwareApplicationAttentionFixture),
+    )
+    expect(await screen.findByRole('heading', { name: 'Resolve policy conflicts' })).toBeVisible()
+    expect(
+      screen.getAllByText('2 observations have conflicting policy results.').length,
+    ).toBeGreaterThan(0)
+    recommendations.unmount()
+
+    renderWithProviders(
+      <ApplicationAttention
+        projectId={populatedApplicationAttentionFixture.project.id}
+        applicationId={populatedApplicationAttentionFixture.application.id}
+        section="overview"
+      />,
+      vi.fn().mockResolvedValue(populatedApplicationAttentionFixture),
+    )
+    expect(await screen.findByRole('heading', { name: 'Policy classification' })).toBeVisible()
+    expect(
+      screen.queryByRole('heading', { name: 'Resolve policy conflicts' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows a localized empty priority panel without mounting recommendations', async () => {
+    renderWithProviders(
+      <ApplicationAttention
+        projectId={unavailableApplicationAttentionFixture.project.id}
+        applicationId={unavailableApplicationAttentionFixture.application.id}
+        section="priority"
+      />,
+      vi.fn().mockResolvedValue(unavailableApplicationAttentionFixture),
+      'ru',
+    )
+    expect(await screen.findByText('В этой сводке нет пунктов приоритетной очереди.')).toBeVisible()
+    expect(screen.queryByText('Для этой сводки нет рекомендуемых действий.')).toBeNull()
+    expect(screen.getByRole('tab', { name: 'Приоритетная очередь (0)' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
   })
 
   it('rejects mismatched Application attention ownership', async () => {

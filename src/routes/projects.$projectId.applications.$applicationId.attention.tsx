@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
-import { Link, createFileRoute } from '@tanstack/react-router'
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { ApplicationAttention } from '../features/attention/application-attention'
+import { parseApplicationAttentionSearch } from '../features/attention/url-state'
 import { applicationOptions, projectOptions } from '../shared/api/queries'
 import { useApi } from '../shared/api/context'
 import { useLocalization } from '../shared/i18n'
@@ -9,11 +10,14 @@ import { ErrorState } from '../shared/ui/error-state'
 import { Loading } from '../shared/ui/loading'
 
 export const Route = createFileRoute('/projects/$projectId/applications/$applicationId/attention')({
+  validateSearch: parseApplicationAttentionSearch,
   component: ApplicationAttentionPage,
 })
 
 function ApplicationAttentionPage() {
   const { projectId, applicationId } = Route.useParams()
+  const search = Route.useSearch()
+  const navigate = useNavigate({ from: Route.fullPath })
   const api = useApi()
   const { t } = useLocalization()
   const project = useQuery(projectOptions(api, projectId))
@@ -54,7 +58,12 @@ function ApplicationAttentionPage() {
         <span>/</span>
         <span aria-current="page">{t('requiresAttention')}</span>
       </nav>
-      <ApplicationAttention projectId={projectId} applicationId={applicationId} />
+      <ApplicationAttention
+        projectId={projectId}
+        applicationId={applicationId}
+        section={search.section}
+        onSection={(section) => void navigate({ search: { section } })}
+      />
     </div>
   )
 }

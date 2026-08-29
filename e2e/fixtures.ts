@@ -527,10 +527,32 @@ export async function mockApi(page: Page, role: 'owner' | 'member' = 'owner') {
           disappeared_runtime_items: 0,
           unchanged_runtime_items: 2,
           total_runtime_items: 3,
+          policy: {
+            factual_total: 4,
+            actionable_total: 2,
+            evaluation_pending: 0,
+            expected: 2,
+            requires_review: 0,
+            policy_conflict: 0,
+            unclassified: 2,
+          },
         },
         release_comparison: attentionComparison,
         priority_items: [attentionItem],
-        recommendations: [attentionRecommendation],
+        recommendations: [
+          attentionRecommendation,
+          {
+            ...attentionRecommendation,
+            id: 'policy-unclassified',
+            reason_code: 'policy_unclassified',
+            facts: { reason_count: 2 },
+            resource: {
+              type: 'application',
+              project_id: project.id,
+              application_id: application.id,
+            },
+          },
+        ],
       })
     if (path === `/api/v1/projects/${project.id}/applications/${application.id}`)
       return json(route, application)

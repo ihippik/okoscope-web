@@ -75,7 +75,21 @@ export function reasonText(
       container: facts.restart_loop.container_name,
       count: facts.restart_loop.observed_restart_count,
     })
+  if (reason === 'policy_review_required')
+    return t('reasonPolicyReviewRequired', { count: facts.reason_count })
+  if (reason === 'policy_conflict') return t('reasonPolicyConflict', { count: facts.reason_count })
+  if (reason === 'policy_unclassified')
+    return t('reasonPolicyUnclassified', { count: facts.reason_count })
+  if (reason === 'policy_evaluation_pending')
+    return t('reasonPolicyEvaluationPending', { count: facts.reason_count })
   return t('reasonDiscoveryOpen', { count: facts.reason_count })
+}
+
+const policyRecommendationKeys: Partial<Record<AttentionReasonCode, MessageKey>> = {
+  policy_review_required: 'reviewPolicyRequired',
+  policy_conflict: 'reviewPolicyConflicts',
+  policy_unclassified: 'reviewPolicyUnclassified',
+  policy_evaluation_pending: 'reviewPolicyPending',
 }
 
 function RestartLoopFacts({ facts }: { facts: AttentionPriorityItem['facts'] }) {
@@ -206,6 +220,21 @@ export function AttentionActionLink({
         </Link>
       </Button>
     )
+  if (destination.kind === 'runtime-groups')
+    return (
+      <Button asChild variant="outline">
+        <Link
+          to="/projects/$projectId/applications/$applicationId/runtime-groups"
+          params={{
+            projectId: destination.projectId,
+            applicationId: destination.applicationId,
+          }}
+          search={destination.search}
+        >
+          {content}
+        </Link>
+      </Button>
+    )
   if (destination.kind === 'notifications')
     return (
       <Button asChild variant="outline">
@@ -331,7 +360,9 @@ export function RecommendationList({
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <PriorityBadge priority={item.priority} />
-                  <h3 className="font-semibold">{t(recommendationKeys[item.kind])}</h3>
+                  <h3 className="font-semibold">
+                    {t(policyRecommendationKeys[item.reason_code] ?? recommendationKeys[item.kind])}
+                  </h3>
                 </div>
                 <p className="mt-2 text-sm text-slate-200">
                   {reasonText(item.reason_code, item.facts, t)}
@@ -348,7 +379,11 @@ export function RecommendationList({
                     recommendationKind: item.kind,
                     reasonCode: item.reason_code,
                   })}
-                  label={t(recommendationActionKeys[item.kind] ?? recommendationKeys[item.kind])}
+                  label={t(
+                    policyRecommendationKeys[item.reason_code] ??
+                      recommendationActionKeys[item.kind] ??
+                      recommendationKeys[item.kind],
+                  )}
                   showArrow={false}
                 />
               </div>

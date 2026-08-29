@@ -239,10 +239,17 @@ export function InventoryList({
   view?: 'grid' | 'list'
 }) {
   return (
-    <div data-view={view} className={view === 'grid' ? 'grid gap-4 lg:grid-cols-2' : 'space-y-4'}>
+    <div data-view={view} className={view === 'grid' ? 'grid gap-5 lg:grid-cols-2' : 'space-y-5'}>
       {items.map((item) => (
-        <Card key={item.id}>
-          <div className="flex flex-wrap items-start justify-between gap-4">
+        <Card
+          key={item.id}
+          className={`inventory-item-card ${view === 'grid' ? 'inventory-item-card-grid' : ''}`}
+        >
+          <div
+            className={`items-start justify-between gap-4 ${
+              view === 'grid' ? 'grid w-full grid-cols-[minmax(0,1fr)_auto]' : 'flex flex-wrap'
+            }`}
+          >
             <div className="min-w-0">
               <p className="eyebrow">
                 {getActivityPresentation(item.inventory_kind).behaviorLabel}
@@ -251,7 +258,11 @@ export function InventoryList({
                 <InventoryIdentity item={item} />
               </h2>
             </div>
-            <Button asChild variant="outline">
+            <Button
+              asChild
+              variant="outline"
+              className={view === 'grid' ? 'whitespace-nowrap' : undefined}
+            >
               <Link
                 to="/projects/$projectId/applications/$applicationId/runtime-inventory/$itemId"
                 params={{ projectId, applicationId, itemId: item.id }}
@@ -261,7 +272,7 @@ export function InventoryList({
               </Link>
             </Button>
           </div>
-          <dl className="details mt-5">
+          <dl className="details mt-6 text-sm">
             <dt>First observed</dt>
             <dd>{formatTimestamp(item.first_seen_at)}</dd>
             <dt>Last observed</dt>
@@ -269,7 +280,11 @@ export function InventoryList({
             <dt>{getActivityPresentation(item.inventory_kind).countLabel}</dt>
             <dd>{formatCount(item.occurrence_count)}</dd>
           </dl>
-          <div className="mt-5 grid grid-cols-[repeat(auto-fit,minmax(5.5rem,1fr))] gap-2 text-sm">
+          <div
+            className={`inventory-item-metrics mt-6 grid border-t pt-4 text-sm ${
+              view === 'grid' ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-4 sm:grid-cols-7'
+            }`}
+          >
             {[
               ['Releases', item.release_count],
               ['Clusters', item.cluster_count],
@@ -278,12 +293,21 @@ export function InventoryList({
               ['Pods', item.pod_count],
               ['Containers', item.container_count],
               ['Discoveries', item.group_count],
-            ].map(([label, value]) => (
-              <div key={String(label)} className="min-w-0 rounded-lg bg-slate-950 p-2">
-                <span className="block break-words text-xs leading-tight text-slate-400">
+            ].map(([label, value], index) => (
+              <div
+                key={String(label)}
+                className={`min-w-0 border-l px-3 first:border-l-0 first:pl-0 ${
+                  view === 'grid'
+                    ? 'nth-[5]:border-l-0 nth-[5]:pl-0 nth-[n+5]:mt-4 max-sm:odd:border-l-0 max-sm:odd:pl-0 max-sm:nth-[n+3]:mt-4'
+                    : 'max-sm:nth-[5]:border-l-0 max-sm:nth-[5]:pl-0 max-sm:nth-[n+5]:mt-4'
+                } ${index === 6 ? 'text-cyan-300' : ''}`}
+              >
+                <strong className="block text-lg leading-none text-slate-100">
+                  {formatCount(Number(value))}
+                </strong>
+                <span className="mt-1.5 block truncate text-xs leading-tight text-slate-400">
                   {label}
                 </span>
-                <strong>{formatCount(Number(value))}</strong>
               </div>
             ))}
           </div>
