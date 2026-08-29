@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, createFileRoute } from '@tanstack/react-router'
+import { BellRing } from 'lucide-react'
 import { useEffect } from 'react'
 import { ApplicationList } from '../features/tenant/application-list'
 import { projectOptions } from '../shared/api/queries'
 import { useApi } from '../shared/api/context'
+import { Button } from '../shared/ui/button'
 import { Card } from '../shared/ui/card'
 import { ErrorState } from '../shared/ui/error-state'
 import { Loading } from '../shared/ui/loading'
@@ -49,13 +51,12 @@ function ProjectPage() {
         </div>
       </Card>
       <nav aria-label="Project sections">
-        <Link
-          to="/projects/$projectId/notifications"
-          params={{ projectId }}
-          className="nav-link border border-slate-700"
-        >
-          Notifications
-        </Link>
+        <Button asChild className="gap-2 px-5 py-2.5 shadow-lg shadow-cyan-950/40">
+          <Link to="/projects/$projectId/notifications" params={{ projectId }}>
+            <BellRing size={18} aria-hidden="true" />
+            Configure notifications
+          </Link>
+        </Button>
       </nav>
       <ApplicationList projectId={projectId} />
     </div>

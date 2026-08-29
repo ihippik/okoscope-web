@@ -114,6 +114,7 @@ export const legacyRussian: Record<string, string> = {
   Application: 'Приложение',
   Applications: 'Приложения',
   Notifications: 'Уведомления',
+  'Configure notifications': 'Настроить уведомления',
   Configuration: 'Конфигурация',
   Diagnostics: 'Диагностика',
   Releases: 'Релизы',
