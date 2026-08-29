@@ -17,6 +17,7 @@ import {
 import { applicationOptions, projectOptions } from '../shared/api/queries'
 import { useApi } from '../shared/api/context'
 import { Button } from '../shared/ui/button'
+import { Card } from '../shared/ui/card'
 import { Loading } from '../shared/ui/loading'
 import { PolicyFilters } from '../features/policies/components'
 
@@ -73,6 +74,19 @@ function RuntimeGroupsPage() {
         search={search}
         apply={(updates) => void navigate({ search: changeRuntimeGroupFilters(search, updates) })}
       />
+      <Card>
+        <h2 className="text-lg font-semibold">Policy state</h2>
+        <div className="mt-3">
+          <PolicyFilters
+            verdict={search.verdict}
+            suppressed={search.suppressed}
+            evaluationPending={search.evaluation_pending}
+            onChange={(updates) =>
+              void navigate({ search: changeRuntimeGroupFilters(search, updates) })
+            }
+          />
+        </div>
+      </Card>
       <div className="flex flex-wrap justify-end gap-3">
         <StatusQuickFilters
           status={search.status}
@@ -179,7 +193,10 @@ function Filters({
   search: ReturnType<typeof parseRuntimeGroupSearch>
   apply: (value: Partial<ReturnType<typeof parseRuntimeGroupSearch>>) => void
 }) {
-  const hasAdvancedFilters = Object.keys(search).some((key) => key !== 'cursor' && key !== 'status')
+  const policyFilterKeys = new Set(['verdict', 'suppressed', 'evaluation_pending'])
+  const hasAdvancedFilters = Object.keys(search).some(
+    (key) => key !== 'cursor' && key !== 'status' && !policyFilterKeys.has(key),
+  )
   const fields = [
     ['event_kind', 'Event kind'],
     ['namespace', 'Namespace'],
@@ -212,14 +229,6 @@ function Filters({
           )
         }}
       >
-        <div className="sm:col-span-2 lg:col-span-4">
-          <PolicyFilters
-            verdict={search.verdict}
-            suppressed={search.suppressed}
-            evaluationPending={search.evaluation_pending}
-            onChange={apply}
-          />
-        </div>
         {fields.map(([key, label]) => (
           <label key={key} className="text-sm">
             {label}
