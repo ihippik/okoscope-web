@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { CircleAlert, Copy, DoorOpen, Network, Sparkles } from 'lucide-react'
 import { useState } from 'react'
@@ -31,6 +32,7 @@ import type {
   ContainerRestartLoopPayload,
   EvidenceSource,
   RelatedEvidence,
+  DeploymentEpisode,
   Release,
   RuntimeDiffEntry,
   RuntimeGroup,
@@ -42,6 +44,8 @@ import { ErrorState } from '../../shared/ui/error-state'
 import { formatCount, formatTimestamp } from '../tenant/format'
 import { useLocalization, type MessageKey } from '../../shared/i18n'
 import { PolicyState } from '../policies/components'
+import { useApi } from '../../shared/api/context'
+import { deploymentEpisodesOptions } from './queries'
 import {
   directionLabel,
   formatEndpoint,
@@ -1182,25 +1186,243 @@ export function ReleaseList({
   return (
     <div className="space-y-4">
       {releases.map((release) => (
-        <Card key={release.id}>
-          <div className="flex flex-wrap justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-semibold">{release.version}</h2>
-              <p className="mt-2 text-slate-400">{release.description ?? 'No description'}</p>
-              <p className="mt-2 text-sm">Deployed {formatTimestamp(release.deployed_at)}</p>
-            </div>
-            <Button asChild variant="outline">
-              <Link
-                to="/projects/$projectId/applications/$applicationId/releases/$targetReleaseId/runtime-diff"
-                params={{ projectId, applicationId, targetReleaseId: release.id }}
-              >
-                View changes
-              </Link>
-            </Button>
-          </div>
-        </Card>
+        <ReleaseCard
+          key={release.id}
+          release={release}
+          projectId={projectId}
+          applicationId={applicationId}
+        />
       ))}
     </div>
+  )
+}
+
+const episodeStateLabel: Record<DeploymentEpisode['state'], string> = {
+  detected: 'Detected',
+  active: 'Active',
+  inactive: 'Inactive',
+}
+
+const episodeTransitionLabel: Record<DeploymentEpisode['transition_kind'], string> = {
+  rollout: 'Rollout observation',
+  rollback_candidate: 'Rollback candidate',
+  concurrent: 'Concurrent revision',
+  unknown: 'Unknown transition',
+}
+
+export const baselineSelectionPresentation = (
+  source:
+    | 'explicit'
+    | 'transition'
+    | 'concurrent_transition_fallback'
+    | 'legacy_deployment_order'
+    | 'none',
+) =>
+  ({
+    explicit: 'Explicitly selected by the operator.',
+    transition: 'Selected by the backend from deployment transition evidence.',
+    concurrent_transition_fallback:
+      'Selected by the backend as a fallback for concurrent transition evidence; this does not establish rollout order or traffic allocation.',
+    legacy_deployment_order: 'Selected by the backend using legacy deployment order.',
+    none: 'No comparison baseline is available.',
+  })[source]
+
+export const hasEpisodeOwnershipMismatch = (episodes: DeploymentEpisode[], releaseId: string) =>
+  episodes.some((episode) => episode.release_id !== releaseId)
+
+export function DeploymentEpisodeList({ episodes }: { episodes: DeploymentEpisode[] }) {
+  return (
+    <ol className="space-y-3" aria-label="Deployment episodes">
+      {episodes.map((episode) => (
+        <li key={episode.id} className="rounded-lg border border-slate-700 bg-slate-950 p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <strong>Episode {formatCount(episode.occurrence_number)}</strong>
+            <span className="rounded-full border border-slate-600 px-2 py-1 text-xs font-bold">
+              {episodeStateLabel[episode.state]}
+            </span>
+            <span className="rounded-full border border-sky-700 bg-sky-950 px-2 py-1 text-xs font-bold text-sky-200">
+              {episodeTransitionLabel[episode.transition_kind]}
+            </span>
+          </div>
+          <dl className="details mt-4">
+            <dt>Kubernetes revision</dt>
+            <dd className="break-all font-mono text-xs">{episode.revision_id}</dd>
+            <dt>Cluster</dt>
+            <dd className="break-all font-mono text-xs">{episode.cluster_id}</dd>
+            <dt>Started</dt>
+            <dd>{formatTimestamp(episode.first_observed_at)}</dd>
+            <dt>First Ready</dt>
+            <dd>
+              {episode.first_ready_at ? formatTimestamp(episode.first_ready_at) : 'Unavailable'}
+            </dd>
+            <dt>Last observed</dt>
+            <dd>{formatTimestamp(episode.last_observed_at)}</dd>
+            <dt>Ended</dt>
+            <dd>{episode.ended_at ? formatTimestamp(episode.ended_at) : 'Ongoing'}</dd>
+            <dt>Pods</dt>
+            <dd>{formatCount(episode.pod_count)}</dd>
+            <dt>Ready Pods</dt>
+            <dd>
+              {formatCount(episode.ready_pod_count)} of{' '}
+              {formatCount(episode.workload_ready_pod_count)} workload Ready Pods
+            </dd>
+            <dt>Ready Pod share</dt>
+            <dd>
+              {episode.ready_pod_share === null
+                ? 'Unavailable'
+                : new Intl.NumberFormat(undefined, {
+                    style: 'percent',
+                    maximumFractionDigits: 1,
+                  }).format(episode.ready_pod_share)}
+            </dd>
+            <dt>Readiness snapshot</dt>
+            <dd>
+              {episode.snapshot_observed_at
+                ? formatTimestamp(episode.snapshot_observed_at)
+                : 'Unavailable'}
+            </dd>
+          </dl>
+          <p className="mt-3 text-sm text-slate-400">
+            Ready Pod share is the share of Ready Pods in this observation. It is not traffic share
+            and does not confirm canary or A/B deployment intent.
+          </p>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+export function ReleaseMetadata({ release }: { release: Release }) {
+  return (
+    <div className="min-w-0">
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="text-xl font-semibold">{release.version}</h2>
+        <span className="rounded-full border border-slate-600 px-2 py-1 text-xs font-bold capitalize">
+          {release.source}
+        </span>
+      </div>
+      <p className="mt-2 text-slate-400">{release.description ?? 'No description'}</p>
+      <p className="mt-2 text-sm">Deployed {formatTimestamp(release.deployed_at)}</p>
+      {release.source === 'observed' && (
+        <div className="mt-4 space-y-3">
+          <dl className="details">
+            <dt>Image identity digest</dt>
+            <dd className="break-all font-mono text-xs">
+              {release.identity_digest ?? 'Unavailable'}
+            </dd>
+            <dt>Kubernetes revisions</dt>
+            <dd>{formatCount(release.revision_count)}</dd>
+            <dt>Active episodes</dt>
+            <dd>{formatCount(release.active_episode_count)}</dd>
+          </dl>
+          {release.identity_components?.length ? (
+            <details>
+              <summary className="cursor-pointer font-medium">Image identity components</summary>
+              <div className="mt-2">
+                <JsonDetailsViewer
+                  value={release.identity_components}
+                  label="Image identity components"
+                />
+              </div>
+            </details>
+          ) : (
+            <p className="text-sm text-slate-400">Image identity components unavailable.</p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ReleaseCard({
+  release,
+  projectId,
+  applicationId,
+}: {
+  release: Release
+  projectId: string
+  applicationId: string
+}) {
+  const api = useApi()
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [episodeCursor, setEpisodeCursor] = useState<string | undefined>()
+  const episodes = useQuery(
+    deploymentEpisodesOptions(
+      api,
+      projectId,
+      applicationId,
+      release.id,
+      episodeCursor,
+      historyOpen,
+    ),
+  )
+  const ownershipMismatch = episodes.data
+    ? hasEpisodeOwnershipMismatch(episodes.data.items, release.id)
+    : false
+  return (
+    <Card>
+      <div className="flex flex-wrap justify-between gap-4">
+        <ReleaseMetadata release={release} />
+        <div className="flex flex-wrap items-start gap-2">
+          {release.source === 'observed' && (
+            <Button
+              variant="outline"
+              aria-expanded={historyOpen}
+              aria-controls={`episodes-${release.id}`}
+              onClick={() => setHistoryOpen((value) => !value)}
+            >
+              {historyOpen ? 'Hide episodes' : 'View episodes'}
+            </Button>
+          )}
+          <Button asChild variant="outline">
+            <Link
+              to="/projects/$projectId/applications/$applicationId/releases/$targetReleaseId/runtime-diff"
+              params={{ projectId, applicationId, targetReleaseId: release.id }}
+            >
+              View changes
+            </Link>
+          </Button>
+        </div>
+      </div>
+      {historyOpen && (
+        <section id={`episodes-${release.id}`} className="mt-5 border-t border-slate-700 pt-5">
+          <h3 className="text-lg font-semibold">Deployment episode history</h3>
+          <p className="mt-1 text-sm text-slate-400">
+            A Release is immutable. Kubernetes revisions and repeated deployment episodes are shown
+            as separate observed evidence.
+          </p>
+          <div className="mt-4">
+            {episodes.isPending ? (
+              <p role="status">Loading deployment episodes…</p>
+            ) : episodes.isError ? (
+              <ApiErrorPanel
+                title="Deployment episodes unavailable"
+                error={episodes.error}
+                onRetry={() => void episodes.refetch()}
+              />
+            ) : ownershipMismatch ? (
+              <EmptyState
+                title="Episode ownership mismatch"
+                description="The response does not belong to this Release."
+              />
+            ) : episodes.data.items.length ? (
+              <div className="space-y-4">
+                <DeploymentEpisodeList episodes={episodes.data.items} />
+                <PaginationControls
+                  nextCursor={episodes.data.next_cursor}
+                  onNext={(cursor) => setEpisodeCursor(cursor)}
+                />
+              </div>
+            ) : (
+              <EmptyState
+                title="No deployment episodes"
+                description="No Kubernetes deployment episodes are available for this Release."
+              />
+            )}
+          </div>
+        </section>
+      )}
+    </Card>
   )
 }
 export function RuntimeDiffList({

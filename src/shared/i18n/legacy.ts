@@ -2,6 +2,36 @@ import type { Locale } from '.'
 
 /** Dictionary-backed compatibility boundary for existing JSX surfaces. */
 export const legacyRussian: Record<string, string> = {
+  'Comparison provenance mismatch': 'Несоответствие источника сравнения',
+  'Baseline selection': 'Выбор базового релиза',
+  'Deployment episodes': 'Эпизоды развёртывания',
+  Episode: 'Эпизод',
+  'Kubernetes revision': 'Ревизия Kubernetes',
+  'First Ready': 'Первая готовность',
+  Ended: 'Завершён',
+  Pods: 'Поды',
+  'Ready Pods': 'Готовые поды',
+  of: 'из',
+  'workload Ready Pods': 'готовых подов workload',
+  'Ready Pod share': 'Доля готовых подов',
+  'Readiness snapshot': 'Снимок готовности',
+  'Ready Pod share is the share of Ready Pods in this observation. It is not traffic share and does not confirm canary or A/B deployment intent.':
+    'Доля готовых подов относится только к готовым подам в этом наблюдении. Это не доля трафика и не подтверждение canary- или A/B-развёртывания.',
+  'Image identity digest': 'Дайджест идентификатора образа',
+  'Kubernetes revisions': 'Ревизии Kubernetes',
+  'Active episodes': 'Активные эпизоды',
+  'Image identity components': 'Компоненты идентификатора образа',
+  'Image identity components unavailable.': 'Компоненты идентификатора образа недоступны.',
+  'Deployment episode history': 'История эпизодов развёртывания',
+  'A Release is immutable. Kubernetes revisions and repeated deployment episodes are shown as separate observed evidence.':
+    'Release неизменяем. Ревизии Kubernetes и повторные эпизоды развёртывания показаны как отдельные наблюдаемые свидетельства.',
+  'Loading deployment episodes…': 'Загрузка эпизодов развёртывания…',
+  'Deployment episodes unavailable': 'Эпизоды развёртывания недоступны',
+  'Episode ownership mismatch': 'Несоответствие области эпизода',
+  'The response does not belong to this Release.': 'Ответ не относится к этому Release.',
+  'No deployment episodes': 'Нет эпизодов развёртывания',
+  'No Kubernetes deployment episodes are available for this Release.':
+    'Для этого Release нет доступных эпизодов развёртывания Kubernetes.',
   'Loading managed runtime policies…': 'Загрузка управляемых политик…',
   'Managed runtime policies unavailable': 'Управляемые политики недоступны',
   'Managed policies': 'Управляемые политики',

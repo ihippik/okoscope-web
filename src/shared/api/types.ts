@@ -109,6 +109,8 @@ export type OccurrencePage = components['schemas']['OccurrencePage']
 export type FirstSeenNotificationSummary = components['schemas']['FirstSeenNotificationSummary']
 export type Release = components['schemas']['Release']
 export type ReleasePage = components['schemas']['ReleasePage']
+export type DeploymentEpisode = components['schemas']['DeploymentEpisode']
+export type DeploymentEpisodePage = components['schemas']['DeploymentEpisodePage']
 export type RuntimeDiff = components['schemas']['RuntimeDiff']
 export type RuntimeDiffEntry = components['schemas']['RuntimeDiffEntry']
 export type RuntimeDiffSummary = components['schemas']['RuntimeDiffSummary']
@@ -166,6 +168,9 @@ export type ResolveRuntimeGroupResponse =
 export type ReopenRuntimeGroupResponse =
   operations['reopenRuntimeGroup']['responses'][200]['content']['application/json']
 export type ReleaseQuery = NonNullable<operations['listReleases']['parameters']['query']>
+export type DeploymentEpisodeQuery = NonNullable<
+  operations['listDeploymentEpisodes']['parameters']['query']
+>
 export type RuntimeDiffQuery = NonNullable<operations['getRuntimeDiff']['parameters']['query']>
 export type RuntimeDiffSummaryQuery = NonNullable<
   operations['getRuntimeDiffSummary']['parameters']['query']
@@ -677,6 +682,12 @@ export const contractFixture = {
       description: null,
       deployed_at: '2026-08-17T00:00:00Z',
       created_at: '2026-08-17T00:00:00Z',
+      source: 'manual',
+      identity_version: null,
+      identity_digest: null,
+      identity_components: null,
+      revision_count: 0,
+      active_episode_count: 0,
     },
     target: {
       id: '40000000-0000-4000-8000-000000000002',
@@ -686,7 +697,14 @@ export const contractFixture = {
       description: null,
       deployed_at: '2026-08-18T00:00:00Z',
       created_at: '2026-08-18T00:00:00Z',
+      source: 'manual',
+      identity_version: null,
+      identity_digest: null,
+      identity_components: null,
+      revision_count: 0,
+      active_episode_count: 0,
     },
+    baseline_selection_source: 'legacy_deployment_order',
     total_item_count: 2,
     classifications: [
       { classification: 'new', item_count: 1 },

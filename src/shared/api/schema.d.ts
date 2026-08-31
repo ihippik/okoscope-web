@@ -932,6 +932,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/applications/{application_id}/releases/{release_id}/episodes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                release_id: components["parameters"]["ReleaseId"];
+            };
+            cookie?: never;
+        };
+        /** @description Lists observed Kubernetes deployment episodes. Ready Pod share is not measured traffic share or declared rollout intent. */
+        get: operations["listDeploymentEpisodes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/applications/{application_id}/releases/{target_id}/runtime-diff": {
         parameters: {
             query?: never;
@@ -1812,7 +1833,7 @@ export interface components {
             api_version: "v1";
             /**
              * Format: int64
-             * @example 18
+             * @example 19
              */
             required_database_migration: number;
         };
@@ -2376,6 +2397,42 @@ export interface components {
             description: string | null;
             deployed_at: components["schemas"]["Timestamp"];
             created_at: components["schemas"]["Timestamp"];
+            /** @enum {string} */
+            source: "manual" | "observed";
+            identity_version: number | null;
+            identity_digest: string | null;
+            identity_components: Record<string, never>[] | null;
+            /** Format: int64 */
+            revision_count: number;
+            /** Format: int64 */
+            active_episode_count: number;
+        };
+        DeploymentEpisode: {
+            id: components["schemas"]["Uuid"];
+            release_id: components["schemas"]["Uuid"];
+            revision_id: components["schemas"]["Uuid"];
+            cluster_id: components["schemas"]["Uuid"];
+            /** Format: int64 */
+            occurrence_number: number;
+            /** @enum {string} */
+            state: "detected" | "active" | "inactive";
+            /** @enum {string} */
+            transition_kind: "rollout" | "rollback_candidate" | "concurrent" | "unknown";
+            first_observed_at: components["schemas"]["Timestamp"];
+            first_ready_at: components["schemas"]["NullableTimestamp"];
+            last_observed_at: components["schemas"]["Timestamp"];
+            ended_at: components["schemas"]["NullableTimestamp"];
+            pod_count: number;
+            ready_pod_count: number;
+            workload_ready_pod_count: number;
+            /** @description Share of Ready Pods */
+            ready_pod_share: number | null;
+            snapshot_observed_at: components["schemas"]["NullableTimestamp"];
+            predecessors: Record<string, never>[];
+        };
+        DeploymentEpisodePage: {
+            items: components["schemas"]["DeploymentEpisode"][];
+            next_cursor: components["schemas"]["NullableUuid"];
         };
         ReleasePage: {
             items: components["schemas"]["Release"][];
@@ -2406,6 +2463,8 @@ export interface components {
             target: components["schemas"]["Release"];
             items: components["schemas"]["RuntimeDiffEntry"][];
             next_cursor: components["schemas"]["NullableUuid"];
+            /** @enum {string} */
+            baseline_selection_source: "explicit" | "transition" | "concurrent_transition_fallback" | "legacy_deployment_order" | "none";
         };
         RuntimeDiffClassificationCount: {
             /** @enum {string} */
@@ -2429,6 +2488,8 @@ export interface components {
         RuntimeDiffSummary: {
             baseline: components["schemas"]["Release"] | null;
             target: components["schemas"]["Release"];
+            /** @enum {string} */
+            baseline_selection_source: "explicit" | "transition" | "concurrent_transition_fallback" | "legacy_deployment_order" | "none";
             /** Format: int64 */
             total_item_count: number;
             classifications: components["schemas"]["RuntimeDiffClassificationCount"][];
@@ -3144,6 +3205,16 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["ReleasePage"];
+            };
+        };
+        /** @description Kubernetes deployment episode page; Ready Pod share is not traffic share */
+        DeploymentEpisodePage: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["DeploymentEpisodePage"];
             };
         };
         /** @description Runtime behavior diff */
@@ -4706,6 +4777,26 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["Release"];
+        };
+    };
+    listDeploymentEpisodes: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor scoped to the authenticated collection. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                release_id: components["parameters"]["ReleaseId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["DeploymentEpisodePage"];
         };
     };
     getRuntimeDiff: {

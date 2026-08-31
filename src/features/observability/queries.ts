@@ -1,6 +1,7 @@
 import { queryOptions, type QueryClient } from '@tanstack/react-query'
 import type { ApiClient } from '../../shared/api/client'
 import type {
+  DeploymentEpisodePage,
   ReleasePage,
   OccurrencePage,
   RuntimeGroup,
@@ -44,6 +45,20 @@ export const observabilityKeys = {
     ] as const,
   releases: (projectId: string, applicationId: string, search: ReleaseSearch) =>
     ['releases', projectId, applicationId, normalized(search)] as const,
+  deploymentEpisodes: (
+    projectId: string,
+    applicationId: string,
+    releaseId: string,
+    cursor?: string,
+  ) =>
+    [
+      'deployment-episodes',
+      projectId,
+      applicationId,
+      releaseId,
+      cursor ?? null,
+      EPISODE_PAGE_SIZE,
+    ] as const,
   runtimeDiff: (
     projectId: string,
     applicationId: string,
@@ -74,6 +89,7 @@ export const observabilityKeys = {
     ] as const,
 }
 export const OCCURRENCE_PAGE_SIZE = 25
+export const EPISODE_PAGE_SIZE = 25
 export const RUNTIME_DIFF_SUMMARY_SIZE = 5
 export const runtimeGroupOccurrencesPath = (groupId: string, cursor?: string) =>
   `/api/v1/runtime-groups/${encodeURIComponent(groupId)}/occurrences${params({ cursor, limit: OCCURRENCE_PAGE_SIZE })}`
@@ -154,6 +170,31 @@ export const releasesOptions = (
         `/api/v1/projects/${encodeURIComponent(projectId)}/applications/${encodeURIComponent(applicationId)}/releases${params({ ...search, limit: 50 })}`,
         { protected: true },
       ),
+  })
+export const deploymentEpisodesPath = (
+  projectId: string,
+  applicationId: string,
+  releaseId: string,
+  cursor?: string,
+) =>
+  `/api/v1/projects/${encodeURIComponent(projectId)}/applications/${encodeURIComponent(applicationId)}/releases/${encodeURIComponent(releaseId)}/episodes${params({ cursor, limit: EPISODE_PAGE_SIZE })}`
+
+export const deploymentEpisodesOptions = (
+  api: ApiClient,
+  projectId: string,
+  applicationId: string,
+  releaseId: string,
+  cursor: string | undefined,
+  enabled: boolean,
+) =>
+  queryOptions({
+    queryKey: observabilityKeys.deploymentEpisodes(projectId, applicationId, releaseId, cursor),
+    queryFn: () =>
+      api.get<DeploymentEpisodePage>(
+        deploymentEpisodesPath(projectId, applicationId, releaseId, cursor),
+        { protected: true },
+      ),
+    enabled,
   })
 export const runtimeDiffOptions = (
   api: ApiClient,

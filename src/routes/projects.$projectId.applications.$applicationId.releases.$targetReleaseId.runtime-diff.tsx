@@ -3,6 +3,7 @@ import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import {
   ApiErrorPanel,
+  baselineSelectionPresentation,
   EmptyState,
   OwnershipError,
   PaginationControls,
@@ -88,6 +89,20 @@ function RuntimeDiffPage() {
         }
       />
     )
+  if (
+    diffSummary.data &&
+    diffSummary.data.baseline_selection_source !== diff.data.baseline_selection_source
+  )
+    return (
+      <ApiErrorPanel
+        title="Comparison provenance mismatch"
+        error={new Error('Runtime Diff and its summary disagree about baseline selection.')}
+        onRetry={() => {
+          void diff.refetch()
+          void diffSummary.refetch()
+        }}
+      />
+    )
   return (
     <div className="space-y-6">
       <nav aria-label="Breadcrumb" className="breadcrumbs flex-wrap">
@@ -153,6 +168,8 @@ function RuntimeDiffPage() {
               ? `${diff.data.baseline.version} · ${formatTimestamp(diff.data.baseline.deployed_at)}`
               : 'No baseline available'}
           </dd>
+          <dt>Baseline selection</dt>
+          <dd>{baselineSelectionPresentation(diff.data.baseline_selection_source)}</dd>
         </dl>
       </Card>
       {diff.data.baseline &&

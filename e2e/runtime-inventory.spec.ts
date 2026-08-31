@@ -57,7 +57,7 @@ test('explores Application Activity scope, views, cursors, and observation histo
   await expect(page.locator('script', { hasText: '/tmp/old-' })).toHaveCount(0)
   await page.getByRole('button', { name: /Process launches/ }).click()
 
-  await page.getByRole('link', { name: 'View observation history' }).click()
+  await page.getByRole('link', { name: 'Observation history' }).click()
   await expect(page.getByRole('tab', { name: 'Releases' })).toHaveAttribute('aria-selected', 'true')
   await expect(page.getByText('Observed', { exact: true })).toBeVisible()
   await expect(page.getByText('Not observed in available evidence')).toBeVisible()

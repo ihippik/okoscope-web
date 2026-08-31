@@ -11,6 +11,12 @@ const release = {
   description: null,
   deployed_at: '2026-08-18T00:00:00Z',
   created_at: '2026-08-18T00:00:00Z',
+  source: 'manual' as const,
+  identity_version: null,
+  identity_digest: null,
+  identity_components: null,
+  revision_count: 0,
+  active_episode_count: 0,
 }
 
 describe('RuntimeDiffVisualization', () => {
@@ -18,6 +24,7 @@ describe('RuntimeDiffVisualization', () => {
     const summary: RuntimeDiffSummary = {
       baseline: { ...release, id: '40000000-0000-4000-8000-000000000002', version: '2.13.0' },
       target: release,
+      baseline_selection_source: 'explicit',
       total_item_count: 3,
       classifications: [
         { classification: 'new', item_count: 1 },
@@ -59,6 +66,7 @@ describe('RuntimeDiffVisualization', () => {
     const summary: RuntimeDiffSummary = {
       baseline: { ...release, id: '40000000-0000-4000-8000-000000000002', version: '2.13.0' },
       target: release,
+      baseline_selection_source: 'explicit',
       total_item_count: 1,
       classifications: [{ classification: 'unchanged', item_count: 1 }],
       largest_changes: [
@@ -88,6 +96,7 @@ describe('RuntimeDiffVisualization', () => {
     const summary: RuntimeDiffSummary = {
       baseline: release,
       target: release,
+      baseline_selection_source: 'explicit',
       total_item_count: 3,
       classifications: [
         { classification: 'new', item_count: 1 },

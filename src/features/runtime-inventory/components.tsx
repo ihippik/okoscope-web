@@ -268,7 +268,7 @@ export function InventoryList({
                 params={{ projectId, applicationId, itemId: item.id }}
                 search={{ evidence: 'releases' }}
               >
-                View observation history
+                Observation history
               </Link>
             </Button>
           </div>
