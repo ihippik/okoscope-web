@@ -1325,12 +1325,25 @@ export function ReleaseMetadata({ release }: { release: Release }) {
               <summary className="cursor-pointer font-medium">
                 {t('imageIdentityComponents')}
               </summary>
-              <div className="mt-2">
-                <JsonDetailsViewer
-                  value={release.identity_components}
-                  label={t('imageIdentityComponents')}
-                />
-              </div>
+              <ol className="mt-3 grid gap-3">
+                {release.identity_components.map((component, index) => (
+                  <li
+                    key={index}
+                    className="grid min-w-0 grid-cols-[2rem_minmax(0,1fr)] items-start gap-3 rounded-lg border border-slate-700 bg-slate-900/60 p-3"
+                  >
+                    <span
+                      className="flex size-8 items-center justify-center rounded-full border border-sky-700 bg-sky-950 text-sm font-bold text-sky-200"
+                      aria-hidden="true"
+                    >
+                      {index + 1}
+                    </span>
+                    <JsonDetailsViewer
+                      value={component}
+                      label={`${t('imageIdentityComponents')} ${index + 1}`}
+                    />
+                  </li>
+                ))}
+              </ol>
             </details>
           ) : (
             <p className="text-sm text-slate-400">{t('imageIdentityComponentsUnavailable')}</p>

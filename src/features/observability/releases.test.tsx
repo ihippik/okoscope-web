@@ -93,12 +93,33 @@ describe('automatic Release presentation', () => {
       ...observedRelease,
       display_name: 'payments · 3 images · cdcdcdcd',
       identity_digest: 'cd'.repeat(32),
-      identity_components: [{}, {}, {}],
+      identity_components: JSON.parse(`[
+        {
+          "name": "file-activity",
+          "image": "busybox:1.37",
+          "digest": "${'9d'.repeat(32)}"
+        },
+        {
+          "name": "payment-api",
+          "image": "busybox:1.36",
+          "category": "application",
+          "digest": "${'73'.repeat(32)}"
+        },
+        {}
+      ]`),
     }
-    render(<ReleaseMetadata release={release} />)
+    const { container } = render(<ReleaseMetadata release={release} />)
     expect(screen.getByText(release.display_name)).toBeVisible()
     expect(screen.getByText(release.identity_digest!)).toBeVisible()
     expect(screen.getByText('Image identity components')).toBeVisible()
+    expect(container.querySelectorAll('ol > li')).toHaveLength(3)
+    expect(screen.getByLabelText('Image identity components 1')).toHaveTextContent(
+      `name“file-activity”image“busybox:1.37”digest“${'9d'.repeat(32)}”`,
+    )
+    expect(screen.getByLabelText('Image identity components 2')).toHaveTextContent(
+      `name“payment-api”image“busybox:1.36”category“application”digest“${'73'.repeat(32)}”`,
+    )
+    expect(screen.getByLabelText('Image identity components 3')).toBeInTheDocument()
     expect(screen.queryByText(/primary container|changed container/i)).not.toBeInTheDocument()
   })
 })
