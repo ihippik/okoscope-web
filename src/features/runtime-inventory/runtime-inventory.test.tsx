@@ -279,6 +279,7 @@ describe('runtime inventory safe presentation', () => {
               ...observed,
               release_id: '40000000-0000-4000-8000-000000000002',
               version: '2.13.0',
+              release_display_name: 'payments · 2 images · bbbbbbbb',
               presence: 'not_observed',
               occurrence_count: null,
               first_seen_at: null,
@@ -289,6 +290,7 @@ describe('runtime inventory safe presentation', () => {
               ...observed,
               release_id: '40000000-0000-4000-8000-000000000003',
               version: '2.12.0',
+              release_display_name: 'payments · 2 images · cccccccc',
               presence: 'unknown',
               occurrence_count: null,
               first_seen_at: null,
@@ -301,6 +303,8 @@ describe('runtime inventory safe presentation', () => {
       />,
     )
     expect(screen.getByText('Observed')).toBeVisible()
+    expect(screen.getByText(observed.release_display_name)).toBeVisible()
+    expect(screen.queryByText(`Release ${observed.version}`)).not.toBeInTheDocument()
     expect(screen.getByText('Not observed in available evidence')).toBeVisible()
     expect(screen.getByText('Unknown')).toBeVisible()
     expect(screen.getByText('55')).toBeVisible()

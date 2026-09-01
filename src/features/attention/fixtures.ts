@@ -16,11 +16,13 @@ const application = {
 const baseline = {
   id: '30000000-0000-4000-8000-000000000001',
   version: '1.0.0',
+  display_name: 'Checkout 1.0.0',
   deployed_at: '2026-08-20T10:00:00Z',
 }
 const target = {
   id: '30000000-0000-4000-8000-000000000002',
   version: '1.1.0',
+  display_name: 'Checkout 1.1.0',
   deployed_at: '2026-08-22T10:00:00Z',
 }
 const comparison = {
@@ -179,7 +181,9 @@ export const populatedOrganizationAttentionFixture = {
         project_id: project.id,
         application_id: application.id,
         target_release_id: target.id,
+        target_release_display_name: target.display_name,
         baseline_release_id: baseline.id,
+        baseline_release_display_name: baseline.display_name,
       },
       created_from_snapshot_at: '2026-08-22T12:00:00Z',
     },

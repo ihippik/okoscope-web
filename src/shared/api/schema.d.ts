@@ -1557,6 +1557,7 @@ export interface components {
         AttentionReleaseRef: {
             id: components["schemas"]["Uuid"];
             version: string;
+            display_name: string;
             deployed_at: components["schemas"]["Timestamp"];
         };
         AttentionFacts: {
@@ -1613,7 +1614,9 @@ export interface components {
             project_id: components["schemas"]["Uuid"];
             application_id: components["schemas"]["Uuid"];
             target_release_id: components["schemas"]["Uuid"];
+            target_release_display_name: string;
             baseline_release_id: components["schemas"]["Uuid"];
+            baseline_release_display_name: string;
         };
         AttentionPriorityItem: {
             id: string;
@@ -1833,7 +1836,7 @@ export interface components {
             api_version: "v1";
             /**
              * Format: int64
-             * @example 19
+             * @example 20
              */
             required_database_migration: number;
         };
@@ -2009,6 +2012,7 @@ export interface components {
             related_evidence: components["schemas"]["RelatedEvidence"][];
             release_id: components["schemas"]["NullableUuid"];
             release_version: string | null;
+            release_display_name: string;
         };
         OccurrencePage: {
             items: components["schemas"]["EventOccurrence"][];
@@ -2394,6 +2398,7 @@ export interface components {
             project_id: components["schemas"]["Uuid"];
             application_id: components["schemas"]["Uuid"];
             version: string;
+            display_name: string;
             description: string | null;
             deployed_at: components["schemas"]["Timestamp"];
             created_at: components["schemas"]["Timestamp"];
@@ -2410,6 +2415,7 @@ export interface components {
         DeploymentEpisode: {
             id: components["schemas"]["Uuid"];
             release_id: components["schemas"]["Uuid"];
+            release_display_name: string;
             revision_id: components["schemas"]["Uuid"];
             cluster_id: components["schemas"]["Uuid"];
             /** Format: int64 */
@@ -2869,6 +2875,7 @@ export interface components {
         };
         InventoryReleaseEvidence: {
             release_id: components["schemas"]["Uuid"];
+            release_display_name: string;
             version: string;
             deployed_at: components["schemas"]["Timestamp"];
             presence: components["schemas"]["InventoryReleasePresence"];
@@ -2936,6 +2943,7 @@ export interface components {
             payload: components["schemas"]["RuntimeEventPayload"];
             release_id: components["schemas"]["NullableUuid"];
             release_version: string | null;
+            release_display_name: string;
         };
         InventoryOccurrencePage: {
             items: components["schemas"]["InventoryOccurrence"][];

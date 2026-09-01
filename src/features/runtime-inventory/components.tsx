@@ -436,7 +436,7 @@ export function InventoryFilterFields({
               <option value="">All releases</option>
               {releases.map((release) => (
                 <option key={release.id} value={release.id}>
-                  {release.version}
+                  {release.display_name}
                 </option>
               ))}
             </select>
@@ -522,7 +522,7 @@ export function EvidenceList(props: EvidenceProps) {
           const copy = presenceCopy[item.presence]
           return (
             <Card key={item.release_id}>
-              <h2 className="font-semibold">Release {item.version}</h2>
+              <h2 className="font-semibold">{item.release_display_name}</h2>
               <p className={`mt-2 font-semibold ${copy.className}`}>{copy.label}</p>
               <p className="text-sm text-slate-400">{copy.description}</p>
               <dl className="details mt-3">
@@ -639,7 +639,7 @@ export function EvidenceList(props: EvidenceProps) {
             <dt>Container</dt>
             <dd className="break-all">{item.container_name}</dd>
             <dt>Release</dt>
-            <dd className="break-all">{item.release_version ?? 'Unavailable'}</dd>
+            <dd className="break-all">{item.release_display_name}</dd>
           </dl>
           <details className="mt-4 rounded-lg border border-slate-700 p-3">
             <summary className="cursor-pointer font-semibold">Technical details</summary>

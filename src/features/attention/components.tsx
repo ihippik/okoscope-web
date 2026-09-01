@@ -413,8 +413,8 @@ export function ReleaseComparisonCard({
     <Card>
       <h3 className="text-xl font-semibold">{heading}</h3>
       <p className="mt-2 text-sm text-slate-400">
-        {t('baselineRelease')}: {comparison.baseline_release?.version ?? t('noBaseline')} →{' '}
-        {t('targetRelease')}: {comparison.target_release.version}
+        {t('baselineRelease')}: {comparison.baseline_release?.display_name ?? t('noBaseline')} →{' '}
+        {t('targetRelease')}: {comparison.target_release.display_name}
       </p>
       <dl className="mt-5 grid grid-cols-3 gap-3 text-sm">
         {[

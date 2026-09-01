@@ -153,19 +153,19 @@ function RuntimeDiffPage() {
             .filter((item) => item.id !== targetReleaseId)
             .map((item) => (
               <option key={item.id} value={item.id}>
-                {item.version}
+                {item.display_name}
               </option>
             ))}
         </select>
         <dl className="details mt-5">
           <dt>Target</dt>
           <dd>
-            {diff.data.target.version} · {formatTimestamp(diff.data.target.deployed_at)}
+            {diff.data.target.display_name} · {formatTimestamp(diff.data.target.deployed_at)}
           </dd>
           <dt>Baseline</dt>
           <dd>
             {diff.data.baseline
-              ? `${diff.data.baseline.version} · ${formatTimestamp(diff.data.baseline.deployed_at)}`
+              ? `${diff.data.baseline.display_name} · ${formatTimestamp(diff.data.baseline.deployed_at)}`
               : 'No baseline available'}
           </dd>
           <dt>Baseline selection</dt>

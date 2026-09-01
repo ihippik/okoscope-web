@@ -8,6 +8,7 @@ const release = {
   project_id: '20000000-0000-4000-8000-000000000001',
   application_id: '30000000-0000-4000-8000-000000000001',
   version: '2.14.0',
+  display_name: 'Payments 2.14.0',
   description: null,
   deployed_at: '2026-08-18T00:00:00Z',
   created_at: '2026-08-18T00:00:00Z',

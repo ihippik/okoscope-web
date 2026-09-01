@@ -17,6 +17,7 @@ const manualRelease: Release = {
   project_id: 'project',
   application_id: 'application',
   version: '2.14.0',
+  display_name: 'Payments 2.14.0',
   description: null,
   deployed_at: '2026-08-18T00:00:00Z',
   created_at: '2026-08-18T00:00:00Z',
@@ -31,6 +32,7 @@ const manualRelease: Release = {
 const observedRelease: Release = {
   ...manualRelease,
   id: 'release-observed',
+  display_name: 'payments · 1 image · abababab',
   source: 'observed',
   identity_version: 1,
   identity_digest: 'ab'.repeat(32),
@@ -43,10 +45,11 @@ const episode = ({
   id,
   revision_id,
   ...values
-}: Partial<DeploymentEpisode> &
+}: Partial<Omit<DeploymentEpisode, 'release_display_name'>> &
   Pick<DeploymentEpisode, 'id' | 'revision_id'>): DeploymentEpisode => ({
   id,
   release_id: observedRelease.id,
+  release_display_name: observedRelease.display_name,
   revision_id,
   cluster_id: 'cluster',
   occurrence_number: 1,
@@ -66,10 +69,11 @@ const episode = ({
 })
 
 describe('automatic Release presentation', () => {
-  it('keeps legacy manual Releases usable without Kubernetes metadata', () => {
+  it('shows the backend-provided manual name without Kubernetes metadata', () => {
     render(<ReleaseMetadata release={manualRelease} />)
     expect(screen.getByText('manual')).toBeVisible()
-    expect(screen.getByText('2.14.0')).toBeVisible()
+    expect(screen.getByText('Payments 2.14.0')).toBeVisible()
+    expect(screen.queryByText('2.14.0')).not.toBeInTheDocument()
     expect(screen.queryByText('Image identity digest')).not.toBeInTheDocument()
     expect(screen.queryByText('Kubernetes revisions')).not.toBeInTheDocument()
   })
@@ -77,10 +81,25 @@ describe('automatic Release presentation', () => {
   it('shows observed image identity and revision and episode counts', () => {
     render(<ReleaseMetadata release={observedRelease} />)
     expect(screen.getByText('observed')).toBeVisible()
+    expect(screen.getByText('payments · 1 image · abababab')).toBeVisible()
     expect(screen.getByText(observedRelease.identity_digest!)).toBeVisible()
     expect(screen.getByText('Kubernetes revisions')).toBeVisible()
     expect(screen.getAllByText('2')).toHaveLength(2)
     expect(document.querySelector('script')).toBeNull()
+  })
+
+  it('keeps a multi-image name and complete image composition without deriving change claims', () => {
+    const release: Release = {
+      ...observedRelease,
+      display_name: 'payments · 3 images · cdcdcdcd',
+      identity_digest: 'cd'.repeat(32),
+      identity_components: [{}, {}, {}],
+    }
+    render(<ReleaseMetadata release={release} />)
+    expect(screen.getByText(release.display_name)).toBeVisible()
+    expect(screen.getByText(release.identity_digest!)).toBeVisible()
+    expect(screen.getByText('Image identity components')).toBeVisible()
+    expect(screen.queryByText(/primary container|changed container/i)).not.toBeInTheDocument()
   })
 })
 

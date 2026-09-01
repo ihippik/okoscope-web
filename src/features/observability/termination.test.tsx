@@ -141,6 +141,7 @@ describe('termination evidence presentation', () => {
       related_evidence: [],
       release_id: null,
       release_version: null,
+      release_display_name: 'Unattributed',
     }
     render(<OccurrenceTimeline occurrences={[occurrence]} />)
     expect(screen.getByText('Newest received evidence first')).toBeVisible()

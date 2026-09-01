@@ -517,6 +517,7 @@ export const contractFixture = {
     items: [
       {
         release_id: '40000000-0000-4000-8000-000000000001',
+        release_display_name: 'payments · 1 image · a81f4c2e',
         version: '2.14.0',
         deployed_at: '2026-08-18T00:00:00Z',
         presence: 'observed',
@@ -590,6 +591,7 @@ export const contractFixture = {
         },
         release_id: null,
         release_version: null,
+        release_display_name: 'Unattributed',
       },
     ],
     next_cursor: null,
@@ -679,6 +681,7 @@ export const contractFixture = {
       project_id: '20000000-0000-4000-8000-000000000001',
       application_id: '30000000-0000-4000-8000-000000000001',
       version: '2.13.0',
+      display_name: 'Payments 2.13.0',
       description: null,
       deployed_at: '2026-08-17T00:00:00Z',
       created_at: '2026-08-17T00:00:00Z',
@@ -694,6 +697,7 @@ export const contractFixture = {
       project_id: '20000000-0000-4000-8000-000000000001',
       application_id: '30000000-0000-4000-8000-000000000001',
       version: '2.14.0',
+      display_name: 'Payments 2.14.0',
       description: null,
       deployed_at: '2026-08-18T00:00:00Z',
       created_at: '2026-08-18T00:00:00Z',

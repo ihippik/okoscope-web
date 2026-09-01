@@ -175,6 +175,7 @@ describe('inbound network privacy', () => {
             },
             release_id: null,
             release_version: null,
+            release_display_name: 'Unattributed',
           },
         ]}
       />,
@@ -288,6 +289,7 @@ describe('observability presentation', () => {
       process_command: 'worker',
       release_id: null,
       release_version: null,
+      release_display_name: 'Unattributed',
     }
     render(
       <OccurrenceTimeline
@@ -440,13 +442,15 @@ describe('observability presentation', () => {
               },
               release_id: null,
               release_version: null,
+              release_display_name: 'Unattributed',
             },
           ]}
         />
       </>,
     )
     expect(screen.queryByText('must-not-render')).not.toBeInTheDocument()
-    expect(screen.getAllByText('Unavailable')).toHaveLength(6)
+    expect(screen.getAllByText('Unavailable')).toHaveLength(5)
+    expect(screen.getByText('Unattributed')).toBeVisible()
   })
   it('renders older occurrences when related evidence is absent', () => {
     const occurrence = {
@@ -472,6 +476,7 @@ describe('observability presentation', () => {
       },
       release_id: null,
       release_version: null,
+      release_display_name: 'Unattributed',
     } as unknown as Parameters<typeof OccurrenceTimeline>[0]['occurrences'][number]
 
     render(<OccurrenceTimeline occurrences={[occurrence]} />)
@@ -518,6 +523,7 @@ describe('observability presentation', () => {
             },
             release_id: null,
             release_version: null,
+            release_display_name: 'Unattributed',
           }))}
         />
       </>,
@@ -533,7 +539,7 @@ describe('observability presentation', () => {
     for (const forbidden of ['packet payload', 'dns_name', 'source_port', 'https://'])
       expect(screen.queryByText(forbidden)).not.toBeInTheDocument()
     expect(formatCount(1_234_567)).toBe('1,234,567')
-    expect(screen.getAllByText('Unavailable')).toHaveLength(3)
+    expect(screen.getAllByText('Unattributed')).toHaveLength(3)
   })
   it('renders DNS evidence as inert qualified text with ambiguity and unavailable guidance', () => {
     render(
@@ -583,6 +589,7 @@ describe('observability presentation', () => {
               },
               release_id: null,
               release_version: null,
+              release_display_name: 'Unattributed',
             },
             {
               id: 'connect',
@@ -615,6 +622,7 @@ describe('observability presentation', () => {
               },
               release_id: null,
               release_version: null,
+              release_display_name: 'Unattributed',
             },
           ]}
         />

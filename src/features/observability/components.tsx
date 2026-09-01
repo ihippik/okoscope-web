@@ -1138,7 +1138,7 @@ export function OccurrenceTimeline({
                 {item.process_command || 'Unavailable'}
               </dd>
               <dt>Release</dt>
-              <dd>{item.release_version ?? item.release_id ?? 'Unavailable'}</dd>
+              <dd>{item.release_display_name}</dd>
             </dl>
             <details className="mt-4 rounded-lg border border-slate-700 p-3">
               <summary className="cursor-pointer font-semibold">Technical details</summary>
@@ -1296,7 +1296,7 @@ export function ReleaseMetadata({ release }: { release: Release }) {
   return (
     <div className="min-w-0">
       <div className="flex flex-wrap items-center gap-2">
-        <h2 className="text-xl font-semibold">{release.version}</h2>
+        <h2 className="text-xl font-semibold">{release.display_name}</h2>
         <span className="rounded-full border border-slate-600 px-2 py-1 text-xs font-bold capitalize">
           {release.source}
         </span>
