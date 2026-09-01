@@ -5,7 +5,7 @@ import { authenticate, mockApi } from './fixtures'
 test('explores new discoveries and release changes with history and deep links', async ({
   page,
 }) => {
-  const { project, application, group } = await mockApi(page)
+  const { project, application, group, releases } = await mockApi(page)
   await page.goto(`/projects/${project.id}/applications/${application.id}`)
   await authenticate(page)
   await page.getByRole('link', { name: /New discoveries/ }).click()
@@ -77,7 +77,7 @@ test('explores new discoveries and release changes with history and deep links',
   ).toBeVisible()
   await expect(page.getByText('Largest observation-count changes')).toBeVisible()
   await expect(page.getByText('New', { exact: true }).last()).toBeVisible()
-  await page.getByLabel('Baseline release').selectOption({ label: 'v1' })
+  await page.getByLabel('Baseline release').selectOption({ label: releases[1]!.display_name })
   await expect(page).toHaveURL(/baseline=/)
   await page.getByRole('link', { name: 'View discovery' }).click()
   await expect(page).toHaveURL(new RegExp(`${group.id}$`))

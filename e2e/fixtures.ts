@@ -99,35 +99,52 @@ const occurrence = {
   related_evidence: [],
   release_id: '00000000-0000-4000-8000-000000000008',
   release_version: 'v2',
+  release_display_name: 'Gateway · 1 image · a81f4c2e',
 }
 const targetRelease = {
   id: '00000000-0000-4000-8000-000000000008',
   project_id: project.id,
   application_id: application.id,
   version: 'v2',
+  display_name: 'Gateway · 1 image · a81f4c2e',
   description: 'Current',
   deployed_at: '2026-08-17T11:00:00Z',
   created_at: '2026-08-17T11:00:00Z',
+  source: 'observed',
+  identity_version: 1,
+  identity_digest: 'a81f4c2e'.padEnd(64, '0'),
+  identity_components: [{}],
+  revision_count: 1,
+  active_episode_count: 1,
 }
 const baselineRelease = {
   id: '00000000-0000-4000-8000-000000000009',
   project_id: project.id,
   application_id: application.id,
   version: 'v1',
+  display_name: 'Gateway · 1 image · b71f4c2e',
   description: 'Baseline',
   deployed_at: '2026-08-16T11:00:00Z',
   created_at: '2026-08-16T11:00:00Z',
+  source: 'observed',
+  identity_version: 1,
+  identity_digest: 'b71f4c2e'.padEnd(64, '0'),
+  identity_components: [{}],
+  revision_count: 1,
+  active_episode_count: 0,
 }
 const releases = [targetRelease, baselineRelease]
 const attentionComparison = {
   target_release: {
     id: targetRelease.id,
     version: targetRelease.version,
+    display_name: targetRelease.display_name,
     deployed_at: targetRelease.deployed_at,
   },
   baseline_release: {
     id: baselineRelease.id,
     version: baselineRelease.version,
+    display_name: baselineRelease.display_name,
     deployed_at: baselineRelease.deployed_at,
   },
   new_count: 1,
@@ -679,6 +696,7 @@ export async function mockApi(page: Page, role: 'owner' | 'member' = 'owner') {
         items: [
           {
             release_id: targetRelease.id,
+            release_display_name: targetRelease.display_name,
             version: targetRelease.version,
             deployed_at: targetRelease.deployed_at,
             presence: 'observed',
@@ -689,6 +707,7 @@ export async function mockApi(page: Page, role: 'owner' | 'member' = 'owner') {
           },
           {
             release_id: baselineRelease.id,
+            release_display_name: baselineRelease.display_name,
             version: baselineRelease.version,
             deployed_at: baselineRelease.deployed_at,
             presence: 'not_observed',
@@ -780,6 +799,7 @@ export async function mockApi(page: Page, role: 'owner' | 'member' = 'owner') {
       return json(route, {
         baseline: baselineRelease,
         target: targetRelease,
+        baseline_selection_source: 'transition',
         items: [
           {
             group_id: group.id,
@@ -803,6 +823,7 @@ export async function mockApi(page: Page, role: 'owner' | 'member' = 'owner') {
       return json(route, {
         baseline: baselineRelease,
         target: targetRelease,
+        baseline_selection_source: 'transition',
         total_item_count: 1,
         classifications: [
           { classification: 'new', item_count: 1 },
