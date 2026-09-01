@@ -1197,17 +1197,17 @@ export function ReleaseList({
   )
 }
 
-const episodeStateLabel: Record<DeploymentEpisode['state'], string> = {
-  detected: 'Detected',
-  active: 'Active',
-  inactive: 'Inactive',
+const episodeStateLabel: Record<DeploymentEpisode['state'], MessageKey> = {
+  detected: 'episodeStateDetected',
+  active: 'episodeStateActive',
+  inactive: 'episodeStateInactive',
 }
 
-const episodeTransitionLabel: Record<DeploymentEpisode['transition_kind'], string> = {
-  rollout: 'Rollout observation',
-  rollback_candidate: 'Rollback candidate',
-  concurrent: 'Concurrent revision',
-  unknown: 'Unknown transition',
+const episodeTransitionLabel: Record<DeploymentEpisode['transition_kind'], MessageKey> = {
+  rollout: 'episodeTransitionRollout',
+  rollback_candidate: 'episodeTransitionRollbackCandidate',
+  concurrent: 'episodeTransitionConcurrent',
+  unknown: 'episodeTransitionUnknown',
 }
 
 export const baselineSelectionPresentation = (
@@ -1231,61 +1231,63 @@ export const hasEpisodeOwnershipMismatch = (episodes: DeploymentEpisode[], relea
   episodes.some((episode) => episode.release_id !== releaseId)
 
 export function DeploymentEpisodeList({ episodes }: { episodes: DeploymentEpisode[] }) {
+  const { locale, t } = useLocalization()
   return (
-    <ol className="space-y-3" aria-label="Deployment episodes">
+    <ol className="space-y-3" aria-label={t('deploymentEpisodes')}>
       {episodes.map((episode) => (
         <li key={episode.id} className="rounded-lg border border-slate-700 bg-slate-950 p-4">
           <div className="flex flex-wrap items-center gap-2">
-            <strong>Episode {formatCount(episode.occurrence_number)}</strong>
+            <strong>
+              {t('episodeNumber', { number: formatCount(episode.occurrence_number) })}
+            </strong>
             <span className="rounded-full border border-slate-600 px-2 py-1 text-xs font-bold">
-              {episodeStateLabel[episode.state]}
+              {t(episodeStateLabel[episode.state])}
             </span>
             <span className="rounded-full border border-sky-700 bg-sky-950 px-2 py-1 text-xs font-bold text-sky-200">
-              {episodeTransitionLabel[episode.transition_kind]}
+              {t(episodeTransitionLabel[episode.transition_kind])}
             </span>
           </div>
           <dl className="details mt-4">
-            <dt>Kubernetes revision</dt>
+            <dt>{t('kubernetesRevision')}</dt>
             <dd className="break-all font-mono text-xs">{episode.revision_id}</dd>
-            <dt>Cluster</dt>
+            <dt>{t('cluster')}</dt>
             <dd className="break-all font-mono text-xs">{episode.cluster_id}</dd>
-            <dt>Started</dt>
+            <dt>{t('episodeStarted')}</dt>
             <dd>{formatTimestamp(episode.first_observed_at)}</dd>
-            <dt>First Ready</dt>
+            <dt>{t('episodeFirstReady')}</dt>
             <dd>
-              {episode.first_ready_at ? formatTimestamp(episode.first_ready_at) : 'Unavailable'}
+              {episode.first_ready_at ? formatTimestamp(episode.first_ready_at) : t('unavailable')}
             </dd>
-            <dt>Last observed</dt>
+            <dt>{t('episodeLastObserved')}</dt>
             <dd>{formatTimestamp(episode.last_observed_at)}</dd>
-            <dt>Ended</dt>
-            <dd>{episode.ended_at ? formatTimestamp(episode.ended_at) : 'Ongoing'}</dd>
-            <dt>Pods</dt>
+            <dt>{t('episodeEnded')}</dt>
+            <dd>{episode.ended_at ? formatTimestamp(episode.ended_at) : t('episodeOngoing')}</dd>
+            <dt>{t('pods')}</dt>
             <dd>{formatCount(episode.pod_count)}</dd>
-            <dt>Ready Pods</dt>
+            <dt>{t('readyPods')}</dt>
             <dd>
-              {formatCount(episode.ready_pod_count)} of{' '}
-              {formatCount(episode.workload_ready_pod_count)} workload Ready Pods
+              {t('readyPodsCount', {
+                ready: formatCount(episode.ready_pod_count),
+                total: formatCount(episode.workload_ready_pod_count),
+              })}
             </dd>
-            <dt>Ready Pod share</dt>
+            <dt>{t('readyPodShare')}</dt>
             <dd>
               {episode.ready_pod_share === null
-                ? 'Unavailable'
-                : new Intl.NumberFormat(undefined, {
+                ? t('unavailable')
+                : new Intl.NumberFormat(locale, {
                     style: 'percent',
                     maximumFractionDigits: 1,
                   }).format(episode.ready_pod_share)}
             </dd>
-            <dt>Readiness snapshot</dt>
+            <dt>{t('readinessSnapshot')}</dt>
             <dd>
               {episode.snapshot_observed_at
                 ? formatTimestamp(episode.snapshot_observed_at)
-                : 'Unavailable'}
+                : t('unavailable')}
             </dd>
           </dl>
-          <p className="mt-3 text-sm text-slate-400">
-            Ready Pod share is the share of Ready Pods in this observation. It is not traffic share
-            and does not confirm canary or A/B deployment intent.
-          </p>
+          <p className="mt-3 text-sm text-slate-400">{t('readyPodShareDisclaimer')}</p>
         </li>
       ))}
     </ol>
@@ -1293,40 +1295,45 @@ export function DeploymentEpisodeList({ episodes }: { episodes: DeploymentEpisod
 }
 
 export function ReleaseMetadata({ release }: { release: Release }) {
+  const { t } = useLocalization()
   return (
     <div className="min-w-0">
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-xl font-semibold">{release.display_name}</h2>
         <span className="rounded-full border border-slate-600 px-2 py-1 text-xs font-bold capitalize">
-          {release.source}
+          {t(release.source === 'observed' ? 'releaseSourceObserved' : 'releaseSourceManual')}
         </span>
       </div>
-      <p className="mt-2 text-slate-400">{release.description ?? 'No description'}</p>
-      <p className="mt-2 text-sm">Deployed {formatTimestamp(release.deployed_at)}</p>
+      <p className="mt-2 text-slate-400">{release.description ?? t('noReleaseDescription')}</p>
+      <p className="mt-2 text-sm">
+        {t('releaseDeployedAt', { time: formatTimestamp(release.deployed_at) })}
+      </p>
       {release.source === 'observed' && (
         <div className="mt-4 space-y-3">
           <dl className="details">
-            <dt>Image identity digest</dt>
+            <dt>{t('imageIdentityDigest')}</dt>
             <dd className="break-all font-mono text-xs">
-              {release.identity_digest ?? 'Unavailable'}
+              {release.identity_digest ?? t('unavailable')}
             </dd>
-            <dt>Kubernetes revisions</dt>
+            <dt>{t('kubernetesRevisions')}</dt>
             <dd>{formatCount(release.revision_count)}</dd>
-            <dt>Active episodes</dt>
+            <dt>{t('activeEpisodes')}</dt>
             <dd>{formatCount(release.active_episode_count)}</dd>
           </dl>
           {release.identity_components?.length ? (
             <details>
-              <summary className="cursor-pointer font-medium">Image identity components</summary>
+              <summary className="cursor-pointer font-medium">
+                {t('imageIdentityComponents')}
+              </summary>
               <div className="mt-2">
                 <JsonDetailsViewer
                   value={release.identity_components}
-                  label="Image identity components"
+                  label={t('imageIdentityComponents')}
                 />
               </div>
             </details>
           ) : (
-            <p className="text-sm text-slate-400">Image identity components unavailable.</p>
+            <p className="text-sm text-slate-400">{t('imageIdentityComponentsUnavailable')}</p>
           )}
         </div>
       )}
@@ -1343,6 +1350,7 @@ function ReleaseCard({
   projectId: string
   applicationId: string
 }) {
+  const { t } = useLocalization()
   const api = useApi()
   const [historyOpen, setHistoryOpen] = useState(false)
   const [episodeCursor, setEpisodeCursor] = useState<string | undefined>()
@@ -1371,7 +1379,7 @@ function ReleaseCard({
               aria-controls={`episodes-${release.id}`}
               onClick={() => setHistoryOpen((value) => !value)}
             >
-              {historyOpen ? 'Hide episodes' : 'View episodes'}
+              {t(historyOpen ? 'hideEpisodes' : 'viewEpisodes')}
             </Button>
           )}
           <Button asChild variant="outline">
@@ -1379,31 +1387,28 @@ function ReleaseCard({
               to="/projects/$projectId/applications/$applicationId/releases/$targetReleaseId/runtime-diff"
               params={{ projectId, applicationId, targetReleaseId: release.id }}
             >
-              View changes
+              {t('viewChanges')}
             </Link>
           </Button>
         </div>
       </div>
       {historyOpen && (
         <section id={`episodes-${release.id}`} className="mt-5 border-t border-slate-700 pt-5">
-          <h3 className="text-lg font-semibold">Deployment episode history</h3>
-          <p className="mt-1 text-sm text-slate-400">
-            A Release is immutable. Kubernetes revisions and repeated deployment episodes are shown
-            as separate observed evidence.
-          </p>
+          <h3 className="text-lg font-semibold">{t('deploymentEpisodeHistory')}</h3>
+          <p className="mt-1 text-sm text-slate-400">{t('deploymentEpisodeHistoryHelp')}</p>
           <div className="mt-4">
             {episodes.isPending ? (
-              <p role="status">Loading deployment episodes…</p>
+              <p role="status">{t('loadingDeploymentEpisodes')}</p>
             ) : episodes.isError ? (
               <ApiErrorPanel
-                title="Deployment episodes unavailable"
+                title={t('deploymentEpisodesUnavailable')}
                 error={episodes.error}
                 onRetry={() => void episodes.refetch()}
               />
             ) : ownershipMismatch ? (
               <EmptyState
-                title="Episode ownership mismatch"
-                description="The response does not belong to this Release."
+                title={t('episodeOwnershipMismatch')}
+                description={t('episodeOwnershipMismatchHelp')}
               />
             ) : episodes.data.items.length ? (
               <div className="space-y-4">
@@ -1415,8 +1420,8 @@ function ReleaseCard({
               </div>
             ) : (
               <EmptyState
-                title="No deployment episodes"
-                description="No Kubernetes deployment episodes are available for this Release."
+                title={t('noDeploymentEpisodes')}
+                description={t('noDeploymentEpisodesHelp')}
               />
             )}
           </div>

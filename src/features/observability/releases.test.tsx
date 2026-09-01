@@ -71,7 +71,7 @@ const episode = ({
 describe('automatic Release presentation', () => {
   it('shows the backend-provided manual name without Kubernetes metadata', () => {
     render(<ReleaseMetadata release={manualRelease} />)
-    expect(screen.getByText('manual')).toBeVisible()
+    expect(screen.getByText('Manual')).toBeVisible()
     expect(screen.getByText('Payments 2.14.0')).toBeVisible()
     expect(screen.queryByText('2.14.0')).not.toBeInTheDocument()
     expect(screen.queryByText('Image identity digest')).not.toBeInTheDocument()
@@ -80,7 +80,7 @@ describe('automatic Release presentation', () => {
 
   it('shows observed image identity and revision and episode counts', () => {
     render(<ReleaseMetadata release={observedRelease} />)
-    expect(screen.getByText('observed')).toBeVisible()
+    expect(screen.getByText('Observed')).toBeVisible()
     expect(screen.getByText('payments · 1 image · abababab')).toBeVisible()
     expect(screen.getByText(observedRelease.identity_digest!)).toBeVisible()
     expect(screen.getByText('Kubernetes revisions')).toBeVisible()
