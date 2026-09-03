@@ -400,6 +400,7 @@ export interface paths {
             };
             cookie?: never;
         };
+        /** @description Returns all inventory-kind aggregates within the same normalized operational scope used by the inventory list. */
         get: operations["getApplicationRuntimeInventorySummary"];
         put?: never;
         post?: never;
@@ -1836,7 +1837,7 @@ export interface components {
             api_version: "v1";
             /**
              * Format: int64
-             * @example 20
+             * @example 21
              */
             required_database_migration: number;
         };
@@ -2393,6 +2394,12 @@ export interface components {
             representative_event: components["schemas"]["EventOccurrence"];
             notification: components["schemas"]["FirstSeenNotificationSummary"];
         };
+        ReleaseIdentityComponent: {
+            name: string;
+            image: string;
+            category: string;
+            digest: string;
+        };
         Release: {
             id: components["schemas"]["Uuid"];
             project_id: components["schemas"]["Uuid"];
@@ -2406,7 +2413,7 @@ export interface components {
             source: "manual" | "observed";
             identity_version: number | null;
             identity_digest: string | null;
-            identity_components: Record<string, never>[] | null;
+            identity_components: components["schemas"]["ReleaseIdentityComponent"][] | null;
             /** Format: int64 */
             revision_count: number;
             /** Format: int64 */
@@ -2801,6 +2808,22 @@ export interface components {
             /** Format: int64 */
             occurrence_count: number;
         };
+        /**
+         * @example {
+         *       "identity_version": 1,
+         *       "item_count": 1,
+         *       "occurrence_count": 4,
+         *       "first_seen_at": "2026-08-18T09:00:00Z",
+         *       "last_seen_at": "2026-08-18T10:00:00Z",
+         *       "kinds": [
+         *         {
+         *           "kind": "process",
+         *           "item_count": 1,
+         *           "occurrence_count": 4
+         *         }
+         *       ]
+         *     }
+         */
         InventorySummary: {
             /** Format: int32 */
             identity_version: number;
@@ -2847,11 +2870,25 @@ export interface components {
             /** Format: int64 */
             occurrence_count: number;
         };
+        /**
+         * @example {
+         *       "items": [
+         *         {
+         *           "value": "production",
+         *           "label": "production",
+         *           "item_count": 12,
+         *           "occurrence_count": 48
+         *         }
+         *       ],
+         *       "next_cursor": null
+         *     }
+         */
         InventoryFacetPage: {
             items: components["schemas"]["InventoryFacetOption"][];
             /** @description Opaque cursor bound to the exact Application */
             next_cursor: string | null;
         };
+        /** @description Optional navigation conveniences generated from the current scoped identifiers. Clients should construct the four typed child routes from OpenAPI parameters; if a hint is used, validate it against the matching root-relative allowlist pattern and never treat it as an arbitrary fetch target. */
         InventoryEvidenceLinks: {
             releases: string;
             sightings: string;

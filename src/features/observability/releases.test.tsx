@@ -36,7 +36,14 @@ const observedRelease: Release = {
   source: 'observed',
   identity_version: 1,
   identity_digest: 'ab'.repeat(32),
-  identity_components: [{}],
+  identity_components: [
+    {
+      name: 'payments',
+      image: 'registry.example/payments:2.14.0',
+      category: 'application',
+      digest: 'ab'.repeat(32),
+    },
+  ],
   revision_count: 2,
   active_episode_count: 2,
 }

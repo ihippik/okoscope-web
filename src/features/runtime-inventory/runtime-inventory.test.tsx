@@ -10,10 +10,10 @@ import {
 } from './components'
 import {
   expectedEvidencePath,
+  inventoryEvidenceOptions,
   inventoryFacetPath,
   inventoryKeys,
   isInvalidCursorError,
-  validateEvidencePath,
 } from './queries'
 import {
   changeEvidence,
@@ -22,7 +22,7 @@ import {
   parseInventorySearch,
   summarySearch,
 } from './url-state'
-import { ApiClientError } from '../../shared/api/client'
+import { ApiClientError, type ApiClient } from '../../shared/api/client'
 import { contractFixture } from '../../shared/api/types'
 
 describe('runtime inventory URL state', () => {
@@ -75,6 +75,9 @@ describe('runtime inventory query boundary', () => {
     expect(inventoryKeys.evidence('p', 'a', 'i', 'groups', 'one')).not.toEqual(
       inventoryKeys.evidence('p', 'a', 'i', 'groups', 'two'),
     )
+    expect(inventoryKeys.evidence('p', 'a', 'i', 'groups', 'one')).not.toEqual(
+      inventoryKeys.evidence('p', 'a', 'i', 'occurrences', 'one'),
+    )
   })
 
   it('omits a requested facet own value and bounds the page', () => {
@@ -94,13 +97,28 @@ describe('runtime inventory query boundary', () => {
     expect(path).toContain('limit=50')
   })
 
-  it('validates exact relative evidence paths', () => {
-    const expected = expectedEvidencePath('p', 'a', 'i', 'releases')
-    expect(validateEvidencePath(expected, 'p', 'a', 'i', 'releases')).toBe(expected)
-    expect(() => validateEvidencePath('https://evil.test', 'p', 'a', 'i', 'releases')).toThrow(
-      'unsafe evidence link',
-    )
-  })
+  it.each(['releases', 'sightings', 'groups', 'occurrences'] as const)(
+    'derives the encoded %s evidence path without a response hint',
+    async (evidence) => {
+      const get = vi.fn().mockResolvedValue({ items: [], next_cursor: null })
+      const api = { get } as unknown as ApiClient
+      const options = inventoryEvidenceOptions(
+        api,
+        'project /',
+        'application ?',
+        'item #',
+        evidence,
+        'opaque cursor',
+      )
+
+      await options.queryFn?.({ signal: AbortSignal.abort() } as never)
+
+      expect(get).toHaveBeenCalledWith(
+        `${expectedEvidencePath('project /', 'application ?', 'item #', evidence)}?cursor=opaque+cursor&limit=50`,
+        { protected: true, signal: expect.any(AbortSignal) },
+      )
+    },
+  )
 
   it('recognizes only documented cursor errors', () => {
     expect(

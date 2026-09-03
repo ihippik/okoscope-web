@@ -49,7 +49,6 @@ function RuntimeInventoryDetailPage() {
   const project = useQuery(projectOptions(api, projectId))
   const application = useQuery(applicationOptions(api, projectId, applicationId))
   const item = useQuery(inventoryItemOptions(api, projectId, applicationId, itemId))
-  const evidencePath = item.data?.evidence[search.evidence] ?? ''
   const releases = useQuery({
     ...inventoryEvidenceOptions<InventoryReleasePresencePage>(
       api,
@@ -57,7 +56,6 @@ function RuntimeInventoryDetailPage() {
       applicationId,
       itemId,
       'releases',
-      item.data?.evidence.releases ?? '',
       search.cursor,
     ),
     enabled: item.isSuccess && search.evidence === 'releases',
@@ -69,7 +67,6 @@ function RuntimeInventoryDetailPage() {
       applicationId,
       itemId,
       'sightings',
-      item.data?.evidence.sightings ?? '',
       search.cursor,
     ),
     enabled: item.isSuccess && search.evidence === 'sightings',
@@ -81,7 +78,6 @@ function RuntimeInventoryDetailPage() {
       applicationId,
       itemId,
       'groups',
-      item.data?.evidence.groups ?? '',
       search.cursor,
     ),
     enabled: item.isSuccess && search.evidence === 'groups',
@@ -93,7 +89,6 @@ function RuntimeInventoryDetailPage() {
       applicationId,
       itemId,
       'occurrences',
-      item.data?.evidence.occurrences ?? '',
       search.cursor,
     ),
     enabled: item.isSuccess && search.evidence === 'occurrences',
@@ -202,12 +197,7 @@ function RuntimeInventoryDetailPage() {
           </Button>
         ))}
       </div>
-      {!evidencePath ? (
-        <ApiErrorPanel
-          title="Unsafe observation link"
-          error={new Error('Missing observation link')}
-        />
-      ) : active.isPending ? (
+      {active.isPending ? (
         <Loading label={`Loading ${search.evidence} observations…`} />
       ) : active.isError ? (
         invalidCursor ? (

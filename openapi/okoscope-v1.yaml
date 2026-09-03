@@ -439,6 +439,7 @@ paths:
       ]
     get:
       operationId: getApplicationRuntimeInventorySummary
+      description: Returns all inventory-kind aggregates within the same normalized operational scope used by the inventory list.
       parameters:
         - {
             name: operation,
@@ -2467,7 +2468,7 @@ components:
         service_version: { type: string, example: 0.1.0 }
         git_commit: { type: string, example: ac23c0b4d042e8d430ea6880f6b66ed1a9d4580a }
         api_version: { type: string, const: v1 }
-        required_database_migration: { type: integer, format: int64, example: 20 }
+        required_database_migration: { type: integer, format: int64, example: 21 }
     Organization:
       type: object
       additionalProperties: false
@@ -3388,6 +3389,15 @@ components:
           properties:
             representative_event: { $ref: '#/components/schemas/EventOccurrence' }
             notification: { $ref: '#/components/schemas/FirstSeenNotificationSummary' }
+    ReleaseIdentityComponent:
+      type: object
+      additionalProperties: false
+      required: [name, image, category, digest]
+      properties:
+        name: { type: string }
+        image: { type: string }
+        category: { type: string }
+        digest: { type: string, minLength: 64, maxLength: 64, pattern: '^[0-9a-f]{64}$' }
     Release:
       type: object
       additionalProperties: false
@@ -3420,7 +3430,12 @@ components:
         source: { type: string, enum: [manual, observed] }
         identity_version: { type: [integer, 'null'], minimum: 1 }
         identity_digest: { type: [string, 'null'], pattern: '^[0-9a-f]{64}$' }
-        identity_components: { type: [array, 'null'], maxItems: 64, items: { type: object } }
+        identity_components:
+          {
+            type: [array, 'null'],
+            maxItems: 64,
+            items: { $ref: '#/components/schemas/ReleaseIdentityComponent' },
+          }
         revision_count: { type: integer, format: int64, minimum: 0 }
         active_episode_count: { type: integer, format: int64, minimum: 0 }
     DeploymentEpisode:
@@ -4071,6 +4086,14 @@ components:
       type: object
       additionalProperties: false
       required: [identity_version, item_count, occurrence_count, first_seen_at, last_seen_at, kinds]
+      example:
+        identity_version: 1
+        item_count: 1
+        occurrence_count: 4
+        first_seen_at: '2026-08-18T09:00:00Z'
+        last_seen_at: '2026-08-18T10:00:00Z'
+        kinds:
+          - { kind: process, item_count: 1, occurrence_count: 4 }
       properties:
         identity_version: { type: integer, format: int32, minimum: 1 }
         item_count: { type: integer, format: int64, minimum: 0 }
@@ -4130,6 +4153,10 @@ components:
       type: object
       additionalProperties: false
       required: [items, next_cursor]
+      example:
+        items:
+          - { value: production, label: production, item_count: 12, occurrence_count: 48 }
+        next_cursor: null
       properties:
         items:
           {
@@ -4146,6 +4173,7 @@ components:
           }
     InventoryEvidenceLinks:
       type: object
+      description: Optional navigation conveniences generated from the current scoped identifiers. Clients should construct the four typed child routes from OpenAPI parameters; if a hint is used, validate it against the matching root-relative allowlist pattern and never treat it as an arbitrary fetch target.
       additionalProperties: false
       required: [releases, sightings, groups, occurrences]
       properties:

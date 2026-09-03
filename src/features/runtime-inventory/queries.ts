@@ -208,35 +208,19 @@ export function expectedEvidencePath(
 ) {
   return `${base(projectId, applicationId)}/${encodeURIComponent(itemId)}/${evidence}`
 }
-export function validateEvidencePath(
-  actual: string,
-  projectId: string,
-  applicationId: string,
-  itemId: string,
-  evidence: InventoryEvidence,
-) {
-  if (actual !== expectedEvidencePath(projectId, applicationId, itemId, evidence))
-    throw new ApiClientError({
-      kind: 'invalid-response',
-      message: 'The API returned an unsafe evidence link.',
-      requestId: crypto.randomUUID(),
-    })
-  return actual
-}
 export const inventoryEvidenceOptions = <T extends EvidencePage>(
   api: ApiClient,
   projectId: string,
   applicationId: string,
   itemId: string,
   evidence: InventoryEvidence,
-  actualPath: string,
   cursor?: string,
 ) =>
   queryOptions({
     queryKey: inventoryKeys.evidence(projectId, applicationId, itemId, evidence, cursor),
     queryFn: ({ signal }) =>
       api.get<T>(
-        `${validateEvidencePath(actualPath, projectId, applicationId, itemId, evidence)}${query({ cursor, limit: INVENTORY_PAGE_SIZE })}`,
+        `${expectedEvidencePath(projectId, applicationId, itemId, evidence)}${query({ cursor, limit: INVENTORY_PAGE_SIZE })}`,
         { protected: true, signal },
       ),
   })
