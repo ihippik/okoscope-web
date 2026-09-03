@@ -4,6 +4,67 @@
  */
 
 export interface paths {
+    "/api/v1/runtime-groups/{group_id}/snapshots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List compacted daily group history
+         * @description Whole UTC day history; day_from is inclusive and day_to exclusive. Sub-day timestamps are rejected. Snapshots contain counts only and cannot reconstruct events.
+         */
+        get: operations["listRuntimeHistorySnapshots"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organization_id}/runtime-retention": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: components["parameters"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        /** @description Read effective retention settings. */
+        get: operations["getOrganizationRuntimeRetention"];
+        /** @description Organization owner required. Changes affect subsequent maintenance batches. */
+        put: operations["putOrganizationRuntimeRetention"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/runtime-retention": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** @description Read effective retention settings. */
+        get: operations["getProjectRuntimeRetention"];
+        /** @description Organization owner required. Changes affect subsequent maintenance batches. */
+        put: operations["putProjectRuntimeRetention"];
+        post?: never;
+        /** @description Organization owner required. Changes affect subsequent maintenance batches. */
+        delete: operations["deleteProjectRuntimeRetention"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organizations/{organization_id}/notification-retention": {
         parameters: {
             query?: never;
@@ -1282,6 +1343,47 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        RuntimeRetentionCoverage: {
+            closed_before: components["schemas"]["NullableTimestamp"];
+            history_expired_before: components["schemas"]["NullableTimestamp"];
+            /** @enum {string} */
+            detail_scope: "raw";
+        };
+        RuntimeHistorySnapshot: {
+            id: components["schemas"]["Uuid"];
+            group_id: components["schemas"]["Uuid"];
+            release_id: components["schemas"]["NullableUuid"];
+            /** Format: date */
+            day: string;
+            /** @enum {integer} */
+            format_version: 1;
+            /** Format: int64 */
+            occurrence_count: number;
+            first_observed_at: components["schemas"]["Timestamp"];
+            last_observed_at: components["schemas"]["Timestamp"];
+        };
+        RuntimeHistorySnapshotPage: {
+            items: components["schemas"]["RuntimeHistorySnapshot"][];
+            next_cursor: components["schemas"]["NullableUuid"];
+            coverage: components["schemas"]["RuntimeRetentionCoverage"];
+            /** @enum {string} */
+            granularity: "utc_day";
+        };
+        RuntimeRetentionPolicy: {
+            /** @default false */
+            enabled: boolean;
+            /** @default 30 */
+            raw_days: number;
+            /** @description Total observation age in days; must be at least raw_days. Null preserves snapshots forever. Processing uses complete UTC days. */
+            history_days: number | null;
+        };
+        ProjectRuntimeRetention: {
+            override: components["schemas"]["RuntimeRetentionPolicy"] | null;
+            effective: components["schemas"]["RuntimeRetentionPolicy"];
+            inherited: components["schemas"]["RuntimeRetentionPolicy"];
+            /** @enum {string} */
+            source: "organization" | "project";
+        };
         NotificationRetentionPolicy: {
             enabled: boolean;
             /** @description Days since the latest terminal transition; includes attempts and manual actions. */
@@ -1686,7 +1788,7 @@ export interface components {
         AttentionLargestChange: {
             group_id: components["schemas"]["Uuid"];
             /** @enum {string} */
-            classification: "new" | "disappeared" | "unchanged";
+            classification: "new" | "disappeared" | "unchanged" | "unknown";
             /** Format: int64 */
             baseline_occurrence_count: number;
             /** Format: int64 */
@@ -2000,10 +2102,12 @@ export interface components {
             agent_last_seen_at: components["schemas"]["Timestamp"];
         };
         ApplicationWorkerPage: {
+            coverage: components["schemas"]["RuntimeRetentionCoverage"];
             items: components["schemas"]["ApplicationWorker"][];
             next_cursor: components["schemas"]["NullableOpaqueCursor"];
         };
         RuntimeGroup: {
+            coverage: components["schemas"]["RuntimeRetentionCoverage"];
             id: components["schemas"]["Uuid"];
             project_id: components["schemas"]["Uuid"];
             application_id: components["schemas"]["Uuid"];
@@ -2017,11 +2121,11 @@ export interface components {
             /** @enum {string} */
             status: "open" | "acknowledged" | "resolved";
             first_seen_at: components["schemas"]["Timestamp"];
-            first_seen_event_id: components["schemas"]["Uuid"];
+            first_seen_event_id: components["schemas"]["NullableUuid"];
             last_seen_at: components["schemas"]["Timestamp"];
             /** Format: int64 */
             occurrence_count: number;
-            representative_event_id: components["schemas"]["Uuid"];
+            representative_event_id: components["schemas"]["NullableUuid"];
             policy_evaluation: components["schemas"]["PolicyEvaluation"];
             active_suppression: components["schemas"]["ActivePolicySuppression"] | null;
             actionable: boolean;
@@ -2153,6 +2257,8 @@ export interface components {
         /** @enum {string} */
         EvidenceSource: "kernel" | "kubernetes" | "derived";
         EventCorrelation: {
+            /** @description A related raw event was removed by retention. */
+            retention_incomplete?: boolean;
             /** @enum {string} */
             status: "absent" | "qualified" | "ambiguous";
             candidate_count: number;
@@ -2444,7 +2550,7 @@ export interface components {
             failed_count: number;
         };
         RuntimeGroupDetail: components["schemas"]["RuntimeGroup"] & {
-            representative_event: components["schemas"]["EventOccurrence"];
+            representative_event: components["schemas"]["EventOccurrence"] | null;
             notification: components["schemas"]["FirstSeenNotificationSummary"];
         };
         ReleaseIdentityComponent: {
@@ -2512,7 +2618,7 @@ export interface components {
         RuntimeDiffEntry: {
             group_id: components["schemas"]["Uuid"];
             /** @enum {string} */
-            classification: "new" | "disappeared" | "unchanged";
+            classification: "new" | "disappeared" | "unchanged" | "unknown";
             event_kind: string;
             semantic_summary: components["schemas"]["RuntimeEventSemanticSummary"];
             /** Format: int64 */
@@ -2525,6 +2631,7 @@ export interface components {
             target_last_seen_at: components["schemas"]["NullableTimestamp"];
         };
         RuntimeDiff: {
+            coverage: components["schemas"]["RuntimeRetentionCoverage"];
             baseline: components["schemas"]["Release"] | null;
             target: components["schemas"]["Release"];
             items: components["schemas"]["RuntimeDiffEntry"][];
@@ -2534,14 +2641,14 @@ export interface components {
         };
         RuntimeDiffClassificationCount: {
             /** @enum {string} */
-            classification: "new" | "disappeared" | "unchanged";
+            classification: "new" | "disappeared" | "unchanged" | "unknown";
             /** Format: int64 */
             item_count: number;
         };
         RuntimeDiffChangeEntry: {
             group_id: components["schemas"]["Uuid"];
             /** @enum {string} */
-            classification: "new" | "disappeared" | "unchanged";
+            classification: "new" | "disappeared" | "unchanged" | "unknown";
             event_kind: string;
             semantic_summary: components["schemas"]["RuntimeEventSemanticSummary"];
             /** Format: int64 */
@@ -2552,6 +2659,7 @@ export interface components {
             occurrence_delta: number;
         };
         RuntimeDiffSummary: {
+            coverage: components["schemas"]["RuntimeRetentionCoverage"];
             baseline: components["schemas"]["Release"] | null;
             target: components["schemas"]["Release"];
             /** @enum {string} */
@@ -2851,6 +2959,7 @@ export interface components {
             group_count: number;
         };
         InventoryItemPage: {
+            coverage: components["schemas"]["RuntimeRetentionCoverage"];
             items: components["schemas"]["InventoryItem"][];
             next_cursor: components["schemas"]["NullableUuid"];
         };
@@ -2863,6 +2972,11 @@ export interface components {
         };
         /**
          * @example {
+         *       "coverage": {
+         *         "closed_before": null,
+         *         "history_expired_before": null,
+         *         "detail_scope": "raw"
+         *       },
          *       "identity_version": 1,
          *       "item_count": 1,
          *       "occurrence_count": 4,
@@ -2878,6 +2992,7 @@ export interface components {
          *     }
          */
         InventorySummary: {
+            coverage: components["schemas"]["RuntimeRetentionCoverage"];
             /** Format: int32 */
             identity_version: number;
             /** Format: int64 */
@@ -2903,6 +3018,7 @@ export interface components {
             occurrence_count: number;
         };
         InventoryDistribution: {
+            coverage: components["schemas"]["RuntimeRetentionCoverage"];
             /** Format: int32 */
             identity_version: number;
             kind: components["schemas"]["InventoryKind"];
@@ -2925,6 +3041,11 @@ export interface components {
         };
         /**
          * @example {
+         *       "coverage": {
+         *         "closed_before": null,
+         *         "history_expired_before": null,
+         *         "detail_scope": "raw"
+         *       },
          *       "items": [
          *         {
          *           "value": "production",
@@ -2937,6 +3058,7 @@ export interface components {
          *     }
          */
         InventoryFacetPage: {
+            coverage: components["schemas"]["RuntimeRetentionCoverage"];
             items: components["schemas"]["InventoryFacetOption"][];
             /** @description Opaque cursor bound to the exact Application */
             next_cursor: string | null;
@@ -2949,6 +3071,7 @@ export interface components {
             occurrences: string;
         };
         InventoryItemDetail: components["schemas"]["InventoryItem"] & {
+            coverage: components["schemas"]["RuntimeRetentionCoverage"];
             evidence: components["schemas"]["InventoryEvidenceLinks"];
             policy_placement_summary: components["schemas"]["InventoryPolicyPlacementSummary"];
         };
@@ -2977,6 +3100,7 @@ export interface components {
             release_evidence_count: number;
         };
         InventoryReleasePresencePage: {
+            coverage: components["schemas"]["RuntimeRetentionCoverage"];
             items: components["schemas"]["InventoryReleaseEvidence"][];
             next_cursor: components["schemas"]["NullableUuid"];
         };
@@ -2997,6 +3121,7 @@ export interface components {
             actionable: boolean;
         };
         InventorySightingPage: {
+            coverage: components["schemas"]["RuntimeRetentionCoverage"];
             items: components["schemas"]["InventorySighting"][];
             next_cursor: components["schemas"]["NullableOpaqueCursor"];
         };
@@ -3015,6 +3140,7 @@ export interface components {
             occurrence_count: number;
         };
         InventoryGroupPage: {
+            coverage: components["schemas"]["RuntimeRetentionCoverage"];
             items: components["schemas"]["InventoryGroup"][];
             next_cursor: components["schemas"]["NullableUuid"];
         };
@@ -3036,6 +3162,7 @@ export interface components {
             release_display_name: string;
         };
         InventoryOccurrencePage: {
+            coverage: components["schemas"]["RuntimeRetentionCoverage"];
             items: components["schemas"]["InventoryOccurrence"][];
             next_cursor: components["schemas"]["NullableUuid"];
         };
@@ -3508,6 +3635,185 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    listRuntimeHistorySnapshots: {
+        parameters: {
+            query?: {
+                day_from?: string;
+                day_to?: string;
+                release_id?: string;
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                group_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Daily snapshots, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuntimeHistorySnapshotPage"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    getOrganizationRuntimeRetention: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: components["parameters"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Retention settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuntimeRetentionPolicy"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    putOrganizationRuntimeRetention: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: components["parameters"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RuntimeRetentionPolicy"];
+            };
+        };
+        responses: {
+            /** @description Retention settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuntimeRetentionPolicy"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    getProjectRuntimeRetention: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Retention settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectRuntimeRetention"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    putProjectRuntimeRetention: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RuntimeRetentionPolicy"];
+            };
+        };
+        responses: {
+            /** @description Retention settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectRuntimeRetention"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    deleteProjectRuntimeRetention: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Retention settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectRuntimeRetention"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
     getOrganizationNotificationRetention: {
         parameters: {
             query?: never;

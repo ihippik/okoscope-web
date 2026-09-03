@@ -1,3 +1,5 @@
+import { SnapshotHistory } from '../features/runtime-retention/snapshots'
+import { RetentionCoverage, UnavailableEventDetails } from '../features/runtime-retention/coverage'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
@@ -158,7 +160,9 @@ function RuntimeGroupDetailPage() {
             <dt>Event kind</dt>
             <dd>{group.data.event_kind}</dd>
             <dt>First event ID</dt>
-            <dd className="break-all font-mono text-xs">{group.data.first_seen_event_id}</dd>
+            <dd className="break-all font-mono text-xs">
+              {group.data.first_seen_event_id ?? <UnavailableEventDetails />}
+            </dd>
           </dl>
         </details>
         <LifecycleControls
@@ -185,7 +189,16 @@ function RuntimeGroupDetailPage() {
           <SemanticSummary value={group.data.semantic_summary} />
         </div>
       </Card>
+      <RetentionCoverage coverage={group.data.coverage} />
+      {group.data.representative_event === null && <UnavailableEventDetails />}
       <NotificationSummary notification={group.data.notification} />
+      <SnapshotHistory
+        projectId={projectId}
+        applicationId={applicationId}
+        groupId={groupId}
+        search={search}
+        onChange={(snapshot) => void navigate({ search: { ...search, ...snapshot } })}
+      />
       <section aria-labelledby="occurrences-heading">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <h2 id="occurrences-heading" className="text-2xl font-semibold">

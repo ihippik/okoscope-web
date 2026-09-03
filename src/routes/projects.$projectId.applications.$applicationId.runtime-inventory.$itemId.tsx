@@ -1,3 +1,4 @@
+import { RetentionCoverage } from '../features/runtime-retention/coverage'
 import { useQuery } from '@tanstack/react-query'
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect } from 'react'
@@ -165,6 +166,7 @@ function RuntimeInventoryDetailPage() {
         <span>/</span>
         <span aria-current="page">Observation history</span>
       </nav>
+      <RetentionCoverage coverage={item.data.coverage} inventory />
       <Card>
         <p className="eyebrow">{getActivityPresentation(item.data.inventory_kind).itemLabel}</p>
         <h1 className="mt-2 text-2xl font-semibold">

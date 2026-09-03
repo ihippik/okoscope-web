@@ -42,6 +42,7 @@ describe('ApplicationWorkers', () => {
     vi.spyOn(Date, 'now').mockReturnValue(now)
     renderWorkers(
       vi.fn().mockResolvedValue({
+        coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
         items: [
           worker({ agent_last_seen_at: '2026-08-22T09:45:00Z' }),
           worker({
@@ -73,6 +74,7 @@ describe('ApplicationWorkers', () => {
   it('renders heterogeneous and unavailable platform values as inert text', async () => {
     renderWorkers(
       vi.fn().mockResolvedValue({
+        coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
         items: [
           worker(),
           worker({
@@ -93,7 +95,14 @@ describe('ApplicationWorkers', () => {
   })
 
   it('localizes the empty state', async () => {
-    renderWorkers(vi.fn().mockResolvedValue({ items: [], next_cursor: null }), 'ru')
+    renderWorkers(
+      vi.fn().mockResolvedValue({
+        coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
+        items: [],
+        next_cursor: null,
+      }),
+      'ru',
+    )
     expect(await screen.findByRole('heading', { name: 'Рабочие узлы' })).toBeVisible()
     expect(screen.getByText('Наблюдений рабочих узлов пока нет.')).toBeVisible()
   })
@@ -102,7 +111,11 @@ describe('ApplicationWorkers', () => {
     const get = vi
       .fn()
       .mockRejectedValueOnce(new Error('failed'))
-      .mockResolvedValueOnce({ items: [worker()], next_cursor: null })
+      .mockResolvedValueOnce({
+        coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
+        items: [worker()],
+        next_cursor: null,
+      })
     renderWorkers(get)
     expect(
       await screen.findByRole('heading', { name: 'Worker nodes could not be loaded' }),
@@ -114,8 +127,13 @@ describe('ApplicationWorkers', () => {
   it('forwards opaque cursors and appends the next page', async () => {
     const get = vi
       .fn()
-      .mockResolvedValueOnce({ items: [worker()], next_cursor: 'opaque / cursor' })
       .mockResolvedValueOnce({
+        coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
+        items: [worker()],
+        next_cursor: 'opaque / cursor',
+      })
+      .mockResolvedValueOnce({
+        coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
         items: [worker({ agent_id: 'agent-2', node_name: 'worker-arm64-02' })],
         next_cursor: null,
       })
@@ -132,7 +150,11 @@ describe('ApplicationWorkers', () => {
   it('preserves workers after a failed background refresh', async () => {
     const get = vi
       .fn()
-      .mockResolvedValueOnce({ items: [worker()], next_cursor: null })
+      .mockResolvedValueOnce({
+        coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
+        items: [worker()],
+        next_cursor: null,
+      })
       .mockRejectedValueOnce(new Error('refresh failed'))
     const { client } = renderWorkers(get)
     expect(await screen.findByText('6.9.2')).toBeVisible()
@@ -143,4 +165,22 @@ describe('ApplicationWorkers', () => {
     expect(screen.getByText('6.9.2')).toBeVisible()
     expect(screen.getByRole('alert')).toHaveTextContent('Worker nodes could not be refreshed.')
   })
+})
+
+it('explains empty worker observations after history closure', async () => {
+  renderWorkers(
+    vi.fn().mockResolvedValue({
+      items: [],
+      next_cursor: null,
+      coverage: {
+        closed_before: '2026-08-01T00:00:00Z',
+        history_expired_before: null,
+        detail_scope: 'raw',
+      },
+    }),
+  )
+  expect(
+    await screen.findByText(/Detailed activity covers retained raw events only/),
+  ).toBeInTheDocument()
+  expect(screen.getByText(/Event ingestion closed before/)).toBeInTheDocument()
 })

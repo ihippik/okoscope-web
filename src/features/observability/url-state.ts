@@ -1,3 +1,4 @@
+import type { SnapshotSearch } from '../runtime-retention/snapshots'
 export type RuntimeGroupSearch = {
   event_kind?: string | undefined
   status?: 'open' | 'acknowledged' | 'resolved' | undefined
@@ -14,9 +15,10 @@ export type RuntimeGroupSearch = {
   evaluation_pending?: boolean | undefined
   cursor?: string | undefined
 }
-export type RuntimeGroupDetailSearch = RuntimeGroupSearch & {
-  occurrence_cursor?: string | undefined
-}
+export type RuntimeGroupDetailSearch = RuntimeGroupSearch &
+  SnapshotSearch & {
+    occurrence_cursor?: string | undefined
+  }
 export type ReleaseSearch = { cursor?: string | undefined }
 export type RuntimeDiffSearch = { baseline?: string | undefined; cursor?: string | undefined }
 
@@ -68,11 +70,19 @@ export function parseRuntimeGroupDetailSearch(
   return compact({
     ...parseRuntimeGroupSearch(input),
     occurrence_cursor: text(input.occurrence_cursor),
+    snapshot_cursor: text(input.snapshot_cursor),
+    snapshot_from: text(input.snapshot_from),
+    snapshot_to: text(input.snapshot_to),
+    snapshot_release: text(input.snapshot_release),
   })
 }
 export function runtimeGroupListSearch(search: RuntimeGroupDetailSearch): RuntimeGroupSearch {
   const listSearch = { ...search }
   delete listSearch.occurrence_cursor
+  delete listSearch.snapshot_cursor
+  delete listSearch.snapshot_from
+  delete listSearch.snapshot_to
+  delete listSearch.snapshot_release
   return listSearch
 }
 export const parseReleaseSearch = (input: Record<string, unknown>): ReleaseSearch =>

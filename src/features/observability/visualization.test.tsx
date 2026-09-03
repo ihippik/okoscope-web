@@ -23,6 +23,7 @@ const release = {
 describe('RuntimeDiffVisualization', () => {
   it('shows complete classifications and explicit increase/decrease evidence', () => {
     const summary: RuntimeDiffSummary = {
+      coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
       baseline: { ...release, id: '40000000-0000-4000-8000-000000000002', version: '2.13.0' },
       target: release,
       baseline_selection_source: 'explicit',
@@ -65,6 +66,7 @@ describe('RuntimeDiffVisualization', () => {
 
   it('presents listener behavior by local endpoint without remote clients', () => {
     const summary: RuntimeDiffSummary = {
+      coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
       baseline: { ...release, id: '40000000-0000-4000-8000-000000000002', version: '2.13.0' },
       target: release,
       baseline_selection_source: 'explicit',
@@ -95,6 +97,7 @@ describe('RuntimeDiffVisualization', () => {
 
   it('uses backend file classifications and ordered rename identity', () => {
     const summary: RuntimeDiffSummary = {
+      coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
       baseline: release,
       target: release,
       baseline_selection_source: 'explicit',

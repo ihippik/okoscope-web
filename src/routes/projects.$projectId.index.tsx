@@ -1,3 +1,4 @@
+import { RuntimeRetention } from '../features/runtime-retention/settings'
 import { useQuery } from '@tanstack/react-query'
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { BellRing } from 'lucide-react'
@@ -59,6 +60,7 @@ function ProjectPage() {
         </Button>
       </nav>
       <ApplicationList projectId={projectId} />
+      <RuntimeRetention projectId={projectId} />
     </div>
   )
 }

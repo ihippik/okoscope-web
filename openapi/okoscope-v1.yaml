@@ -8,6 +8,138 @@ servers:
 security:
   - sessionAuth: []
 paths:
+  /api/v1/runtime-groups/{group_id}/snapshots:
+    get:
+      operationId: listRuntimeHistorySnapshots
+      summary: List compacted daily group history
+      description: Whole UTC day history; day_from is inclusive and day_to exclusive. Sub-day timestamps are rejected. Snapshots contain counts only and cannot reconstruct events.
+      parameters:
+        - { name: group_id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: day_from, in: query, schema: { type: string, format: date } }
+        - { name: day_to, in: query, schema: { type: string, format: date } }
+        - { name: release_id, in: query, schema: { type: string, format: uuid } }
+        - { name: cursor, in: query, schema: { type: string, format: uuid } }
+        - {
+            name: limit,
+            in: query,
+            schema: { type: integer, minimum: 1, maximum: 100, default: 50 },
+          }
+      responses:
+        '200':
+          description: Daily snapshots, newest first
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RuntimeHistorySnapshotPage' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /api/v1/organizations/{organization_id}/runtime-retention:
+    parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+    get:
+      operationId: getOrganizationRuntimeRetention
+      description: Read effective retention settings.
+      responses:
+        '200':
+          {
+            description: Retention settings,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: '#/components/schemas/RuntimeRetentionPolicy' } },
+              },
+          }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '500': { $ref: '#/components/responses/Error' }
+    put:
+      operationId: putOrganizationRuntimeRetention
+      description: Organization owner required. Changes affect subsequent maintenance batches.
+      requestBody:
+        required: true
+        content:
+          { application/json: { schema: { $ref: '#/components/schemas/RuntimeRetentionPolicy' } } }
+      responses:
+        '200':
+          {
+            description: Retention settings,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: '#/components/schemas/RuntimeRetentionPolicy' } },
+              },
+          }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '500': { $ref: '#/components/responses/Error' }
+  /api/v1/projects/{project_id}/runtime-retention:
+    parameters: [{ $ref: '#/components/parameters/ProjectId' }]
+    get:
+      operationId: getProjectRuntimeRetention
+      description: Read effective retention settings.
+      responses:
+        '200':
+          {
+            description: Retention settings,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: '#/components/schemas/ProjectRuntimeRetention' } },
+              },
+          }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '500': { $ref: '#/components/responses/Error' }
+    put:
+      operationId: putProjectRuntimeRetention
+      description: Organization owner required. Changes affect subsequent maintenance batches.
+      requestBody:
+        required: true
+        content:
+          { application/json: { schema: { $ref: '#/components/schemas/RuntimeRetentionPolicy' } } }
+      responses:
+        '200':
+          {
+            description: Retention settings,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: '#/components/schemas/ProjectRuntimeRetention' } },
+              },
+          }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '500': { $ref: '#/components/responses/Error' }
+    delete:
+      operationId: deleteProjectRuntimeRetention
+      description: Organization owner required. Changes affect subsequent maintenance batches.
+      responses:
+        '200':
+          {
+            description: Retention settings,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: '#/components/schemas/ProjectRuntimeRetention' } },
+              },
+          }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '500': { $ref: '#/components/responses/Error' }
   /api/v1/organizations/{organization_id}/notification-retention:
     parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
     get:
@@ -1494,6 +1626,74 @@ components:
   headers:
     RequestId: { schema: { type: string }, description: Correlation identifier for the request. }
   schemas:
+    RuntimeRetentionCoverage:
+      type: object
+      additionalProperties: false
+      required: [closed_before, history_expired_before, detail_scope]
+      properties:
+        closed_before: { $ref: '#/components/schemas/NullableTimestamp' }
+        history_expired_before: { $ref: '#/components/schemas/NullableTimestamp' }
+        detail_scope: { type: string, enum: [raw] }
+    RuntimeHistorySnapshot:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          group_id,
+          release_id,
+          day,
+          format_version,
+          occurrence_count,
+          first_observed_at,
+          last_observed_at,
+        ]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        group_id: { $ref: '#/components/schemas/Uuid' }
+        release_id: { $ref: '#/components/schemas/NullableUuid' }
+        day: { type: string, format: date }
+        format_version: { type: integer, enum: [1] }
+        occurrence_count: { type: integer, format: int64, minimum: 1 }
+        first_observed_at: { $ref: '#/components/schemas/Timestamp' }
+        last_observed_at: { $ref: '#/components/schemas/Timestamp' }
+    RuntimeHistorySnapshotPage:
+      type: object
+      additionalProperties: false
+      required: [items, next_cursor, coverage, granularity]
+      properties:
+        items:
+          {
+            type: array,
+            maxItems: 100,
+            items: { $ref: '#/components/schemas/RuntimeHistorySnapshot' },
+          }
+        next_cursor: { $ref: '#/components/schemas/NullableUuid' }
+        coverage: { $ref: '#/components/schemas/RuntimeRetentionCoverage' }
+        granularity: { type: string, enum: [utc_day] }
+    RuntimeRetentionPolicy:
+      type: object
+      additionalProperties: false
+      required: [enabled, raw_days, history_days]
+      properties:
+        enabled: { type: boolean, default: false }
+        raw_days: { type: integer, minimum: 1, maximum: 3650, default: 30 }
+        history_days:
+          type: [integer, 'null']
+          minimum: 1
+          maximum: 3650
+          description: Total observation age in days; must be at least raw_days. Null preserves snapshots forever. Processing uses complete UTC days.
+    ProjectRuntimeRetention:
+      type: object
+      required: [override, effective, inherited, source]
+      properties:
+        override:
+          anyOf:
+            - { $ref: '#/components/schemas/RuntimeRetentionPolicy' }
+            - { type: 'null' }
+        effective: { $ref: '#/components/schemas/RuntimeRetentionPolicy' }
+        inherited: { $ref: '#/components/schemas/RuntimeRetentionPolicy' }
+        source: { type: string, enum: [organization, project] }
     NotificationRetentionPolicy:
       type: object
       additionalProperties: false
@@ -2288,7 +2488,7 @@ components:
       properties:
         {
           group_id: { $ref: '#/components/schemas/Uuid' },
-          classification: { type: string, enum: [new, disappeared, unchanged] },
+          classification: { type: string, enum: [new, disappeared, unchanged, unknown] },
           baseline_occurrence_count: { type: integer, format: int64 },
           target_occurrence_count: { type: integer, format: int64 },
           occurrence_delta: { type: integer, format: int64 },
@@ -2806,8 +3006,9 @@ components:
     ApplicationWorkerPage:
       type: object
       additionalProperties: false
-      required: [items, next_cursor]
+      required: [items, next_cursor, coverage]
       properties:
+        coverage: { $ref: '#/components/schemas/RuntimeRetentionCoverage' }
         items:
           { type: array, maxItems: 200, items: { $ref: '#/components/schemas/ApplicationWorker' } }
         next_cursor: { $ref: '#/components/schemas/NullableOpaqueCursor' }
@@ -2816,6 +3017,7 @@ components:
       additionalProperties: false
       required:
         [
+          coverage,
           id,
           project_id,
           application_id,
@@ -2839,6 +3041,7 @@ components:
           actionable,
         ]
       properties:
+        coverage: { $ref: '#/components/schemas/RuntimeRetentionCoverage' }
         id: { $ref: '#/components/schemas/Uuid' }
         project_id: { $ref: '#/components/schemas/Uuid' }
         application_id: { $ref: '#/components/schemas/Uuid' }
@@ -2851,10 +3054,10 @@ components:
         semantic_summary: { $ref: '#/components/schemas/RuntimeEventSemanticSummary' }
         status: { type: string, enum: [open, acknowledged, resolved] }
         first_seen_at: { $ref: '#/components/schemas/Timestamp' }
-        first_seen_event_id: { $ref: '#/components/schemas/Uuid' }
+        first_seen_event_id: { $ref: '#/components/schemas/NullableUuid' }
         last_seen_at: { $ref: '#/components/schemas/Timestamp' }
         occurrence_count: { type: integer, format: int64, minimum: 0 }
-        representative_event_id: { $ref: '#/components/schemas/Uuid' }
+        representative_event_id: { $ref: '#/components/schemas/NullableUuid' }
         policy_evaluation: { $ref: '#/components/schemas/PolicyEvaluation' }
         active_suppression:
           { anyOf: [{ $ref: '#/components/schemas/ActivePolicySuppression' }, { type: 'null' }] }
@@ -3086,6 +3289,8 @@ components:
       additionalProperties: false
       required: [status, candidate_count, related_event_ids]
       properties:
+        retention_incomplete:
+          { type: boolean, description: A related raw event was removed by retention. }
         status: { type: string, enum: [absent, qualified, ambiguous] }
         candidate_count: { type: integer, minimum: 0, maximum: 2 }
         tolerance_seconds: { type: integer, minimum: 1 }
@@ -3522,7 +3727,8 @@ components:
         - type: object
           required: [representative_event, notification]
           properties:
-            representative_event: { $ref: '#/components/schemas/EventOccurrence' }
+            representative_event:
+              { anyOf: [{ $ref: '#/components/schemas/EventOccurrence' }, { type: 'null' }] }
             notification: { $ref: '#/components/schemas/FirstSeenNotificationSummary' }
     ReleaseIdentityComponent:
       type: object
@@ -3663,7 +3869,7 @@ components:
         ]
       properties:
         group_id: { $ref: '#/components/schemas/Uuid' }
-        classification: { type: string, enum: [new, disappeared, unchanged] }
+        classification: { type: string, enum: [new, disappeared, unchanged, unknown] }
         event_kind: { type: string }
         semantic_summary: { $ref: '#/components/schemas/RuntimeEventSemanticSummary' }
         baseline_occurrence_count: { type: [integer, 'null'], format: int64 }
@@ -3675,8 +3881,9 @@ components:
     RuntimeDiff:
       type: object
       additionalProperties: false
-      required: [baseline, target, items, next_cursor, baseline_selection_source]
+      required: [coverage, baseline, target, items, next_cursor, baseline_selection_source]
       properties:
+        coverage: { $ref: '#/components/schemas/RuntimeRetentionCoverage' }
         baseline: { oneOf: [{ $ref: '#/components/schemas/Release' }, { type: 'null' }] }
         target: { $ref: '#/components/schemas/Release' }
         items: { type: array, items: { $ref: '#/components/schemas/RuntimeDiffEntry' } }
@@ -3692,7 +3899,7 @@ components:
       additionalProperties: false
       required: [classification, item_count]
       properties:
-        classification: { type: string, enum: [new, disappeared, unchanged] }
+        classification: { type: string, enum: [new, disappeared, unchanged, unknown] }
         item_count: { type: integer, format: int64, minimum: 0 }
     RuntimeDiffChangeEntry:
       type: object
@@ -3709,7 +3916,7 @@ components:
         ]
       properties:
         group_id: { $ref: '#/components/schemas/Uuid' }
-        classification: { type: string, enum: [new, disappeared, unchanged] }
+        classification: { type: string, enum: [new, disappeared, unchanged, unknown] }
         event_kind: { type: string }
         semantic_summary: { $ref: '#/components/schemas/RuntimeEventSemanticSummary' }
         baseline_occurrence_count: { type: integer, format: int64, minimum: 0 }
@@ -3720,6 +3927,7 @@ components:
       additionalProperties: false
       required:
         [
+          coverage,
           baseline,
           target,
           total_item_count,
@@ -3728,6 +3936,7 @@ components:
           baseline_selection_source,
         ]
       properties:
+        coverage: { $ref: '#/components/schemas/RuntimeRetentionCoverage' }
         baseline: { oneOf: [{ $ref: '#/components/schemas/Release' }, { type: 'null' }] }
         target: { $ref: '#/components/schemas/Release' }
         baseline_selection_source:
@@ -3740,7 +3949,7 @@ components:
         classifications:
           {
             type: array,
-            maxItems: 3,
+            maxItems: 4,
             items: { $ref: '#/components/schemas/RuntimeDiffClassificationCount' },
           }
         largest_changes:
@@ -4190,11 +4399,11 @@ components:
         project_id: { $ref: '#/components/schemas/Uuid' }
         application_id: { $ref: '#/components/schemas/Uuid' }
         inventory_kind: { $ref: '#/components/schemas/InventoryKind' }
-        identity_version: { type: integer, format: int32, minimum: 1, example: 1 }
+        identity_version: { type: integer, format: int32, minimum: 0, example: 1 }
         semantic_summary: { $ref: '#/components/schemas/InventorySemanticSummary' }
         first_seen_at: { $ref: '#/components/schemas/Timestamp' }
         last_seen_at: { $ref: '#/components/schemas/Timestamp' }
-        occurrence_count: { type: integer, format: int64, minimum: 1 }
+        occurrence_count: { type: integer, format: int64, minimum: 0 }
         release_count: { type: integer, format: int64, minimum: 0 }
         cluster_count: { type: integer, format: int64, minimum: 0 }
         namespace_count: { type: integer, format: int64, minimum: 0 }
@@ -4205,8 +4414,9 @@ components:
     InventoryItemPage:
       type: object
       additionalProperties: false
-      required: [items, next_cursor]
+      required: [coverage, items, next_cursor]
       properties:
+        coverage: { $ref: '#/components/schemas/RuntimeRetentionCoverage' }
         items: { type: array, maxItems: 200, items: { $ref: '#/components/schemas/InventoryItem' } }
         next_cursor: { $ref: '#/components/schemas/NullableUuid' }
     InventoryKindCount:
@@ -4220,8 +4430,18 @@ components:
     InventorySummary:
       type: object
       additionalProperties: false
-      required: [identity_version, item_count, occurrence_count, first_seen_at, last_seen_at, kinds]
+      required:
+        [
+          coverage,
+          identity_version,
+          item_count,
+          occurrence_count,
+          first_seen_at,
+          last_seen_at,
+          kinds,
+        ]
       example:
+        coverage: { closed_before: null, history_expired_before: null, detail_scope: raw }
         identity_version: 1
         item_count: 1
         occurrence_count: 4
@@ -4230,6 +4450,7 @@ components:
         kinds:
           - { kind: process, item_count: 1, occurrence_count: 4 }
       properties:
+        coverage: { $ref: '#/components/schemas/RuntimeRetentionCoverage' }
         identity_version: { type: integer, format: int32, minimum: 1 }
         item_count: { type: integer, format: int64, minimum: 0 }
         occurrence_count: { type: integer, format: int64, minimum: 0 }
@@ -4256,8 +4477,10 @@ components:
     InventoryDistribution:
       type: object
       additionalProperties: false
-      required: [identity_version, kind, total_item_count, total_occurrence_count, entries, other]
+      required:
+        [coverage, identity_version, kind, total_item_count, total_occurrence_count, entries, other]
       properties:
+        coverage: { $ref: '#/components/schemas/RuntimeRetentionCoverage' }
         identity_version: { type: integer, format: int32, minimum: 1 }
         kind: { $ref: '#/components/schemas/InventoryKind' }
         total_item_count: { type: integer, format: int64, minimum: 0 }
@@ -4287,12 +4510,14 @@ components:
     InventoryFacetPage:
       type: object
       additionalProperties: false
-      required: [items, next_cursor]
+      required: [coverage, items, next_cursor]
       example:
+        coverage: { closed_before: null, history_expired_before: null, detail_scope: raw }
         items:
           - { value: production, label: production, item_count: 12, occurrence_count: 48 }
         next_cursor: null
       properties:
+        coverage: { $ref: '#/components/schemas/RuntimeRetentionCoverage' }
         items:
           {
             type: array,
@@ -4337,9 +4562,10 @@ components:
       allOf:
         - { $ref: '#/components/schemas/InventoryItem' }
         - type: object
-          required: [evidence, policy_placement_summary]
+          required: [evidence, policy_placement_summary, coverage]
           properties:
             {
+              coverage: { $ref: '#/components/schemas/RuntimeRetentionCoverage' },
               evidence: { $ref: '#/components/schemas/InventoryEvidenceLinks' },
               policy_placement_summary:
                 { $ref: '#/components/schemas/InventoryPolicyPlacementSummary' },
@@ -4397,8 +4623,9 @@ components:
     InventoryReleasePresencePage:
       type: object
       additionalProperties: false
-      required: [items, next_cursor]
+      required: [coverage, items, next_cursor]
       properties:
+        coverage: { $ref: '#/components/schemas/RuntimeRetentionCoverage' }
         items:
           {
             type: array,
@@ -4443,8 +4670,9 @@ components:
     InventorySightingPage:
       type: object
       additionalProperties: false
-      required: [items, next_cursor]
+      required: [coverage, items, next_cursor]
       properties:
+        coverage: { $ref: '#/components/schemas/RuntimeRetentionCoverage' }
         items:
           { type: array, maxItems: 200, items: { $ref: '#/components/schemas/InventorySighting' } }
         next_cursor: { $ref: '#/components/schemas/NullableOpaqueCursor' }
@@ -4478,8 +4706,9 @@ components:
     InventoryGroupPage:
       type: object
       additionalProperties: false
-      required: [items, next_cursor]
+      required: [coverage, items, next_cursor]
       properties:
+        coverage: { $ref: '#/components/schemas/RuntimeRetentionCoverage' }
         items:
           { type: array, maxItems: 200, items: { $ref: '#/components/schemas/InventoryGroup' } }
         next_cursor: { $ref: '#/components/schemas/NullableUuid' }
@@ -4523,8 +4752,9 @@ components:
     InventoryOccurrencePage:
       type: object
       additionalProperties: false
-      required: [items, next_cursor]
+      required: [coverage, items, next_cursor]
       properties:
+        coverage: { $ref: '#/components/schemas/RuntimeRetentionCoverage' }
         items:
           {
             type: array,

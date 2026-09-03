@@ -33,7 +33,9 @@ const policyEvaluation = {
   explanation: { specificity: [], related_revision_ids: [] },
   evaluated_at: '2026-08-17T12:00:00Z',
 }
+const coverage = { closed_before: null, history_expired_before: null, detail_scope: 'raw' }
 const group = {
+  coverage,
   id: '00000000-0000-4000-8000-000000000004',
   project_id: project.id,
   application_id: application.id,
@@ -218,6 +220,7 @@ const inventoryItem = {
   group_count: 1,
 }
 const inventoryDetail = {
+  coverage,
   ...inventoryItem,
   evidence: {
     releases: `${inventoryBase}/${inventoryItemId}/releases`,
@@ -237,10 +240,23 @@ const json = (route: Route, body: unknown, status = 200, requestId = 'e2e-reques
     status,
     contentType: 'application/json',
     headers: { 'x-request-id': requestId },
-    body: JSON.stringify(body),
+    body: JSON.stringify(
+      status === 200 &&
+        /runtime-inventory|runtime-diff|\/workers/.test(route.request().url()) &&
+        typeof body === 'object' &&
+        body !== null
+        ? { ...body, coverage }
+        : body,
+    ),
   })
 
 export async function mockApi(page: Page, role: 'owner' | 'member' = 'owner') {
+  let organizationRuntimeRetention = {
+    enabled: false,
+    raw_days: 30,
+    history_days: 365 as number | null,
+  }
+  let projectRuntimeRetention: typeof organizationRuntimeRetention | null = null
   let organizationRetention = { enabled: false, history_days: 90 }
   let projectRetention: typeof organizationRetention | null = null
   let loggedIn = false
@@ -310,6 +326,27 @@ export async function mockApi(page: Page, role: 'owner' | 'member' = 'owner') {
   await page.route('**/api/v1/**', async (route) => {
     const url = new URL(route.request().url())
     const path = url.pathname
+    if (path.endsWith('/runtime-retention')) {
+      const isProject = path.includes('/projects/')
+      if (route.request().method() === 'PUT') {
+        if (isProject) projectRuntimeRetention = route.request().postDataJSON()
+        else organizationRuntimeRetention = route.request().postDataJSON()
+      }
+      if (route.request().method() === 'DELETE') projectRuntimeRetention = null
+      return json(
+        route,
+        isProject
+          ? {
+              override: projectRuntimeRetention,
+              inherited: organizationRuntimeRetention,
+              effective: projectRuntimeRetention ?? organizationRuntimeRetention,
+              source: projectRuntimeRetention ? 'project' : 'organization',
+            }
+          : organizationRuntimeRetention,
+      )
+    }
+    if (path.endsWith('/snapshots'))
+      return json(route, { items: [], next_cursor: null, coverage, granularity: 'utc_day' })
     if (path === `/api/v1/organizations/${organization.id}/notification-retention`) {
       if (route.request().method() === 'PUT') organizationRetention = route.request().postDataJSON()
       return json(route, organizationRetention)

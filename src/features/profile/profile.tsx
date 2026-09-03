@@ -1,3 +1,4 @@
+import { RuntimeRetention } from '../runtime-retention/settings'
 import { useQueryClient } from '@tanstack/react-query'
 import { Building2, ShieldCheck, UserRound } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -116,6 +117,7 @@ export function Profile() {
         </div>
       </Card>
       <NotificationRetention />
+      <RuntimeRetention />
     </section>
   )
 }

@@ -1,3 +1,4 @@
+import { IncompleteCorrelation } from '../runtime-retention/coverage'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { CircleAlert, Copy, DoorOpen, Network, Sparkles } from 'lucide-react'
@@ -1119,10 +1120,16 @@ export function OccurrenceTimeline({
             </div>
             <p className="mt-2 text-sm font-semibold">{getEventKindLabel(item.event_kind)}</p>
             <div className="mt-2 rounded border border-slate-700 p-2 text-xs text-slate-300">
-              <strong>{correlationPresentation(item.correlation).label}</strong>
-              <p className="mt-1 text-slate-400">
-                {correlationPresentation(item.correlation).description}
-              </p>
+              {item.correlation?.retention_incomplete ? (
+                <IncompleteCorrelation />
+              ) : (
+                <strong>{correlationPresentation(item.correlation).label}</strong>
+              )}
+              {!item.correlation?.retention_incomplete && (
+                <p className="mt-1 text-slate-400">
+                  {correlationPresentation(item.correlation).description}
+                </p>
+              )}
             </div>
             <dl className="details mt-3">
               <dt>Node</dt>

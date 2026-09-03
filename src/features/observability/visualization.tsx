@@ -8,6 +8,7 @@ const classificationLabel = {
   new: 'New',
   disappeared: 'No longer observed',
   unchanged: 'Still observed',
+  unknown: 'Unknown',
 } as const
 
 function behaviorText(entry: RuntimeDiffSummary['largest_changes'][number]) {
@@ -48,8 +49,8 @@ export function RuntimeDiffVisualization({ summary }: { summary: RuntimeDiffSumm
   )
   return (
     <section className="space-y-4" aria-label="Complete release comparison summary">
-      <div className="grid gap-3 sm:grid-cols-3">
-        {(['new', 'disappeared', 'unchanged'] as const).map((classification) => (
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {(['new', 'disappeared', 'unchanged', 'unknown'] as const).map((classification) => (
           <Card key={classification}>
             <span className="text-sm text-slate-400">{classificationLabel[classification]}</span>
             <strong className="mt-1 block text-2xl tabular-nums">

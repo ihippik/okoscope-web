@@ -13,7 +13,7 @@ export default defineConfig({
     port: 4173,
     proxy: {
       '/api': {
-        target: 'https://okoscope.com',
+        target: process.env.OKOSCOPE_DEV_API_TARGET ?? 'https://okoscope.com',
         changeOrigin: true,
       },
     },

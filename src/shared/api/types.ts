@@ -286,6 +286,7 @@ export const contractFixture = {
     required_database_migration: 16,
   } satisfies BuildInfo,
   applicationWorkerPage: {
+    coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
     items: [
       {
         agent_id: '10000000-0000-4000-8000-000000000001',
@@ -473,6 +474,7 @@ export const contractFixture = {
     limit: 50,
   } satisfies InventoryListQuery,
   inventorySummary: {
+    coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
     identity_version: 1,
     item_count: 1,
     occurrence_count: 12,
@@ -481,10 +483,12 @@ export const contractFixture = {
     kinds: [{ kind: 'process', item_count: 1, occurrence_count: 12 }],
   } satisfies InventorySummary,
   inventoryFacetPage: {
+    coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
     items: [{ value: 'production', label: 'production', item_count: 1, occurrence_count: 12 }],
     next_cursor: null,
   } satisfies InventoryFacetPage,
   inventoryItemDetail: {
+    coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
     id: '10000000-0000-4000-8000-000000000001',
     project_id: '20000000-0000-4000-8000-000000000001',
     application_id: '30000000-0000-4000-8000-000000000001',
@@ -514,6 +518,7 @@ export const contractFixture = {
     },
   } satisfies InventoryItemDetail,
   inventoryReleasePage: {
+    coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
     items: [
       {
         release_id: '40000000-0000-4000-8000-000000000001',
@@ -530,6 +535,7 @@ export const contractFixture = {
     next_cursor: null,
   } satisfies InventoryReleasePresencePage,
   inventorySightingPage: {
+    coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
     items: [
       {
         cluster_id: '50000000-0000-4000-8000-000000000001',
@@ -555,6 +561,7 @@ export const contractFixture = {
     next_cursor: null,
   } satisfies InventorySightingPage,
   inventoryGroupPage: {
+    coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
     items: [
       {
         id: '60000000-0000-4000-8000-000000000001',
@@ -572,6 +579,7 @@ export const contractFixture = {
     next_cursor: null,
   } satisfies InventoryGroupPage,
   inventoryOccurrencePage: {
+    coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
     items: [
       {
         id: '70000000-0000-4000-8000-000000000001',
@@ -598,6 +606,7 @@ export const contractFixture = {
   } satisfies InventoryOccurrencePage,
   inventoryDistributions: [
     {
+      coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
       identity_version: 1,
       kind: 'process',
       total_item_count: 2,
@@ -613,6 +622,7 @@ export const contractFixture = {
       other: { item_count: 1, occurrence_count: 4 },
     },
     {
+      coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
       identity_version: 1,
       kind: 'destination',
       total_item_count: 1,
@@ -633,6 +643,7 @@ export const contractFixture = {
       other: null,
     },
     {
+      coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
       identity_version: 1,
       kind: 'domain',
       total_item_count: 1,
@@ -652,6 +663,7 @@ export const contractFixture = {
       other: null,
     },
     {
+      coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
       identity_version: 1,
       kind: 'syscall',
       total_item_count: 1,
@@ -667,6 +679,7 @@ export const contractFixture = {
       other: null,
     },
     {
+      coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
       identity_version: 1,
       kind: 'process',
       total_item_count: 0,
@@ -676,6 +689,7 @@ export const contractFixture = {
     },
   ] satisfies InventoryDistribution[],
   runtimeDiffSummary: {
+    coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
     baseline: {
       id: '40000000-0000-4000-8000-000000000001',
       project_id: '20000000-0000-4000-8000-000000000001',

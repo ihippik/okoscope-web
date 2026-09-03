@@ -1,3 +1,4 @@
+import { RetentionCoverage } from '../features/runtime-retention/coverage'
 import { useQuery } from '@tanstack/react-query'
 import { Link, Outlet, createFileRoute, useLocation, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
@@ -248,6 +249,7 @@ function RuntimeInventoryPage() {
           />
         </label>
       </Card>
+      {summary.data && <RetentionCoverage coverage={summary.data.coverage} inventory />}
       <InventoryFilterFields
         search={search}
         releases={releases.data?.items ?? []}

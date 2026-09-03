@@ -20,11 +20,29 @@ describe('application worker queries', () => {
   it('uses a generated worker page query with an opaque next cursor', () => {
     const options = applicationWorkersOptions({ get: vi.fn() } as unknown as ApiClient, 'p', 'a')
     expect(options.initialPageParam).toBeNull()
-    expect(options.getNextPageParam?.({ items: [], next_cursor: 'opaque' }, [], null, [])).toBe(
-      'opaque',
-    )
     expect(
-      options.getNextPageParam?.({ items: [], next_cursor: null }, [], null, []),
+      options.getNextPageParam?.(
+        {
+          coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
+          items: [],
+          next_cursor: 'opaque',
+        },
+        [],
+        null,
+        [],
+      ),
+    ).toBe('opaque')
+    expect(
+      options.getNextPageParam?.(
+        {
+          coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
+          items: [],
+          next_cursor: null,
+        },
+        [],
+        null,
+        [],
+      ),
     ).toBeUndefined()
   })
 })

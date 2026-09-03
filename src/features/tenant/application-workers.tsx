@@ -1,3 +1,4 @@
+import { RetentionCoverage } from '../runtime-retention/coverage'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { applicationWorkersOptions } from '../../shared/api/queries'
 import type { ApplicationWorker } from '../../shared/api/types'
@@ -84,6 +85,9 @@ export function ApplicationWorkers({
         </h2>
         <p className="mt-1 text-sm text-slate-400">{t('workerNodesHelp')}</p>
       </div>
+      {query.data.pages[0] && (
+        <RetentionCoverage coverage={query.data.pages[0].coverage} inventory />
+      )}
       {query.isRefetchError && (
         <p
           role="alert"

@@ -10,6 +10,7 @@ import {
 import { InventoryKindDistribution, TopBehaviorDistribution } from './visualization'
 
 const summary: InventorySummary = {
+  coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
   identity_version: 1,
   item_count: 4,
   occurrence_count: 126,
@@ -36,6 +37,7 @@ describe('data visualization presentation', () => {
 
   it('formats inbound identities without client or deployment fields', () => {
     const distribution: InventoryDistribution = {
+      coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
       identity_version: 1,
       kind: 'inbound_endpoint',
       total_item_count: 1,
@@ -86,6 +88,7 @@ describe('data visualization presentation', () => {
 
   it('sorts top behaviors and other by occurrence count descending', () => {
     const distribution: InventoryDistribution = {
+      coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
       identity_version: 1,
       kind: 'process',
       total_item_count: 4,
@@ -120,6 +123,7 @@ describe('data visualization presentation', () => {
     const onIdentity = vi.fn()
     const user = userEvent.setup()
     const distribution: InventoryDistribution = {
+      coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
       identity_version: 1,
       kind: 'process',
       total_item_count: 3,

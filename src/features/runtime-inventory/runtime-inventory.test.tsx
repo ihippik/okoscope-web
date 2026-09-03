@@ -291,6 +291,7 @@ describe('runtime inventory safe presentation', () => {
       <EvidenceList
         kind="releases"
         page={{
+          coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
           items: [
             observed,
             {

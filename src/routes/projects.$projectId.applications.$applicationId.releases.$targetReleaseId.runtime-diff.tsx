@@ -1,3 +1,4 @@
+import { RetentionCoverage } from '../features/runtime-retention/coverage'
 import { useQuery } from '@tanstack/react-query'
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect } from 'react'
@@ -136,6 +137,7 @@ function RuntimeDiffPage() {
           problem, and “no longer observed” does not prove that behavior is absent.
         </p>
       </div>
+      <RetentionCoverage coverage={diff.data.coverage} />
       <Card>
         <label className="block text-sm font-medium" htmlFor="baseline">
           Baseline release
