@@ -60,6 +60,10 @@ export class ApiClient {
     return this.request<T>('POST', path, options)
   }
 
+  async put<T>(path: string, options: RequestOptions & { body: unknown }): Promise<T> {
+    return this.request<T>('PUT', path, options)
+  }
+
   async patch<T>(path: string, options: RequestOptions & { body: unknown }): Promise<T> {
     return this.request<T>('PATCH', path, options)
   }
@@ -69,7 +73,7 @@ export class ApiClient {
   }
 
   private async request<T>(
-    method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
+    method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
     path: string,
     options: RequestOptions,
   ): Promise<T> {

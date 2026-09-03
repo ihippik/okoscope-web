@@ -241,6 +241,8 @@ const json = (route: Route, body: unknown, status = 200, requestId = 'e2e-reques
   })
 
 export async function mockApi(page: Page, role: 'owner' | 'member' = 'owner') {
+  let organizationRetention = { enabled: false, history_days: 90 }
+  let projectRetention: typeof organizationRetention | null = null
   let loggedIn = false
   let groupStatus: 'open' | 'acknowledged' | 'resolved' = 'open'
   const destination = {
@@ -308,6 +310,20 @@ export async function mockApi(page: Page, role: 'owner' | 'member' = 'owner') {
   await page.route('**/api/v1/**', async (route) => {
     const url = new URL(route.request().url())
     const path = url.pathname
+    if (path === `/api/v1/organizations/${organization.id}/notification-retention`) {
+      if (route.request().method() === 'PUT') organizationRetention = route.request().postDataJSON()
+      return json(route, organizationRetention)
+    }
+    if (path === `/api/v1/projects/${project.id}/notification-retention`) {
+      if (route.request().method() === 'PUT') projectRetention = route.request().postDataJSON()
+      if (route.request().method() === 'DELETE') projectRetention = null
+      return json(route, {
+        override: projectRetention,
+        inherited: organizationRetention,
+        effective: projectRetention ?? organizationRetention,
+        source: projectRetention ? 'project' : 'organization',
+      })
+    }
     if (path === '/api/v1/build-info')
       return json(route, {
         service_version: '0.1.0',

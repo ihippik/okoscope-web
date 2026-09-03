@@ -1,5 +1,6 @@
 import { Outlet, createFileRoute, useLocation, useNavigate } from '@tanstack/react-router'
 import { useEffect } from 'react'
+import { NotificationRetention } from '../features/notifications/retention'
 import { DeliveryHistory } from '../features/notifications/deliveries'
 import { DestinationList } from '../features/notifications/destinations'
 import { NotificationHealthPanel } from '../features/notifications/health'
@@ -34,6 +35,7 @@ function NotificationsPage() {
           Configure delivery receivers and investigate notification attempts.
         </p>
       </div>
+      <NotificationRetention projectId={projectId} />
       <NotificationHealthPanel projectId={projectId} />
       <DestinationList projectId={projectId} />
       <BulkRetry projectId={projectId} />

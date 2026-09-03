@@ -54,4 +54,23 @@ Verified against `https://okoscope.com` service commit `a270f88385ded5f81d067dfb
 - Twenty sequential Domain distribution requests with limit 10 produced a response of approximately 11,443 bytes: mean 211 ms, p50 111 ms, p95 525 ms, maximum 660 ms.
 - Twenty sequential Runtime Diff summary requests with limit 10 produced a response of approximately 4,679 bytes: mean 152 ms, p50 91 ms, p95 356 ms, maximum 555 ms.
 
-These measurements are deployment smoke evidence, not a high-cardinality capacity result: the available development dataset contains only 46 inventory identities and 47 diff identities. Query-plan and p99 evidence on a representative high-cardinality dataset remains a backend release requirement.
+These measurements are deployment smoke evidence, not a high-cardinality capacity result. A separate backend synthetic high-cardinality verification is recorded below; it does not replace production capacity testing.
+
+## Backend high-cardinality verification (2026-09-03)
+
+Backend revision `810660cef5a0fe73cc9be2cd297459a87833e71c`, PostgreSQL 17.4, debug build on Apple M2 Pro / 16 GiB RAM. An isolated local synthetic read-model fixture contains 40,000 inventory identities and diff groups (10,000 identities per visualization kind), 40,000 event rows/sightings, 2,000 Pods, 20 namespaces, 100 workloads and two overlapping releases. Each endpoint/limit configuration uses ten warmups followed by 300 sequential HTTP requests; timing includes the complete response body over loopback. These are development acceptance measurements, not a production SLO or concurrent-ingestion capacity result.
+
+| Endpoint, limit 10                             |      p95 |      p99 | Maximum JSON bytes |
+| ---------------------------------------------- | -------: | -------: | -----------------: |
+| Process Distribution                           |  6.94 ms |  9.56 ms |             10,710 |
+| Destination Distribution                       |  7.36 ms |  9.39 ms |             11,752 |
+| Domain Distribution                            |  7.03 ms |  9.65 ms |             11,175 |
+| Syscall Distribution                           |  7.62 ms |  9.98 ms |             10,848 |
+| Scoped Process Distribution (1,333 identities) | 23.34 ms | 36.33 ms |             10,704 |
+| Runtime Diff Summary (40,000 groups)           | 40.50 ms | 47.50 ms |              3,672 |
+
+Actual aggregate SQL was reviewed using `EXPLAIN (ANALYZE, BUFFERS)`: full-scope window aggregation/top-N sort for distributions, indexed item access with release/sighting scope subplans for the filtered case, and full release comparison/hash joins for diff. No temporary-block spill was observed. All 3,600 measured requests succeeded. Default 5, maximum 10, rejection of 0/11, complete classification totals, and top entries plus `other` were verified. Retain top-N default **5**, maximum **10** for this profile.
+
+The remaining task 5.4 blocker is now concrete: the API bounds entry count but does not enforce an aggregate byte budget. A separate stored-summary probe with 131,072-byte process labels returned HTTP 200 and **1,321,222 bytes** at limit 10. Ordinary-fixture maxima above must not be advertised as contract-wide size limits. Backend must define and enforce bounded identity fields or a bounded aggregate representation, including existing oversized values, before a guaranteed response-byte maximum can be confirmed. The frontend must not add a workaround. Task 5.4 remains unchecked and the change is not ready to archive.
+
+Reproduction, all default/max-limit measurements and full JSON plans are retained in the backend repository: `tools/benchmark_visualizations.py`, `docs/data-visualizations-high-cardinality.md`, and `docs/data-visualizations-benchmark-results.json`.

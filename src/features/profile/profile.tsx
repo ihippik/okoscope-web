@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { Building2, ShieldCheck, UserRound } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { NotificationRetention } from '../notifications/retention'
 import { logout } from '../../shared/api/auth'
 import { useApi } from '../../shared/api/context'
 import { authenticationSession, useAuthentication } from '../../shared/auth/session'
@@ -76,7 +77,7 @@ export function Profile() {
                 {t('organization')}
               </dt>
               <dd className="mt-3 text-lg font-semibold text-slate-100">{organization.name}</dd>
-              <dd className="mt-1 font-mono text-xs text-slate-500">{organization.slug}</dd>
+              <dd className="mt-1 font-mono text-xs text-slate-400">{organization.slug}</dd>
             </dl>
             <dl className="bg-[#08182b] p-6 sm:p-8">
               <dt className="flex items-center gap-2 text-sm text-slate-400">
@@ -86,7 +87,7 @@ export function Profile() {
               <dd className="mt-3 text-lg font-semibold text-slate-100">
                 {role === 'owner' ? t('roleOwner') : t('roleMember')}
               </dd>
-              <dd className="mt-1 text-sm text-slate-500">{t('profileRoleHelp')}</dd>
+              <dd className="mt-1 text-sm text-slate-400">{t('profileRoleHelp')}</dd>
             </dl>
           </div>
 
@@ -94,7 +95,7 @@ export function Profile() {
             <div>
               <div>
                 <LanguageSelector />
-                <p className="mt-2 text-xs leading-5 text-slate-500">{t('profileLanguageHelp')}</p>
+                <p className="mt-2 text-xs leading-5 text-slate-400">{t('profileLanguageHelp')}</p>
               </div>
             </div>
             {error !== null && (
@@ -114,6 +115,7 @@ export function Profile() {
           </section>
         </div>
       </Card>
+      <NotificationRetention />
     </section>
   )
 }

@@ -4,6 +4,47 @@
  */
 
 export interface paths {
+    "/api/v1/organizations/{organization_id}/notification-retention": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: components["parameters"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        /** @description Read effective retention settings. */
+        get: operations["getOrganizationNotificationRetention"];
+        /** @description Organization owner required. Changes affect subsequent maintenance batches. */
+        put: operations["putOrganizationNotificationRetention"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/notification-retention": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** @description Read effective retention settings. */
+        get: operations["getProjectNotificationRetention"];
+        /** @description Organization owner required. Changes affect subsequent maintenance batches. */
+        put: operations["putProjectNotificationRetention"];
+        post?: never;
+        /** @description Organization owner required. Changes affect subsequent maintenance batches. */
+        delete: operations["deleteProjectNotificationRetention"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/build-info": {
         parameters: {
             query?: never;
@@ -1241,6 +1282,18 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        NotificationRetentionPolicy: {
+            enabled: boolean;
+            /** @description Days since the latest terminal transition; includes attempts and manual actions. */
+            history_days: number;
+        };
+        ProjectNotificationRetention: {
+            override: components["schemas"]["NotificationRetentionPolicy"] | null;
+            effective: components["schemas"]["NotificationRetentionPolicy"];
+            inherited: components["schemas"]["NotificationRetentionPolicy"];
+            /** @enum {string} */
+            source: "organization" | "project";
+        };
         /** @enum {string} */
         PolicyVerdict: "unclassified" | "expected" | "requires_review" | "policy_conflict";
         /** @enum {string} */
@@ -1837,7 +1890,7 @@ export interface components {
             api_version: "v1";
             /**
              * Format: int64
-             * @example 21
+             * @example 22
              */
             required_database_migration: number;
         };
@@ -3455,6 +3508,154 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getOrganizationNotificationRetention: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: components["parameters"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Retention settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationRetentionPolicy"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    putOrganizationNotificationRetention: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: components["parameters"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationRetentionPolicy"];
+            };
+        };
+        responses: {
+            /** @description Retention settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationRetentionPolicy"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    getProjectNotificationRetention: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Retention settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectNotificationRetention"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    putProjectNotificationRetention: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationRetentionPolicy"];
+            };
+        };
+        responses: {
+            /** @description Retention settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectNotificationRetention"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    deleteProjectNotificationRetention: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Retention settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectNotificationRetention"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
     getBuildInfo: {
         parameters: {
             query?: never;
