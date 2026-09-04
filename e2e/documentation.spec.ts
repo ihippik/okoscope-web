@@ -28,7 +28,7 @@ for (const expired of [false, true]) {
       await context.addCookies([
         { name: 'okoscope_session', value: 'expired', url: 'http://127.0.0.1:4173' },
       ])
-    await page.goto('/docs/quick-start#configure')
+    await page.goto('/docs/quick-start#secret')
     await expect(page.getByRole('heading', { level: 1, name: 'Quick start' })).toBeVisible()
     if (!expired) {
       for (const selector of [
@@ -48,7 +48,7 @@ for (const expired of [false, true]) {
     await page.reload()
     await expect(page.getByRole('heading', { level: 1, name: 'Quick start' })).toBeVisible()
     await page.getByLabel('Language').selectOption('ru')
-    await expect(page).toHaveURL(/\/docs\/quick-start#configure$/)
+    await expect(page).toHaveURL(/\/docs\/quick-start#secret$/)
     await expect(page.getByRole('heading', { level: 1, name: 'Быстрый старт' })).toBeVisible()
     await page.reload()
     await expect(page.getByLabel('Язык')).toHaveValue('ru')
@@ -211,35 +211,7 @@ test('every visible documentation Okoscope name uses semantic readable brand sty
 })
 
 test('documentation safely links every allowlisted repository reference', async ({ page }) => {
-  const targets = {
-    'https://github.com/ihippik/okoscope': 'https://github.com/ihippik/okoscope',
-    'deploy/kubernetes/agent':
-      'https://github.com/ihippik/okoscope/tree/main/deploy/kubernetes/agent',
-    'deploy/kubernetes/common':
-      'https://github.com/ihippik/okoscope/tree/main/deploy/kubernetes/common',
-    'deploy/kubernetes/agent/daemonset.yaml':
-      'https://github.com/ihippik/okoscope/blob/main/deploy/kubernetes/agent/daemonset.yaml',
-    'deploy/kubernetes/common/namespace.yaml':
-      'https://github.com/ihippik/okoscope/blob/main/deploy/kubernetes/common/namespace.yaml',
-    'deploy/kubernetes/common/postgres.yaml':
-      'https://github.com/ihippik/okoscope/blob/main/deploy/kubernetes/common/postgres.yaml',
-    'deploy/kubernetes/common/secret.example.yaml':
-      'https://github.com/ihippik/okoscope/blob/main/deploy/kubernetes/common/secret.example.yaml',
-  } as const
-  const expectedByArticle: Record<string, Record<string, number>> = {
-    'quick-start': {
-      'https://github.com/ihippik/okoscope': 1,
-      'deploy/kubernetes/agent': 2,
-      'deploy/kubernetes/agent/daemonset.yaml': 1,
-    },
-    'self-hosting': {
-      'https://github.com/ihippik/okoscope': 1,
-      'deploy/kubernetes/common': 1,
-      'deploy/kubernetes/common/namespace.yaml': 1,
-      'deploy/kubernetes/common/postgres.yaml': 1,
-      'deploy/kubernetes/common/secret.example.yaml': 1,
-    },
-  }
+  const targets = {} as const
 
   await page.setViewportSize({ width: 360, height: 800 })
   for (const [slug] of titles) {
@@ -248,7 +220,7 @@ test('documentation safely links every allowlisted repository reference', async 
       await page.getByLabel(/Language|Язык/).selectOption(locale)
       const prose = page.locator('main section p')
       const links = prose.locator('a[href^="https://github.com/ihippik/okoscope"]')
-      const expected: Record<string, number> = expectedByArticle[slug] ?? {}
+      const expected: Record<string, number> = {}
       await expect(links).toHaveCount(
         Object.values(expected).reduce((sum, count) => sum + count, 0),
       )
@@ -274,6 +246,7 @@ test('documentation safely links every allowlisted repository reference', async 
         const sortedEntries = (entries as [string, string][]).sort(
           ([left], [right]) => right.length - left.length,
         )
+        if (sortedEntries.length === 0) return invalid
         const pattern = new RegExp(
           sortedEntries.map(([token]) => token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'),
           'g',
@@ -301,12 +274,12 @@ test('documentation safely links every allowlisted repository reference', async 
         const sources = page.getByRole('link', {
           name:
             locale === 'en'
-              ? 'Open deployment sources on GitHub'
-              : 'Открыть исходные манифесты на GitHub',
+              ? 'Open Helm chart sources on GitHub'
+              : 'Открыть исходники Helm-чартов на GitHub',
         })
         await expect(sources).toHaveAttribute(
           'href',
-          'https://github.com/ihippik/okoscope/tree/main/deploy/kubernetes',
+          'https://github.com/ihippik/okoscope/tree/main/deploy/helm',
         )
       }
       expect(
@@ -315,6 +288,45 @@ test('documentation safely links every allowlisted repository reference', async 
       if (slug === 'quick-start' || slug === 'self-hosting')
         expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
     }
+  }
+})
+
+test('installation journeys match the secure Helm chart contract in both languages', async ({
+  page,
+}) => {
+  for (const locale of ['en', 'ru'] as const) {
+    await page.goto('/docs/quick-start')
+    await page.getByLabel(/Language|Язык/).selectOption(locale)
+    const quickStart = page.locator('main')
+    await expect(quickStart).toContainText('oci://ghcr.io/ihippik/charts/okoscope-agent')
+    await expect(quickStart).toContainText('okoscope-application-credentials')
+    await expect(quickStart).toContainText('credentialSecret.name')
+    await expect(quickStart).toContainText('server.caSecret.name')
+    await expect(quickStart).toContainText('imagePullSecrets')
+    await expect(quickStart).toContainText('32')
+    await expect(quickStart).not.toContainText('postgresql.enabled')
+    await expect(quickStart).not.toContainText('deploy/kubernetes')
+
+    await page.goto('/docs/self-hosting')
+    const selfHosting = page.locator('main')
+    await expect(selfHosting).toContainText('oci://ghcr.io/ihippik/charts/okoscope')
+    await expect(selfHosting).toContainText('database.existingSecret')
+    await expect(selfHosting).toContainText('database.urlKey')
+    await expect(selfHosting).toContainText('internalSecret.existingSecret')
+    await expect(selfHosting).toContainText('imagePullSecrets')
+    await expect(selfHosting).toContainText('helm rollback')
+    await expect(selfHosting).toContainText('helm uninstall')
+    await expect(selfHosting).toContainText(
+      locale === 'en' ? 'does not install PostgreSQL' : 'PostgreSQL он не устанавливает',
+    )
+    await expect(selfHosting).toContainText(
+      locale === 'en'
+        ? 'provision, secure, monitor, back up, restore, upgrade and delete'
+        : 'создаёте, защищаете, наблюдаете, резервируете, восстанавливаете, обновляете и удаляете',
+    )
+    await expect(selfHosting).not.toContainText('postgresql.enabled')
+    await expect(selfHosting).not.toContainText('deploy/kubernetes/common/postgres.yaml')
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   }
 })
 
@@ -680,28 +692,12 @@ async function verifyContentsCaption(contents: Locator, text: string) {
 }
 
 async function verifyQuickStartSubsection(page: Page, contents: Locator, locale: 'en' | 'ru') {
-  const subsectionName = locale === 'en' ? 'Mount the token and CA' : 'Смонтируйте токен и CA'
-  const parentName = locale === 'en' ? '2. Configure one workload' : '2. Настройте одну нагрузку'
-  const subsectionHeading = page.getByRole('heading', { level: 3, name: subsectionName })
-  await expect(subsectionHeading).toHaveAttribute('id', 'secret-mount')
-  await expect(page.getByRole('heading', { level: 2, name: parentName })).toBeVisible()
-
-  const parentItem = contents.getByRole('link', { name: parentName }).locator('..')
-  const subsectionItem = contents.getByRole('link', { name: subsectionName }).locator('..')
-  const [parentStyle, subsectionStyle] = await Promise.all([
-    parentItem.evaluate((element) => {
-      const style = getComputedStyle(element)
-      return { fontSize: parseFloat(style.fontSize), marginLeft: parseFloat(style.marginLeft) }
-    }),
-    subsectionItem.evaluate((element) => {
-      const style = getComputedStyle(element)
-      return { fontSize: parseFloat(style.fontSize), marginLeft: parseFloat(style.marginLeft) }
-    }),
-  ])
-  expect(subsectionStyle.fontSize).toBeLessThan(parentStyle.fontSize)
-  expect(subsectionStyle.marginLeft).toBeGreaterThan(parentStyle.marginLeft)
-  await contents.getByRole('link', { name: subsectionName }).click()
-  expect(new URL(page.url()).hash).toBe('#secret-mount')
+  const sectionName =
+    locale === 'en' ? '2. Create the credential Secret' : '2. Создайте Secret с токеном'
+  const sectionHeading = page.getByRole('heading', { level: 2, name: sectionName })
+  await expect(sectionHeading).toHaveAttribute('id', 'secret')
+  await contents.getByRole('link', { name: sectionName }).click()
+  expect(new URL(page.url()).hash).toBe('#secret')
 }
 
 async function verifyActiveArticleStyling(page: Page, articleName: string, navigation: string) {
@@ -717,7 +713,17 @@ async function verifyActiveArticleStyling(page: Page, articleName: string, navig
 
 async function verifyRenderedBrandNames(page: Page) {
   const shell = page.locator('.docs-shell')
-  const occurrences = (await shell.textContent())?.match(/Okoscope/g)?.length ?? 0
+  const occurrences = await shell.evaluate((root) => {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+    let count = 0
+    let node = walker.nextNode()
+    while (node) {
+      if (!node.parentElement?.closest('.docs-code'))
+        count += node.nodeValue?.match(/Okoscope/g)?.length ?? 0
+      node = walker.nextNode()
+    }
+    return count
+  })
   const branded = shell.locator('strong.docs-brand-text')
   await expect(branded).toHaveCount(occurrences)
   expect(occurrences).toBeGreaterThan(0)
@@ -729,7 +735,8 @@ async function verifyRenderedBrandNames(page: Page) {
     while (node) {
       if ((node.nodeValue?.match(/Okoscope/g)?.length ?? 0) > 0) {
         const parent = node.parentElement
-        if (!parent?.matches('strong.docs-brand-text')) invalid.push(parent?.outerHTML ?? '')
+        if (!parent?.closest('.docs-code') && !parent?.matches('strong.docs-brand-text'))
+          invalid.push(parent?.outerHTML ?? '')
       }
       node = walker.nextNode()
     }

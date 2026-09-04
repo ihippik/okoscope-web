@@ -67,7 +67,7 @@ export function Documentation({ slug }: { slug: string }) {
                 </p>
                 {(slug === 'quick-start' || slug === 'self-hosting') && (
                   <p>
-                    <a href="https://github.com/ihippik/okoscope/tree/main/deploy/kubernetes">
+                    <a href="https://github.com/ihippik/okoscope/tree/main/deploy/helm">
                       {ui.repository}
                     </a>
                   </p>
