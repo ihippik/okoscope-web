@@ -38,10 +38,15 @@ The quality gate includes formatting, linting, strict type checking, contract fr
 
 ```sh
 docker build --build-arg OKOSCOPE_WEB_GIT_COMMIT="$(git rev-parse HEAD)" -t okoscope-web:local .
-docker run --rm -p 8080:8080 --read-only --tmpfs /tmp:rw,noexec,nosuid,size=32m -e OKOSCOPE_API_BASE_URL=https://api.example.com okoscope-web:local
+docker run --rm -p 8080:8080 --read-only --tmpfs /tmp:rw,noexec,nosuid,size=32m \
+  -e OKOSCOPE_API_BASE_URL=/ \
+  -e OKOSCOPE_API_UPSTREAM=http://okoscope-server:8080 \
+  okoscope-web:local
 ```
 
-`OKOSCOPE_API_BASE_URL` accepts a same-origin path or an absolute HTTP(S) URL without credentials. `config.js` and `index.html` are not cached; hashed assets are immutable. `/healthz` is the health endpoint and client-side deep links use SPA fallback.
+`OKOSCOPE_API_BASE_URL` accepts a same-origin path or an absolute HTTP(S) URL without credentials. For the recommended same-origin mode, set it to `/` and set `OKOSCOPE_API_UPSTREAM` to the server's internal absolute HTTP(S) origin, for example `http://okoscope-server:8080`. The upstream must not contain credentials, a path, query, fragment or trailing slash. The container proxies `/api` before SPA routing and forwards the original host/protocol headers. When no upstream is configured, `/api` fails closed with `502` instead of returning `index.html`. Public ingresses that route `/api` directly to the server remain supported.
+
+`config.js` and `index.html` are not cached; hashed assets are immutable. `/healthz` is the health endpoint and client-side deep links use SPA fallback.
 
 Prefer a same-origin deployment with `/api` reverse-proxied to the backend. For a separate origin, configure the backend's exact CORS allowlist entry for the UI origin; wildcard origins are unsupported and credentialed requests require the exact trusted origin.
 

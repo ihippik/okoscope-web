@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { getCurrentUser, isAnonymousResponse, login, register } from '../shared/api/auth'
 import { useApi } from '../shared/api/context'
 import { buildInfoOptions } from '../shared/api/queries'
+import { setupStatusOptions } from '../shared/api/onboarding'
 import type { LoginRequest, RegisterRequest } from '../shared/api/types'
 import { authenticationSession, useAuthentication } from '../shared/auth/session'
 import { useT } from '../shared/i18n'
@@ -13,6 +14,8 @@ import { Brand, BrandMark } from '../shared/ui/brand'
 import { Card } from '../shared/ui/card'
 import { ErrorState } from '../shared/ui/error-state'
 import { Loading } from '../shared/ui/loading'
+import { FirstRunSetup } from '../features/provisioning/first-run-setup'
+import { captureSetupTokenFragment } from '../features/provisioning/setup-token-memory'
 
 export const REQUIRED_API_VERSION = 'v1'
 export const REQUIRED_DATABASE_MIGRATION = 16
@@ -34,6 +37,7 @@ function NotFound() {
 }
 
 function RootComponent() {
+  captureSetupTokenFragment()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   if (pathname === '/docs' || pathname.startsWith('/docs/')) return <Outlet />
   return <ProtectedRoot />
@@ -54,6 +58,31 @@ function ProtectedRoot() {
       />
     )
   if (!isBuildCompatible(query.data)) return <CompatibilityError info={query.data} />
+  return <SetupGate />
+}
+
+function SetupGate() {
+  const api = useApi()
+  const t = useT()
+  const setup = useQuery(setupStatusOptions(api))
+  if (setup.isPending) return <StartupLoading label={t('checkingSetup')} />
+  if (setup.isError)
+    return (
+      <StartupError
+        title={t('setupStatusFailed')}
+        error={setup.error}
+        onRetry={() => void setup.refetch()}
+      />
+    )
+  if (setup.data.state === 'setup_unavailable')
+    return (
+      <StartupError
+        title={t('setupUnavailable')}
+        error={new Error(t('setupUnavailableHelp'))}
+        onRetry={() => void setup.refetch()}
+      />
+    )
+  if (setup.data.state === 'owner_required') return <FirstRunSetup />
   return <SessionGate />
 }
 
@@ -112,6 +141,13 @@ function AuthenticatedShell() {
               activeProps={{ className: 'nav-link text-cyan-300' }}
             >
               {t('profile')}
+            </Link>
+            <Link
+              to="/onboarding"
+              className="nav-link"
+              activeProps={{ className: 'nav-link text-cyan-300' }}
+            >
+              {t('connectAgent')}
             </Link>
             <Link to="/docs" className="nav-link">
               {t('documentation')}

@@ -368,6 +368,7 @@ export async function mockApi(page: Page, role: 'owner' | 'member' = 'owner') {
         api_version: 'v1',
         required_database_migration: 16,
       })
+    if (path === '/api/v1/setup/status') return json(route, { state: 'ready' })
     const authContext = {
       user: { id: '00000000-0000-4000-8000-000000000020', email: 'owner@example.com' },
       organization,

@@ -270,8 +270,8 @@ export const articles: Article[] = [
             ru: 'Попросите у того, кто обслуживает установку, адрес сайта, доступный из кластера gRPC endpoint, сертификат CA и доступ к организации. Регистрация может быть отключена; если она открыта, при регистрации вы становитесь владельцем новой организации, а не системным администратором. Участники могут читать данные, но создавать проекты и приложения в организации вправе владелец или системный администратор.',
           },
           {
-            en: 'In Projects, pick or create a Project, then create an Application. An owner can do this inside their own organization; the global onboarding and discovery flows need the separate system admin credential. The response contains an oko_app_v1_ token — save it right away, because the full value is shown exactly once. Keep it out of ConfigMaps, Git, screenshots and logs.',
-            ru: 'В разделе проектов выберите или создайте проект, а затем создайте приложение. Владельцу это доступно в своей организации; глобальный мастер подключения и поиск требуют отдельного системного токена. В ответе придёт токен oko_app_v1_ — сохраните его сразу, потому что полное значение показывается ровно один раз. Не оставляйте его в ConfigMap, Git, скриншотах и журналах.',
+            en: 'Open Connect agent. The owner wizard resumes from server-side Projects, Applications and installation state, so a reload does not create duplicates. Choose or create a Project and Application, then identify one Deployment by namespace and name or bounded labels. The server supplies the compatible chart version, endpoint and Secret convention; no system administrator credential is needed.',
+            ru: 'Откройте «Подключение агента». Мастер владельца продолжает работу по сохранённым на сервере проектам, приложениям и установкам, поэтому перезагрузка не создаёт дубликаты. Выберите или создайте проект и приложение, затем укажите один Deployment через namespace и имя либо ограниченный набор labels. Сервер передаёт совместимую версию чарта, endpoint и параметры Secret; системный административный токен не нужен.',
           },
         ],
       },
@@ -336,8 +336,8 @@ kubectl -n okoscope-system logs daemonset/okoscope-agent-okoscope-agent --tail=1
             ru: 'Один релиз агента может сопоставить до 32 приложений. Добавьте по одному элементу workloads на приложение: каждый выбирает ровно одно имя Deployment или ограниченный набор labels и ссылается на собственные имя Secret и ключ. Для существующего pull Secret private registry используйте imagePullSecrets. Самих токенов в values-файле быть не должно.',
           },
           {
-            en: 'For a server signed by a private CA, create a CA Secret in the agent namespace and set server.caSecret.name and server.caSecret.key. The chart projects it read-only. Keep server.developmentPlaintext false outside isolated development, and keep the https:// prefix in server.endpoint.',
-            ru: 'Для сервера с сертификатом частного CA создайте Secret с CA в namespace агента и задайте server.caSecret.name и server.caSecret.key. Чарт смонтирует его только для чтения. Не включайте server.developmentPlaintext за пределами изолированной разработки и сохраняйте префикс https:// в server.endpoint.',
+            en: 'For a server signed by a private CA, create the CA Secret named by the installation page in the agent namespace, using the displayed key. The generated Helm command passes only server.caSecret.name and server.caSecret.key references; certificate content never enters Helm values or the browser. The chart projects the Secret read-only. Keep server.developmentPlaintext false outside isolated development, and keep the https:// prefix in server.endpoint.',
+            ru: 'Для сервера с сертификатом частного CA создайте в namespace агента CA Secret с именем и ключом со страницы установки. Сгенерированная Helm-команда передаёт только ссылки server.caSecret.name и server.caSecret.key; содержимое сертификата не попадает в Helm values или браузер. Чарт монтирует Secret только для чтения. Не включайте server.developmentPlaintext за пределами изолированной разработки и сохраняйте префикс https:// в server.endpoint.',
           },
         ],
       },
@@ -410,6 +410,16 @@ read -rsp "PostgreSQL URL: " OKOSCOPE_DATABASE_URL
 kubectl -n okoscope-system create secret generic okoscope-database \
   --from-literal=database-url="$OKOSCOPE_DATABASE_URL"
 unset OKOSCOPE_DATABASE_URL`,
+      },
+      {
+        id: 'claim',
+        title: { en: 'Claim a fresh installation', ru: 'Активируйте новую установку' },
+        paragraphs: [
+          {
+            en: 'On first open, Okoscope asks for the setup token stored in the chart-managed Secret and creates the first owner, Organization and Project in one operation. Retrieve the token with the command printed by Helm NOTES; do not put it in a URL query, values file or shell history. Ordinary public registration remains disabled. After the first owner exists, setup is permanently closed and the normal sign-in page is shown.',
+            ru: 'При первом открытии Okoscope запрашивает setup-токен из управляемого чартом Secret и одной операцией создаёт первого владельца, организацию и проект. Получите токен командой из Helm NOTES; не помещайте его в query-параметр URL, values-файл или историю shell. Обычная публичная регистрация остаётся выключенной. После создания первого владельца setup закрывается навсегда и показывается обычная страница входа.',
+          },
+        ],
       },
       {
         id: 'rollout',

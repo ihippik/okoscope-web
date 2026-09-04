@@ -328,6 +328,11 @@ test('shows correlated session errors without protected content', async ({ page 
           required_database_migration: 16,
         }),
       })
+    if (route.request().url().endsWith('/setup/status'))
+      return route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ state: 'ready' }),
+      })
     return route.fulfill({
       status: 401,
       contentType: 'application/json',

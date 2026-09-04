@@ -122,6 +122,125 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/setup/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getSetupStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/setup/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["completeSetup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent-installation-metadata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getAgentInstallationMetadata"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/installations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        get: operations["listApplicationInstallations"];
+        put?: never;
+        post: operations["createApplicationInstallation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/installations/{installation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                application_id: string;
+                installation_id: string;
+            };
+            cookie?: never;
+        };
+        get: operations["getApplicationInstallation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["updateApplicationInstallation"];
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/installations/{installation_id}/replace-credential": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["replaceInstallationCredential"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/connection-readiness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getApplicationConnectionReadiness"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/register": {
         parameters: {
             query?: never;
@@ -1343,6 +1462,148 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        SetupStatus: {
+            /** @enum {unknown} */
+            state: "owner_required" | "ready" | "setup_unavailable";
+        };
+        CompleteSetupRequest: {
+            setup_token: string;
+            /** Format: email */
+            email: string;
+            password: string;
+            organization_slug: string;
+            organization_name: string;
+            project_slug: string;
+            project_name: string;
+        };
+        CompleteSetupResponse: {
+            /** Format: uuid */
+            user_id: string;
+            /** Format: uuid */
+            organization_id: string;
+            /** Format: uuid */
+            project_id: string;
+            /** @constant */
+            role: "owner";
+        };
+        AgentInstallationMetadata: {
+            chart_reference: string;
+            chart_version: string;
+            recommended_agent_version: string;
+            minimum_agent_version: string;
+            configuration_schema_version: number;
+            grpc_endpoint: string;
+            /** @enum {unknown} */
+            tls_mode: "system" | "custom_ca";
+            ca_secret_name: string | null;
+            ca_secret_key: string | null;
+            namespace: string;
+            credential_secret_name: string;
+            credential_secret_key: string;
+            supported_workload_kinds: "Deployment"[];
+        } & ({
+            /** @constant */
+            tls_mode?: "system";
+            ca_secret_name?: null;
+            ca_secret_key?: null;
+        } | {
+            /** @constant */
+            tls_mode?: "custom_ca";
+            ca_secret_name?: string;
+            ca_secret_key?: string;
+        });
+        WorkloadIntent: {
+            namespace: string;
+            /** @constant */
+            kind: "Deployment";
+            name?: string;
+            labels?: {
+                [key: string]: string;
+            };
+        } & (unknown | unknown);
+        CreateInstallationRequest: {
+            cluster_name: string;
+            workload: components["schemas"]["WorkloadIntent"];
+        };
+        UpdateInstallationRequest: {
+            cluster_name: string;
+            workload: components["schemas"]["WorkloadIntent"];
+        };
+        ApplicationInstallation: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            application_id: string;
+            /** Format: uuid */
+            credential_id: string;
+            cluster_name: string;
+            workload_namespace: string;
+            /** @constant */
+            workload_kind: "Deployment";
+            workload_name?: string | null;
+            workload_labels?: {
+                [key: string]: string;
+            } | null;
+            chart_version: string;
+            configuration_schema_version: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        InstallationPage: {
+            items: components["schemas"]["ApplicationInstallation"][];
+        };
+        IssuedInstallationCredential: {
+            /** Format: uuid */
+            id: string;
+            token: string;
+            token_hint: string;
+            /** @constant */
+            shown_once: true;
+        };
+        InstallationCommandModel: {
+            chart_reference: string;
+            chart_version: string;
+            namespace: string;
+            secret_name: string;
+            secret_key: string;
+            grpc_endpoint: string;
+            /** @enum {unknown} */
+            tls_mode: "system" | "custom_ca";
+            ca_secret_name: string | null;
+            ca_secret_key: string | null;
+        } & ({
+            /** @constant */
+            tls_mode?: "system";
+            ca_secret_name?: null;
+            ca_secret_key?: null;
+        } | {
+            /** @constant */
+            tls_mode?: "custom_ca";
+            ca_secret_name?: string;
+            ca_secret_key?: string;
+        });
+        IssuedInstallation: {
+            installation: components["schemas"]["ApplicationInstallation"];
+            credential: components["schemas"]["IssuedInstallationCredential"];
+            command: components["schemas"]["InstallationCommandModel"];
+        };
+        ConnectionReadiness: {
+            /** @enum {unknown} */
+            state: "credential_created" | "waiting_for_agent" | "agent_authenticated" | "workload_not_matched" | "permission_denied" | "kernel_unsupported" | "waiting_for_event" | "receiving_events" | "stale" | "credential_revoked";
+            /** @enum {string|null} */
+            reason?: "selector_no_match" | "kubernetes_watch_forbidden" | "ebpf_unavailable" | "btf_unavailable" | "event_not_observed" | null;
+            /** Format: date-time */
+            credential_last_used_at?: string | null;
+            /** Format: date-time */
+            first_event_at?: string | null;
+            /** Format: date-time */
+            last_event_at?: string | null;
+            reporting_nodes: number;
+            /** @constant */
+            stale_after_seconds: 300;
+        };
         RuntimeRetentionCoverage: {
             closed_before: components["schemas"]["NullableTimestamp"];
             history_expired_before: components["schemas"]["NullableTimestamp"];
@@ -1992,7 +2253,7 @@ export interface components {
             api_version: "v1";
             /**
              * Format: int64
-             * @example 22
+             * @example 24
              */
             required_database_migration: number;
         };
@@ -3972,6 +4233,244 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["BuildInfoResponse"];
+        };
+    };
+    getSetupStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bounded setup state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SetupStatus"];
+                };
+            };
+            503: components["responses"]["Error"];
+        };
+    };
+    completeSetup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteSetupRequest"];
+            };
+        };
+        responses: {
+            /** @description First owner */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompleteSetupResponse"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getAgentInstallationMetadata: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Server-owned agent chart contract */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentInstallationMetadata"];
+                };
+            };
+            401: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listApplicationInstallations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Installation intent */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstallationPage"];
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    createApplicationInstallation: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Canonical UUID. Reusing it with a different request returns idempotency_key_reused. Application and credential replays never return plaintext token material. */
+                "Idempotency-Key"?: components["parameters"]["ProvisioningIdempotencyKey"];
+            };
+            path: {
+                project_id: string;
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateInstallationRequest"];
+            };
+        };
+        responses: {
+            /** @description Installation and one-time credential */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssuedInstallation"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    getApplicationInstallation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                application_id: string;
+                installation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Installation intent */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationInstallation"];
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    updateApplicationInstallation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                application_id: string;
+                installation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateInstallationRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated non-secret installation intent */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationInstallation"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    replaceInstallationCredential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                application_id: string;
+                installation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One-time replacement credential */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssuedInstallationCredential"];
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    getApplicationConnectionReadiness: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bounded readiness snapshot */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionReadiness"];
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
         };
     };
     registerUser: {
