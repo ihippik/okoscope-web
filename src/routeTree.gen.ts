@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as DocsIndexRouteImport } from './routes/docs.index'
+import { Route as DocsSlugRouteImport } from './routes/docs.$slug'
 import { Route as ProjectsIndexRouteImport } from './routes/projects.index'
 import { Route as ProjectsProjectIdIndexRouteImport } from './routes/projects.$projectId.index'
 import { Route as ProjectsProjectIdNotificationsRouteImport } from './routes/projects.$projectId.notifications'
@@ -43,6 +45,16 @@ const OnboardingRoute = OnboardingRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsIndexRoute = DocsIndexRouteImport.update({
+  id: '/docs/',
+  path: '/docs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsSlugRoute = DocsSlugRouteImport.update({
+  id: '/docs/$slug',
+  path: '/docs/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProjectsIndexRoute = ProjectsIndexRouteImport.update({
@@ -159,6 +171,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
+  '/docs/$slug': typeof DocsSlugRoute
+  '/docs/': typeof DocsIndexRoute
   '/projects/': typeof ProjectsIndexRoute
   '/projects/$projectId/notifications': typeof ProjectsProjectIdNotificationsRouteWithChildren
   '/projects/$projectId/': typeof ProjectsProjectIdIndexRoute
@@ -181,6 +195,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
+  '/docs/$slug': typeof DocsSlugRoute
+  '/docs': typeof DocsIndexRoute
   '/projects': typeof ProjectsIndexRoute
   '/projects/$projectId/notifications': typeof ProjectsProjectIdNotificationsRouteWithChildren
   '/projects/$projectId': typeof ProjectsProjectIdIndexRoute
@@ -204,6 +220,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
+  '/docs/$slug': typeof DocsSlugRoute
+  '/docs/': typeof DocsIndexRoute
   '/projects/': typeof ProjectsIndexRoute
   '/projects/$projectId/notifications': typeof ProjectsProjectIdNotificationsRouteWithChildren
   '/projects/$projectId/': typeof ProjectsProjectIdIndexRoute
@@ -228,6 +246,8 @@ export interface FileRouteTypes {
     | '/'
     | '/onboarding'
     | '/profile'
+    | '/docs/$slug'
+    | '/docs/'
     | '/projects/'
     | '/projects/$projectId/notifications'
     | '/projects/$projectId/'
@@ -250,6 +270,8 @@ export interface FileRouteTypes {
     | '/'
     | '/onboarding'
     | '/profile'
+    | '/docs/$slug'
+    | '/docs'
     | '/projects'
     | '/projects/$projectId/notifications'
     | '/projects/$projectId'
@@ -272,6 +294,8 @@ export interface FileRouteTypes {
     | '/'
     | '/onboarding'
     | '/profile'
+    | '/docs/$slug'
+    | '/docs/'
     | '/projects/'
     | '/projects/$projectId/notifications'
     | '/projects/$projectId/'
@@ -295,6 +319,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   OnboardingRoute: typeof OnboardingRoute
   ProfileRoute: typeof ProfileRoute
+  DocsSlugRoute: typeof DocsSlugRoute
+  DocsIndexRoute: typeof DocsIndexRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
   ProjectsProjectIdNotificationsRoute: typeof ProjectsProjectIdNotificationsRouteWithChildren
   ProjectsProjectIdIndexRoute: typeof ProjectsProjectIdIndexRoute
@@ -323,6 +349,20 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs/': {
+      id: '/docs/'
+      path: '/docs'
+      fullPath: '/docs/'
+      preLoaderRoute: typeof DocsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs/$slug': {
+      id: '/docs/$slug'
+      path: '/docs/$slug'
+      fullPath: '/docs/$slug'
+      preLoaderRoute: typeof DocsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/projects/': {
@@ -559,6 +599,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   OnboardingRoute: OnboardingRoute,
   ProfileRoute: ProfileRoute,
+  DocsSlugRoute: DocsSlugRoute,
+  DocsIndexRoute: DocsIndexRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
   ProjectsProjectIdNotificationsRoute:
     ProjectsProjectIdNotificationsRouteWithChildren,

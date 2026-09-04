@@ -5,7 +5,9 @@ import { authenticate, mockApi } from './fixtures'
 test('switches the interface to Russian and persists the choice', async ({ page }) => {
   await mockApi(page)
   await page.goto('/')
-  await page.getByLabel('Language').selectOption('ru')
+  const languageSelector = page.getByLabel('Language')
+  await expect(languageSelector.locator('..').getByText('Language', { exact: true })).toBeVisible()
+  await languageSelector.selectOption('ru')
   await expect(
     page.getByRole('heading', {
       name: 'Узнайте, что приложения действительно делают во время работы.',
@@ -14,6 +16,9 @@ test('switches the interface to Russian and persists the choice', async ({ page 
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
   await page.reload()
   await expect(page.getByLabel('Язык')).toHaveValue('ru')
+  await expect(
+    page.getByLabel('Язык').locator('..').getByText('Язык', { exact: true }),
+  ).toBeVisible()
 })
 
 test('renders tenant, runtime, and notification surfaces fully in Russian', async ({ page }) => {

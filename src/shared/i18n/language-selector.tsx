@@ -1,7 +1,13 @@
 import { useLocalization } from '.'
 import { useEffect, useRef } from 'react'
 
-export function LanguageSelector({ className = '' }: { className?: string }) {
+export function LanguageSelector({
+  className = '',
+  showLabel = true,
+}: {
+  className?: string
+  showLabel?: boolean
+}) {
   const { locale, setLocale, t } = useLocalization()
   const selectLocale = (value: string) => setLocale(value as 'en' | 'ru')
   const selectRef = useRef<HTMLSelectElement>(null)
@@ -14,7 +20,7 @@ export function LanguageSelector({ className = '' }: { className?: string }) {
   })
   return (
     <label className={`inline-flex items-center gap-2 text-sm text-slate-300 ${className}`}>
-      <span>{t('language')}</span>
+      {showLabel && <span>{t('language')}</span>}
       <select
         ref={selectRef}
         aria-label={t('language')}

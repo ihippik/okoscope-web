@@ -13,6 +13,7 @@ export type Locale = (typeof supportedLocales)[number]
 export type MessageValues = Record<string, string | number>
 
 export const englishMessages = {
+  documentation: 'Documentation',
   language: 'Language',
   english: 'English',
   russian: 'Russian',
@@ -380,6 +381,7 @@ export const englishMessages = {
 export type MessageKey = keyof typeof englishMessages
 
 export const russianMessages = {
+  documentation: 'Документация',
   language: 'Язык',
   english: 'Английский',
   russian: 'Русский',

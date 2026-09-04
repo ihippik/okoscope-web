@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
-import { Link, Outlet, createRootRoute } from '@tanstack/react-router'
+import { Link, Outlet, createRootRoute, useRouterState } from '@tanstack/react-router'
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { getCurrentUser, isAnonymousResponse, login, register } from '../shared/api/auth'
 import { useApi } from '../shared/api/context'
@@ -34,6 +34,12 @@ function NotFound() {
 }
 
 function RootComponent() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  if (pathname === '/docs' || pathname.startsWith('/docs/')) return <Outlet />
+  return <ProtectedRoot />
+}
+
+function ProtectedRoot() {
   const t = useT()
   const api = useApi()
   const build = buildInfoOptions(api)
@@ -107,6 +113,9 @@ function AuthenticatedShell() {
             >
               {t('profile')}
             </Link>
+            <Link to="/docs" className="nav-link">
+              {t('documentation')}
+            </Link>
             <LanguageSelector />
           </nav>
         </div>
@@ -174,6 +183,9 @@ function AuthenticationScreen({ expired }: { expired: boolean }) {
           {t('authProductTitle')}
         </h1>
         <p className="mt-5 max-w-lg text-lg text-slate-300">{t('authProductHelp')}</p>
+        <Link to="/docs" className="mt-6 inline-block text-cyan-300 underline">
+          {t('documentation')}
+        </Link>
       </section>
       <Card className="w-full max-w-md self-center">
         <div className="mb-5 flex justify-end">
