@@ -1,5 +1,8 @@
 import { Link, useRouterState } from '@tanstack/react-router'
-import { Fragment, useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import Prism from 'prismjs'
+import 'prismjs/components/prism-bash'
+import 'prismjs/components/prism-yaml'
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -157,6 +160,8 @@ export function Documentation({ slug }: { slug: string }) {
                       )}
                       {section.code && (
                         <CodeExample
+                          key={locale}
+                          language={section.codeLanguage}
                           code={
                             typeof section.code === 'string' ? section.code : section.code[locale]
                           }
@@ -218,7 +223,9 @@ function BrandText({ text }: { text: string }) {
   )
 }
 
-const githubLinks = {
+const documentationLinks = {
+  'https://okoscope.com/onboarding': 'https://okoscope.com/onboarding',
+  'https://okoscope.com': 'https://okoscope.com',
   'https://github.com/ihippik/okoscope': 'https://github.com/ihippik/okoscope',
   'deploy/kubernetes/agent/daemonset.yaml':
     'https://github.com/ihippik/okoscope/blob/main/deploy/kubernetes/agent/daemonset.yaml',
@@ -234,8 +241,8 @@ const githubLinks = {
     'https://github.com/ihippik/okoscope/tree/main/deploy/kubernetes/agent',
 } as const
 
-const githubLinkPattern = new RegExp(
-  `(${Object.keys(githubLinks)
+const documentationLinkPattern = new RegExp(
+  `(${Object.keys(documentationLinks)
     .sort((left, right) => right.length - left.length)
     .map((token) => token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
     .join('|')})`,
@@ -243,8 +250,8 @@ const githubLinkPattern = new RegExp(
 )
 
 function DocumentationText({ text }: { text: string }) {
-  return text.split(githubLinkPattern).map((part, index) => {
-    const href = githubLinks[part as keyof typeof githubLinks]
+  return text.split(documentationLinkPattern).map((part, index) => {
+    const href = documentationLinks[part as keyof typeof documentationLinks]
     return href ? (
       <a href={href} key={index}>
         <BrandText text={part} />
@@ -255,29 +262,26 @@ function DocumentationText({ text }: { text: string }) {
   })
 }
 
-function CommentedCode({ code }: { code: string }) {
-  return code.split('\n').map((line, index) => {
-    const comment = line.search(/(?:^|\s)#/)
-    const start = comment === -1 ? -1 : line.indexOf('#', comment)
-    return (
-      <Fragment key={index}>
-        {index > 0 && '\n'}
-        {start === -1 ? (
-          line
-        ) : (
-          <>
-            {line.slice(0, start)}
-            <span className="docs-code-comment">{line.slice(start)}</span>
-          </>
-        )}
-      </Fragment>
+function renderCodeTokens(tokens: string | Prism.Token | (string | Prism.Token)[]): ReactNode {
+  if (typeof tokens === 'string') return tokens
+  if (Array.isArray(tokens)) {
+    return tokens.map((token, index) =>
+      typeof token === 'string' ? (
+        token
+      ) : (
+        <span className={`token ${token.type}`} key={index}>
+          {renderCodeTokens(token.content)}
+        </span>
+      ),
     )
-  })
+  }
+  return <span className={`token ${tokens.type}`}>{renderCodeTokens(tokens.content)}</span>
 }
 
-function CodeExample({ code }: { code: string }) {
+function CodeExample({ code, language }: { code: string; language: 'bash' | 'yaml' | undefined }) {
   const { locale } = useLocalization()
   const ui = controls[locale]
+  const grammar = language ? Prism.languages[language] : undefined
   const [status, setStatus] = useState<'copied' | 'copyFailed' | null>(null)
   const copy = async () => {
     try {
@@ -290,14 +294,17 @@ function CodeExample({ code }: { code: string }) {
   return (
     <div className="docs-code">
       <div className="docs-code-toolbar">
+        {language && (
+          <span className="docs-code-language">{language === 'bash' ? 'Bash' : 'YAML'}</span>
+        )}
         <button type="button" onClick={() => void copy()}>
           {ui.copy}
         </button>
         <span role="status">{status ? ui[status] : ''}</span>
       </div>
       <pre tabIndex={0} aria-label={ui.example}>
-        <code>
-          <CommentedCode code={code} />
+        <code translate="no" className={language ? `language-${language}` : undefined}>
+          {grammar ? renderCodeTokens(Prism.tokenize(code, grammar)) : code}
         </code>
       </pre>
     </div>

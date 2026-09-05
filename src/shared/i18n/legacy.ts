@@ -857,6 +857,7 @@ export function localizeDocument(locale: Locale, root: ParentNode = document) {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
     let node: Node | null
     while ((node = walker.nextNode())) {
+      if (node.parentElement?.closest('[translate="no"]')) continue
       const current = node.textContent ?? ''
       let record = originals.get(node)
       if (!record) {
@@ -869,7 +870,8 @@ export function localizeDocument(locale: Locale, root: ParentNode = document) {
       record.rendered = next
       if (node.textContent !== next) node.textContent = next
     }
-    for (const element of root.querySelectorAll('*'))
+    for (const element of root.querySelectorAll('*')) {
+      if (element.closest('[translate="no"]')) continue
       for (const attribute of attributes) {
         const current = element.getAttribute(attribute)
         if (current === null) continue
@@ -889,6 +891,7 @@ export function localizeDocument(locale: Locale, root: ParentNode = document) {
         record.rendered = next
         if (next !== current) element.setAttribute(attribute, next)
       }
+    }
     if (document.title !== renderedTitle) originalTitle = document.title
     renderedTitle = localize(originalTitle, locale)
     if (document.title !== renderedTitle) document.title = renderedTitle

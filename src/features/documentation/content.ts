@@ -19,6 +19,7 @@ export type Article = {
       alt: Localized
     }
     code?: string | Localized
+    codeLanguage?: 'bash' | 'yaml'
     icon?: SectionIcon
     headingLevel?: 2 | 3
     definitions?: { term: Localized; description: Localized }[]
@@ -170,13 +171,13 @@ export const articles: Article[] = [
         },
         paragraphs: [
           {
-            en: 'If your team already runs Okoscope, go through Quick start together with an organization owner and whoever administers the cluster. If nobody has installed it yet, start with Self-hosting instead. Either way, read Compatibility and limits before you plan a wider rollout: the agent supports one specific Linux and Kubernetes profile, and it is much cheaper to learn that now than halfway through.',
-            ru: 'Если команда уже пользуется Okoscope, пройдите быстрый старт вместе с владельцем организации и тем, кто администрирует кластер. Если установки ещё нет, начните с самостоятельного развёртывания. И в том, и в другом случае прочитайте раздел о совместимости и ограничениях до того, как планировать внедрение: агент работает только с определённым профилем Linux и Kubernetes, и узнать об этом заранее гораздо дешевле, чем на полпути.',
+            en: 'Choose Okoscope Cloud to use our server at https://okoscope.com: install only the agent in your Kubernetes cluster and send observations to https://grpc.okoscope.com:443. Choose Self-hosted to operate your own server, web interface and PostgreSQL with your own domains. Both paths require a compatible cluster; read Compatibility and limits before installation.',
+            ru: 'Выберите Okoscope Cloud, чтобы пользоваться нашим сервером на https://okoscope.com: в своём Kubernetes-кластере установите только агента, который отправляет наблюдения на https://grpc.okoscope.com:443. Выберите Self-hosted, чтобы управлять собственным сервером, веб-интерфейсом и PostgreSQL со своими доменами. В обоих случаях нужен совместимый кластер; перед установкой прочитайте раздел о совместимости и ограничениях.',
           },
         ],
       },
     ],
-    related: ['quick-start', 'how-it-works', 'compatibility-and-limits'],
+    related: ['quick-start', 'self-hosting', 'how-it-works', 'compatibility-and-limits'],
   },
   {
     slug: 'how-it-works',
@@ -256,12 +257,12 @@ export const articles: Article[] = [
   {
     slug: 'quick-start',
     title: {
-      en: 'Quick start',
-      ru: 'Быстрый старт',
+      en: 'Okoscope Cloud — Quick start',
+      ru: 'Okoscope Cloud — Быстрый старт',
     },
     intro: {
-      en: 'Connect Kubernetes to an existing hosted or self-hosted Okoscope server with the agent Helm chart.',
-      ru: 'Подключите Kubernetes к существующему hosted- или self-hosted-серверу Okoscope с помощью Helm-чарта агента.',
+      en: 'Connect your Kubernetes cluster to our Okoscope Cloud server. You install only the agent; we operate the server, web interface and database. To run your own server, follow Self-hosted.',
+      ru: 'Подключите свой Kubernetes-кластер к нашему серверу Okoscope Cloud. Вы устанавливаете только агента; сервер, веб-интерфейс и базу данных обслуживаем мы. Для собственного сервера выберите Self-hosted.',
     },
     sections: [
       {
@@ -272,8 +273,12 @@ export const articles: Article[] = [
         },
         paragraphs: [
           {
-            en: 'Ask whoever operates the installation for the web address, a gRPC endpoint reachable from the cluster, the CA certificate and access to an Organization. Registration may be switched off; where it is open, signing up makes you the owner of a new organization, not a system administrator. Members can read data, but creating Projects and Applications inside an organization takes an owner or the system administrator.',
-            ru: 'Попросите у того, кто обслуживает установку, адрес сайта, доступный из кластера gRPC endpoint, сертификат CA и доступ к организации. Регистрация может быть отключена; если она открыта, при регистрации вы становитесь владельцем новой организации, а не системным администратором. Участники могут читать данные, но создавать проекты и приложения в организации вправе владелец или системный администратор.',
+            en: 'If an Application has no worker observations yet, its Worker nodes section offers a Connect agent button. It opens the connection wizard, where you select the Project and Application.',
+            ru: 'Если у приложения ещё нет наблюдений рабочих узлов, в разделе «Рабочие узлы» доступна кнопка «Подключить агента». Она открывает мастер подключения, в котором нужно выбрать проект и приложение.',
+          },
+          {
+            en: 'Sign in or register at https://okoscope.com, create an Organization, then a Project and an Application. Registration creates an organization owner, not a system administrator. If you already belong to an Organization, ask its owner to create the Project and Application. Open https://okoscope.com/onboarding using Connect agent in the main navigation. Allow outbound connections from the agent to https://grpc.okoscope.com:443.',
+            ru: 'Войдите или зарегистрируйтесь на https://okoscope.com, создайте организацию, затем проект и приложение. При регистрации вы становитесь владельцем организации, а не системным администратором. Если вы уже состоите в организации, попросите владельца создать проект и приложение. Откройте https://okoscope.com/onboarding через «Подключение агента» в основном меню. Разрешите исходящие соединения агента к https://grpc.okoscope.com:443.',
           },
           {
             en: 'Open Connect agent. The wizard reads Projects, Applications and installation state from the server, so reloading the page continues where you left off instead of creating duplicates. Cluster name is saved with the installation and passed to the agent as identity.clusterName, while the Kubernetes UID remains the authoritative cluster identity. Workload namespace says where the Deployment lives; then select that one Deployment by its exact name or by a bounded comma-separated key=value label set. Advanced observation settings are informational here: the chart applies the stated defaults, and you can change them after connection. The server hands you the compatible chart version, the endpoint and the Secret convention; no system administrator credential is involved.',
@@ -293,6 +298,7 @@ export const articles: Article[] = [
             ru: 'Токены приложений чарт берёт только из уже существующего Kubernetes Secret. Параметра для самого токена намеренно нет: всё, что вы передадите через values, Helm сохранит в Secret релиза. Мастер «Подключение агента» выдаёт команду с точными namespace, именем Secret и ключом. Считайте токен без вывода на экран, создайте Secret, затем очистите переменную shell. В примере используется общий для Bash и zsh синтаксис. Токену нечего делать в values-файле, аргументе команды, ConfigMap, Git, скриншоте или журнале.',
           },
         ],
+        codeLanguage: 'bash',
         code: `kubectl create namespace okoscope-system
 printf "Okoscope Application token: " >&2
 IFS= read -rs OKOSCOPE_APPLICATION_TOKEN
@@ -313,8 +319,8 @@ unset OKOSCOPE_APPLICATION_TOKEN`,
             ru: 'Установите версионированный OCI-чарт okoscope-agent. От вас нужны четыре вещи: доступный TLS gRPC endpoint, имя кластера, ограниченный селектор Deployment и ссылка на только что созданный Secret. Всё остальное чарт соберёт сам — ServiceAccount, RBAC только для чтения нагрузок, полную конфигурацию агента и DaemonSet, — так что править Kubernetes-манифесты не придётся. Зафиксируйте ту версию чарта, которую называет ваш сервер Okoscope.',
           },
           {
-            en: 'The example trusts the system certificate store. If your server is signed by a private CA, create a separate Secret with the certificate and select it through the chart values; plaintext transport stays reserved for development you have deliberately isolated. Read Data and security before you install: the eBPF agent needs node-level capabilities and host mounts, even though its access to the Kubernetes API is read-only.',
-            ru: 'В примере используется системное хранилище доверенных сертификатов. Если сервер подписан частным CA, создайте отдельный Secret с сертификатом и укажите его в values чарта; открытый транспорт остаётся только для намеренно изолированной разработки. Перед установкой прочитайте раздел о данных и безопасности: агенту eBPF нужны права уровня узла и host mounts, хотя доступ к Kubernetes API у него только на чтение.',
+            en: 'Okoscope Cloud uses a publicly trusted TLS certificate: keep system certificate trust and do not create a private CA Secret. Use the complete command generated by https://okoscope.com/onboarding with its compatible chart version and your workload settings. Read Data and security before installation: the eBPF agent needs node-level capabilities and host mounts, although Kubernetes API access is read-only.',
+            ru: 'Okoscope Cloud использует публично доверенный TLS-сертификат: оставьте системное доверие сертификатам, Secret с частным CA создавать не нужно. Используйте полную команду из https://okoscope.com/onboarding с совместимой версией чарта и настройками вашей нагрузки. Перед установкой прочитайте раздел о данных и безопасности: агенту eBPF нужны права уровня узла и host mounts, хотя доступ к Kubernetes API у него только на чтение.',
           },
         ],
         callout: {
@@ -323,15 +329,16 @@ unset OKOSCOPE_APPLICATION_TOKEN`,
             ru: 'Важно',
           },
           body: {
-            en: '<OKOSCOPE_VERSION> in the generic example is a placeholder, not an environment variable. The Connect agent wizard replaces it with metadata from the server. If the wizard says configuration is unavailable, the operator must configure agentInstallation.publicGrpcEndpoint, chartReference, chartVersion, recommendedAgentVersion and minimumAgentVersion in the server Helm values.',
-            ru: '<OKOSCOPE_VERSION> в общем примере — плейсхолдер, а не переменная окружения. Мастер «Подключение агента» заменяет его данными сервера. Если мастер сообщает, что конфигурация недоступна, оператор должен настроить agentInstallation.publicGrpcEndpoint, chartReference, chartVersion, recommendedAgentVersion и minimumAgentVersion в Helm values сервера.',
+            en: '<OKOSCOPE_VERSION> is a placeholder, not an environment variable. Copy the actual version from the command generated by Connect agent; do not run the placeholder literally. Adapt the sample cluster and workload names to your cluster. If Cloud configuration is unavailable, contact the Okoscope operator; you do not need to install or configure the server.',
+            ru: '<OKOSCOPE_VERSION> — плейсхолдер, а не переменная окружения. Возьмите конкретную версию из команды мастера «Подключение агента»; не выполняйте плейсхолдер буквально. Замените примерные имена кластера и нагрузки своими. Если конфигурация Cloud недоступна, обратитесь к оператору Okoscope; устанавливать или настраивать сервер вам не нужно.',
           },
         },
+        codeLanguage: 'bash',
         code: `helm upgrade --install okoscope-agent \\
   oci://ghcr.io/ihippik/charts/okoscope-agent \\
   --version <OKOSCOPE_VERSION> \\
   --namespace okoscope-system \\
-  --set server.endpoint=https://<grpc-host>:443 \\
+  --set server.endpoint=https://grpc.okoscope.com:443 \\
   --set identity.clusterName=production \\
   --set 'workloads[0].namespace=production' \\
   --set 'workloads[0].kind=Deployment' \\
@@ -345,8 +352,8 @@ kubectl -n okoscope-system logs daemonset/okoscope-agent-okoscope-agent --tail=1
       {
         id: 'agent-variants',
         title: {
-          en: 'Multiple Applications, labels and private CAs',
-          ru: 'Несколько приложений, labels и частные CA',
+          en: 'Multiple Applications and labels',
+          ru: 'Несколько приложений и labels',
         },
         paragraphs: [
           {
@@ -354,8 +361,8 @@ kubectl -n okoscope-system logs daemonset/okoscope-agent-okoscope-agent --tail=1
             ru: 'Один релиз агента может обслуживать до 32 приложений. Добавьте по элементу workloads на приложение: каждый выбирает ровно один Deployment — по имени или по ограниченному набору labels — и ссылается на собственные имя Secret и ключ. Для private registry укажите существующий pull Secret через imagePullSecrets. Самих токенов в values-файле быть не должно никогда.',
           },
           {
-            en: 'If the server is signed by a private CA, create the CA Secret in the agent namespace with the name and key shown on the installation page. The generated Helm command passes only the server.caSecret.name and server.caSecret.key references — the certificate itself never reaches Helm values or the browser — and the chart mounts that Secret read-only. Outside isolated development, leave server.developmentPlaintext off and keep the https:// prefix in server.endpoint.',
-            ru: 'Если сервер подписан частным CA, создайте в namespace агента Secret с тем именем и ключом, которые показывает страница установки. Сгенерированная Helm-команда передаёт только ссылки server.caSecret.name и server.caSecret.key — сам сертификат не попадает ни в values, ни в браузер, — а чарт монтирует этот Secret только для чтения. За пределами изолированной разработки оставляйте server.developmentPlaintext выключенным и не убирайте префикс https:// из server.endpoint.',
+            en: 'For Cloud, keep server.developmentPlaintext off and use https://grpc.okoscope.com:443 with system trust. Private CA configuration applies to Self-hosted installations and is described in that guide.',
+            ru: 'Для Cloud оставляйте server.developmentPlaintext выключенным и используйте https://grpc.okoscope.com:443 с системным доверием. Настройка частного CA относится к Self-hosted и описана в соответствующем руководстве.',
           },
         ],
       },
@@ -382,12 +389,12 @@ kubectl -n okoscope-system logs daemonset/okoscope-agent-okoscope-agent --tail=1
   {
     slug: 'self-hosting',
     title: {
-      en: 'Self-hosting',
-      ru: 'Самостоятельное развёртывание',
+      en: 'Self-hosted — Deployment',
+      ru: 'Self-hosted — Самостоятельное развёртывание',
     },
     intro: {
-      en: 'Install the Okoscope server and web interface with Helm, using PostgreSQL you already own.',
-      ru: 'Установите сервер и веб-интерфейс Okoscope через Helm, используя PostgreSQL, которой вы уже управляете.',
+      en: 'Operate your own Okoscope server, web interface and PostgreSQL with your own web and gRPC domains. To use our server and install only agents, choose Okoscope Cloud.',
+      ru: 'Управляйте собственным сервером, веб-интерфейсом и PostgreSQL со своими доменами для сайта и gRPC. Чтобы пользоваться нашим сервером и устанавливать только агентов, выберите Okoscope Cloud.',
     },
     sections: [
       {
@@ -423,6 +430,7 @@ kubectl -n okoscope-system logs daemonset/okoscope-agent-okoscope-agent --tail=1
             ru: 'По умолчанию чарт сам генерирует внутренние криптографические ключи и сохраняет их при обновлениях. Для production GitOps и аварийного восстановления передайте вместо этого внешний Secret: при офлайн-рендеринге шаблонов Helm lookup недоступен, поэтому сгенерированные ключи не сохранятся. Резервируйте эти ключи отдельно от PostgreSQL: потерять их — совсем не то же самое, что потерять базу, и одна копия не заменяет другую.',
           },
         ],
+        codeLanguage: 'bash',
         code: `kubectl create namespace okoscope-system
 printf "PostgreSQL URL: " >&2
 IFS= read -rs OKOSCOPE_DATABASE_URL
@@ -469,6 +477,7 @@ unset OKOSCOPE_DATABASE_URL`,
             ru: 'Дождитесь Helm и готовности Deployments, затем перенаправьте локальный порт на Web Service. Установка готова, когда отвечает /readyz, /api/v1/build-info сообщает ожидаемую версию, интерфейс открывается, а прямая ссылка на документацию продолжает работать после обновления страницы. Локальный агент необязателен; если ставите его, используйте ту же привязку к существующему Secret, что и в быстром старте.',
           },
         ],
+        codeLanguage: 'bash',
         code: `helm upgrade --install okoscope \\
   oci://ghcr.io/ihippik/charts/okoscope \\
   --version <OKOSCOPE_VERSION> \\
@@ -494,6 +503,7 @@ kubectl -n okoscope-system port-forward service/okoscope-web 8080:80`,
             ru: 'Для обоих чартов действует одно правило: в values можно указывать имена и ключи уже существующих Secrets и никогда — строку подключения к базе или токен приложения, потому что всё переданное Helm сохраняет в Secret релиза. Теги образов в исходниках — заглушки; опубликованный релиз фиксирует образы компонентов.',
           },
         ],
+        codeLanguage: 'bash',
         code: `helm show values oci://ghcr.io/ihippik/charts/okoscope --version <OKOSCOPE_VERSION>
 helm show values oci://ghcr.io/ihippik/charts/okoscope-agent --version <OKOSCOPE_VERSION>`,
       },
@@ -507,6 +517,7 @@ helm show values oci://ghcr.io/ihippik/charts/okoscope-agent --version <OKOSCOPE
             ru: 'Параметры базы данных обязательны всегда. server.corsOrigins можно оставить пустым, когда Web ingress создаёт чарт: Origin из ingress.web.host будет добавлен в доверенные автоматически. Для внешнего ingress, reverse proxy или альтернативного браузерного Origin нужен явный список. В каждой другой строке указано значение по умолчанию. Скопируйте файл, замените имена Secrets, хосты и версию и передайте его через -f values.yaml.',
           },
         ],
+        codeLanguage: 'yaml',
         code: {
           en: `# values.yaml - chart okoscope: server, web interface and migration hook.
 # Values marked required have no default. The rest are shown with the chart
@@ -698,6 +709,7 @@ okoscope-agent:
             ru: 'Обязательны три вещи: куда отправлять данные, какое название кластера передать агенту и за какими нагрузками наблюдать. Авторитетным идентификатором кластера остаётся Kubernetes UID. Значения наблюдения по умолчанию намеренно скромные: расширяйте их, когда базовый сценарий уже заработал.',
           },
         ],
+        codeLanguage: 'yaml',
         code: {
           en: `# values.yaml - chart okoscope-agent: the DaemonSet with the eBPF agent.
 # Values marked required have no default. The rest are shown with the chart default.
@@ -848,6 +860,43 @@ podAnnotations: {}                    # по умолчанию`,
         ],
       },
       {
+        id: 'connect-agents',
+        title: {
+          en: 'Connect agents to your server',
+          ru: 'Подключите агентов к своему серверу',
+        },
+        paragraphs: [
+          {
+            en: 'After deploying the server, open /onboarding on your own web domain. Create or select an Organization, Project and Application. If registration is disabled, ask your installation operator for access. Select the cluster name and Deployment namespace, then its exact name or labels. Run the generated Secret and agent Helm commands in the cluster you want to observe; the credential Secret must be in the agent namespace, even when the workload lives elsewhere.',
+            ru: 'После развёртывания сервера откройте /onboarding на собственном домене сайта. Создайте или выберите организацию, проект и приложение. Если регистрация отключена, запросите доступ у оператора вашей установки. Укажите имя кластера и namespace Deployment, затем его точное имя или метки. Выполните сгенерированные команды создания Secret и установки агента через Helm в наблюдаемом кластере; Secret с токеном должен находиться в namespace агента, даже если нагрузка работает в другом.',
+          },
+          {
+            en: 'The wizard must supply your own public gRPC endpoint, for example https://agents.okoscope.example.com:443, and the compatible chart version. Configure agentInstallation.publicGrpcEndpoint, chartReference, chartVersion, recommendedAgentVersion and minimumAgentVersion in your server values. Do not use the Cloud endpoint for credentials issued by your self-hosted server. In the generic example below, replace <grpc-host> with your own gRPC domain and <OKOSCOPE_VERSION> with the version from your wizard; neither placeholder is an environment variable.',
+            ru: 'Мастер должен выдавать ваш публичный gRPC endpoint, например https://agents.okoscope.example.com:443, и совместимую версию чарта. Настройте agentInstallation.publicGrpcEndpoint, chartReference, chartVersion, recommendedAgentVersion и minimumAgentVersion в values своего сервера. Не используйте Cloud endpoint с токенами, выданными вашим self-hosted-сервером. В общем примере ниже замените <grpc-host> собственным доменом gRPC, а <OKOSCOPE_VERSION> — версией из своего мастера; оба плейсхолдера не являются переменными окружения.',
+          },
+          {
+            en: 'For publicly trusted TLS certificates, use system trust without a CA Secret. Only if your server uses a private CA, obtain its certificate from the operator and create a CA Secret in the agent namespace using the name and key shown by the wizard. The Helm command references server.caSecret.name and server.caSecret.key; do not put certificates or Application tokens into Helm values. Keep server.developmentPlaintext disabled outside isolated development.',
+            ru: 'Для публично доверенных TLS-сертификатов используйте системное доверие без Secret с CA. Только если ваш сервер использует частный CA, получите сертификат у оператора и создайте Secret с CA в namespace агента с именем и ключом из мастера. Helm-команда ссылается на server.caSecret.name и server.caSecret.key; не помещайте сертификаты или токены приложений в Helm values. Оставляйте server.developmentPlaintext выключенным за пределами изолированной разработки.',
+          },
+          {
+            en: 'After installation, check the agent DaemonSet rollout and logs, generate normal activity in the selected Deployment, and confirm a connected stream and an event attributed to the Application. A running Pod alone does not confirm delivery. See Troubleshooting if observations do not appear.',
+            ru: 'После установки проверьте rollout DaemonSet и логи агента, создайте обычную активность в выбранном Deployment и убедитесь, что есть подключённый поток и событие, привязанное к приложению. Сам по себе работающий Pod не подтверждает доставку. Если наблюдения не появляются, откройте раздел устранения проблем.',
+          },
+        ],
+        codeLanguage: 'bash',
+        code: `helm upgrade --install okoscope-agent \\
+  oci://ghcr.io/ihippik/charts/okoscope-agent \\
+  --version <OKOSCOPE_VERSION> \\
+  --namespace okoscope-system \\
+  --set server.endpoint=https://<grpc-host>:443 \\
+  --set identity.clusterName=production \\
+  --set 'workloads[0].namespace=production' \\
+  --set 'workloads[0].kind=Deployment' \\
+  --set 'workloads[0].name=payment-api' \\
+  --set 'workloads[0].credentialSecret.name=okoscope-application-credentials' \\
+  --set 'workloads[0].credentialSecret.key=payment-api'`,
+      },
+      {
         id: 'production-values',
         title: {
           en: 'Production routing and external secrets',
@@ -863,6 +912,7 @@ podAnnotations: {}                    # по умолчанию`,
             ru: 'Если ключами управляет External Secrets или похожий контроллер, укажите в internalSecret.existingSecret тот Secret, который он поддерживает; в этом Secret должны быть ключи, названные в adminCredentialKey, webhookEncryptionKey и identityTokenKey. Учётные данные private registry задаются в imagePullSecrets. А если увеличиваете число реплик сервера, помните, что к этому должна быть готова и база: высокодоступной PostgreSQL чарт не делает никогда, так что эту топологию вы рассчитываете и обслуживаете сами.',
           },
         ],
+        codeLanguage: 'yaml',
         code: `ingress:
   web:
     enabled: true
@@ -946,6 +996,7 @@ imagePullSecrets:
             ru: 'Относительные пути, псевдонимы символических ссылок и записи через mmap этот профиль полнотой не покрывает. Изменения объединяются в фиксированном окне в пять секунд, поэтому частые записи схлопываются в одно наблюдение. Успешный open с O_CREAT ещё не доказывает, что файл создан: доказывает только сочетание O_CREAT и O_EXCL. Начните с одного узкого пути, где нет чувствительных данных.',
           },
         ],
+        codeLanguage: 'yaml',
         code: 'observation:\n  files:\n    enabled: true\n    operations: [create, modify, delete, rename]\n    includePaths: [/app/data]\n    excludePaths: [/app/data/private]',
       },
       {
@@ -1100,6 +1151,7 @@ imagePullSecrets:
             ru: 'Проверки ниже выполняются на предполагаемом узле Linux, но покрывают лишь часть условий: версии Kubernetes и runtime, права на подключение зондов и цепочку владения нагрузкой оператор проверяет отдельно. Другие runtime, cgroup v1, неподдерживаемые владельцы и ужесточённые конфигурации управляемых узлов как поддерживаемые не заявлены: они могут заработать, но обещаний тут нет.',
           },
         ],
+        codeLanguage: 'bash',
         code: 'test -e /sys/kernel/btf/vmlinux\ntest "$(stat -fc %T /sys/fs/cgroup)" = cgroup2fs\nuname -m',
       },
       {

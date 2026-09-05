@@ -1,6 +1,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRouter,
+  RouterProvider,
+} from '@tanstack/react-router'
 import { describe, expect, it, vi } from 'vitest'
 import type { ApiClient } from '../../shared/api/client'
 import { ApiProvider } from '../../shared/api/context'
@@ -24,16 +30,25 @@ const worker = (overrides: Record<string, unknown> = {}) => ({
 
 function renderWorkers(get: ApiClient['get'], locale: 'en' | 'ru' = 'en') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const rootRoute = createRootRoute({
+    component: () => (
+      <ApplicationWorkers projectId="project / one" applicationId="application / one" />
+    ),
+  })
+  const router = createRouter({
+    routeTree: rootRoute,
+    history: createMemoryHistory({ initialEntries: ['/'] }),
+  })
   const rendered = render(
     <QueryClientProvider client={client}>
       <ApiProvider value={{ get } as ApiClient}>
         <LocalizationProvider initialLocale={locale}>
-          <ApplicationWorkers projectId="project / one" applicationId="application / one" />
+          <RouterProvider router={router} />
         </LocalizationProvider>
       </ApiProvider>
     </QueryClientProvider>,
   )
-  return { ...rendered, client }
+  return { ...rendered, client, router }
 }
 
 describe('ApplicationWorkers', () => {
@@ -92,6 +107,7 @@ describe('ApplicationWorkers', () => {
     expect(screen.getAllByText('Not reported')).toHaveLength(2)
     expect(document.querySelector('img')).toBeNull()
     expect(screen.queryByText(/online|compatible/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Connect agent' })).not.toBeInTheDocument()
   })
 
   it('localizes the empty state', async () => {
@@ -105,6 +121,35 @@ describe('ApplicationWorkers', () => {
     )
     expect(await screen.findByRole('heading', { name: 'Рабочие узлы' })).toBeVisible()
     expect(screen.getByText('Наблюдений рабочих узлов пока нет.')).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Подключить агента' })).toHaveAttribute(
+      'href',
+      '/onboarding',
+    )
+  })
+
+  it('keeps the empty-state action out of loading, error, and inactive-only data', async () => {
+    const pending = new Promise<never>(() => undefined)
+    const { unmount } = renderWorkers(vi.fn().mockReturnValue(pending))
+    expect(await screen.findByText('Loading worker nodes…')).toBeVisible()
+    expect(screen.queryByRole('link', { name: 'Connect agent' })).not.toBeInTheDocument()
+    unmount()
+
+    const failed = renderWorkers(vi.fn().mockRejectedValue(new Error('failed')))
+    expect(
+      await screen.findByRole('heading', { name: 'Worker nodes could not be loaded' }),
+    ).toBeVisible()
+    expect(screen.queryByRole('link', { name: 'Connect agent' })).not.toBeInTheDocument()
+    failed.unmount()
+
+    renderWorkers(
+      vi.fn().mockResolvedValue({
+        coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },
+        items: [worker({ agent_last_seen_at: '2020-01-01T00:00:00Z' })],
+        next_cursor: null,
+      }),
+    )
+    expect(await screen.findByText('Inactive (1)')).toBeVisible()
+    expect(screen.queryByRole('link', { name: 'Connect agent' })).not.toBeInTheDocument()
   })
 
   it('isolates initial failures and retries', async () => {
@@ -183,4 +228,5 @@ it('explains empty worker observations after history closure', async () => {
     await screen.findByText(/Detailed activity covers retained raw events only/),
   ).toBeInTheDocument()
   expect(screen.getByText(/Event ingestion closed before/)).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Connect agent' })).toHaveAttribute('href', '/onboarding')
 })

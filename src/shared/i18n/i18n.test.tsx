@@ -63,6 +63,22 @@ describe('localization', () => {
     ).toContain('2025')
     expect(pluralCategory('ru', 2)).toBe('few')
   })
+  it('preserves nested code tokens and attributes inside translate=no while translating surrounding UI', async () => {
+    render(
+      <LocalizationProvider initialLocale="ru">
+        <div>
+          <button>Projects</button>
+          <code translate="no">
+            <span title="Projects">enabled</span>
+          </code>
+        </div>
+      </LocalizationProvider>,
+    )
+    expect(await screen.findByRole('button', { name: 'Проекты' })).toBeVisible()
+    const token = screen.getByText('enabled')
+    expect(token).toHaveTextContent('enabled')
+    expect(token).toHaveAttribute('title', 'Projects')
+  })
   it('translates complete dynamic UI states without mixing languages', async () => {
     function DynamicButton() {
       const [saving, setSaving] = useState(false)

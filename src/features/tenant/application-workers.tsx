@@ -1,5 +1,6 @@
 import { RetentionCoverage } from '../runtime-retention/coverage'
 import { useInfiniteQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { applicationWorkersOptions } from '../../shared/api/queries'
 import type { ApplicationWorker } from '../../shared/api/types'
 import { useApi } from '../../shared/api/context'
@@ -101,6 +102,9 @@ export function ApplicationWorkers({
       {!workers.length ? (
         <Card>
           <p className="text-slate-400">{t('workersEmpty')}</p>
+          <Button asChild className="mt-4">
+            <Link to="/onboarding">{t('connectAgentAction')}</Link>
+          </Button>
         </Card>
       ) : (
         <div className="space-y-3">

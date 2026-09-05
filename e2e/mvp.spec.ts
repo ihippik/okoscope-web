@@ -204,6 +204,14 @@ test('separates retention guidance from the empty worker state', async ({ page }
   expect(emptyCardBox).not.toBeNull()
   expect(emptyCardBox!.y - (guidanceBox!.y + guidanceBox!.height)).toBeGreaterThanOrEqual(12)
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375)
+
+  const connectAgent = page.getByRole('link', { name: 'Подключить агента' })
+  await expect(connectAgent).toBeVisible()
+  await connectAgent.click()
+  await expect(page).toHaveURL('/onboarding')
+  await expect(page.getByRole('heading', { name: 'Проект', level: 2 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Приложение', level: 2 })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /Platform/ })).toBeVisible()
 })
 
 test('authentication flow and primary navigation have no detectable accessibility violations', async ({
