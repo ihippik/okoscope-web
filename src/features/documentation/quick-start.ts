@@ -265,6 +265,10 @@ unset OKOSCOPE_TOKEN`,
           ru: 'Вернитесь к блоку **«Прогресс подключения»** в мастере.',
         },
         {
+          en: 'As soon as the agents connect to the server, they should appear automatically in the Application’s **Worker nodes** section.',
+          ru: 'Как только агенты подключатся к серверу, они должны автоматически появиться в разделе приложения **«Рабочие узлы»**.',
+        },
+        {
           en: 'A running Pod confirms startup; successful installation also requires the server to receive an event from your selected workload.',
           ru: 'Работающий Pod подтверждает запуск. Для проверки подключения нужно также дождаться события от выбранной нагрузки на сервере.',
         },

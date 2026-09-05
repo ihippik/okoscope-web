@@ -9,6 +9,7 @@ import {
   UserRound,
 } from 'lucide-react'
 import type { Locale } from '../../shared/i18n'
+import type { LucideIcon } from 'lucide-react'
 import './quick-start-flow.css'
 
 const stages = [
@@ -44,13 +45,37 @@ export function getQuickStartIcon(sectionId: string) {
 
 export function QuickStartFlow({ locale }: { locale: Locale }) {
   const title = locale === 'ru' ? 'От доступа до первого события' : 'From access to the first event'
+  return <SetupFlow locale={locale} stages={stages} title={title} />
+}
+
+export type SetupStage = {
+  en: string
+  ru: string
+  steps: { id: string; icon: LucideIcon; en: string; ru: string }[]
+}
+
+export function SetupFlow({
+  locale,
+  stages,
+  title,
+}: {
+  locale: Locale
+  stages: SetupStage[]
+  title: string
+}) {
   return (
     <nav className="docs-setup-flow" aria-label={title}>
       <div className="docs-setup-flow-stages">
         {stages.map((stage, stageIndex) => (
           <div className="docs-setup-flow-stage" key={stage.en}>
             <p className="docs-setup-flow-stage-title">{stage[locale]}</p>
-            <ol start={stageIndex * 2 + 1} role="list" aria-label={stage[locale]}>
+            <ol
+              start={stages
+                .slice(0, stageIndex)
+                .reduce((count, item) => count + item.steps.length, 1)}
+              role="list"
+              aria-label={stage[locale]}
+            >
               {stage.steps.map((step, stepIndex) => {
                 const Icon = step.icon
                 return (
@@ -61,7 +86,7 @@ export function QuickStartFlow({ locale }: { locale: Locale }) {
                       </span>
                       <span>{step[locale]}</span>
                     </a>
-                    {stepIndex === 0 && (
+                    {stepIndex < stage.steps.length - 1 && (
                       <ArrowDown
                         className="docs-setup-flow-inner-arrow"
                         size={18}

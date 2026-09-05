@@ -6,13 +6,29 @@ import 'prismjs/components/prism-yaml'
 import {
   AlertTriangle,
   ArrowUpRight,
+  BellCheck,
+  BellOff,
+  BellRing,
   BookOpen,
   Cpu,
+  Database,
+  EyeOff,
   FileCog,
+  Gauge,
+  GitCompareArrows,
+  History,
   ListChecks,
+  MonitorX,
   Network,
+  RotateCcw,
+  ScanSearch,
+  ScrollText,
+  SearchX,
   Server,
+  ServerCog,
   ShieldCheck,
+  ShieldKeyhole,
+  Unplug,
   Wrench,
 } from 'lucide-react'
 import { useLocalization, type Locale } from '../../shared/i18n'
@@ -21,6 +37,7 @@ import { Brand } from '../../shared/ui/brand'
 import { articles, controls, type ArticleList, type ListIcon, type SectionIcon } from './content'
 import './documentation.css'
 import { getQuickStartIcon, QuickStartFlow } from './quick-start-flow'
+import { getSelfHostingIcon, SelfHostingFlow } from './self-hosting-flow'
 
 const sectionIcons = {
   processes: Cpu,
@@ -34,7 +51,46 @@ const listIcons = {
   tools: Wrench,
   network: Network,
   security: ShieldCheck,
+  database: Database,
 } satisfies Record<ListIcon, typeof Cpu>
+
+const troubleshootingIcons: Record<string, typeof Cpu> = {
+  connection: Unplug,
+  empty: SearchX,
+  web: MonitorX,
+  delivery: BellOff,
+}
+
+const dataSecurityIcons: Record<string, typeof Cpu> = {
+  collection: ScanSearch,
+  permissions: ShieldKeyhole,
+  'runtime-retention': History,
+  'notification-retention': BellRing,
+}
+
+const compatibilityIcons: Record<string, typeof Cpu> = {
+  platform: ServerCog,
+  profiles: Gauge,
+  evidence: EyeOff,
+}
+
+const workflowIcons: Record<string, typeof Cpu> = {
+  'new-connection': Network,
+  policies: ScrollText,
+  release: GitCompareArrows,
+  restarts: RotateCcw,
+  notifications: BellCheck,
+}
+
+function getArticleSectionIcon(slug: string, sectionId: string) {
+  if (slug === 'quick-start') return getQuickStartIcon(sectionId)
+  if (slug === 'self-hosting') return getSelfHostingIcon(sectionId)
+  if (slug === 'workflows') return workflowIcons[sectionId]
+  if (slug === 'compatibility-and-limits') return compatibilityIcons[sectionId]
+  if (slug === 'data-and-security') return dataSecurityIcons[sectionId]
+  if (slug === 'troubleshooting') return troubleshootingIcons[sectionId]
+  return undefined
+}
 
 export function Documentation({ slug }: { slug: string }) {
   const { locale, t } = useLocalization()
@@ -108,8 +164,7 @@ export function Documentation({ slug }: { slug: string }) {
                   <p className="docs-toc-label">{ui.onPage}</p>
                   <ul>
                     {article.sections.map((section) => {
-                      const Icon =
-                        slug === 'quick-start' ? getQuickStartIcon(section.id) : undefined
+                      const Icon = getArticleSectionIcon(slug, section.id)
                       return (
                         <li
                           key={section.id}
@@ -129,12 +184,15 @@ export function Documentation({ slug }: { slug: string }) {
                 {article.sections.map((section) => {
                   const Heading = section.headingLevel === 3 ? 'h3' : 'h2'
                   const Icon =
-                    (slug === 'quick-start' ? getQuickStartIcon(section.id) : undefined) ??
+                    getArticleSectionIcon(slug, section.id) ??
                     (section.icon ? sectionIcons[section.icon] : null)
                   return (
                     <Fragment key={section.id}>
                       {slug === 'quick-start' && section.id === 'access' && (
                         <QuickStartFlow locale={locale} />
+                      )}
+                      {slug === 'self-hosting' && section.id === 'database' && (
+                        <SelfHostingFlow locale={locale} />
                       )}
                       <section aria-labelledby={section.id}>
                         <Heading id={section.id}>
@@ -330,7 +388,7 @@ function DocumentationText({ text, accent }: { text: string; accent?: string | u
 function DocumentationLinks({ text }: { text: string }) {
   const { locale } = useLocalization()
   const guidePattern =
-    /(\/docs\/(?:self-hosting|compatibility-and-limits|data-and-security|troubleshooting))/g
+    /(\/docs\/(?:quick-start|self-hosting|compatibility-and-limits|data-and-security|troubleshooting))/g
   return text.split(guidePattern).map((part, index) => {
     const guide = articles.find((article) => `/docs/${article.slug}` === part)
     return guide ? (

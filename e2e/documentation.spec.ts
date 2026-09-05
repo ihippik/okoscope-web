@@ -15,6 +15,113 @@ const titles = [
   ['troubleshooting', 'Troubleshooting and FAQ', 'Устранение проблем и FAQ'],
 ] as const
 
+test('self-hosting follows database, deployment, activation and agent connection in both languages', async ({
+  page,
+}) => {
+  const ids = ['database', 'production-values', 'rollout', 'verify', 'claim', 'connect-agents']
+  await page.goto('/docs/self-hosting')
+  for (const locale of ['en', 'ru'] as const) {
+    await page.getByLabel(/Language|Язык/).selectOption(locale)
+    const article = page.locator('main')
+    expect(
+      await article
+        .locator('section')
+        .evaluateAll((sections) =>
+          sections.map((section) => section.getAttribute('aria-labelledby')),
+        ),
+    ).toEqual([
+      'components',
+      ...ids,
+      'external-secrets',
+      'backups',
+      'helm-values',
+      'values-server',
+      'values-agent',
+      'values-validation',
+      'existing-installations',
+    ])
+    const flow = page.getByRole('navigation', {
+      name:
+        locale === 'en' ? 'From database to the first event' : 'От базы данных до первого события',
+    })
+    expect(
+      await flow.evaluate((element) => [
+        element.previousElementSibling?.getAttribute('aria-labelledby'),
+        element.nextElementSibling?.getAttribute('aria-labelledby'),
+      ]),
+    ).toEqual(['components', 'database'])
+    await expect(flow.locator('a')).toHaveCount(6)
+    await expect(flow.locator('ol')).toHaveCount(3)
+    const labels =
+      locale === 'en'
+        ? [
+            'Database Secret',
+            'Access & settings',
+            'Install server',
+            'Check readiness',
+            'First owner',
+            'Agents & first event',
+          ]
+        : [
+            'Secret базы данных',
+            'Доступ и настройки',
+            'Установка сервера',
+            'Проверка готовности',
+            'Первый владелец',
+            'Агенты и событие',
+          ]
+    for (const [index, id] of ids.entries()) {
+      const link = flow.getByRole('link').nth(index)
+      await expect(link).toHaveAttribute('href', `#${id}`)
+      await expect(link).toHaveAccessibleName(labels[index]!)
+      await link.click()
+      expect(new URL(page.url()).hash).toBe(`#${id}`)
+      await expect(page.locator(`h2#${id}`)).toBeVisible()
+      const matching = await page.evaluate((id) => {
+        const icons = [
+          document.querySelector(`h2#${id} svg`),
+          document.querySelector(`.docs-toc a[href="#${id}"] svg`),
+          document.querySelector(`.docs-setup-flow a[href="#${id}"] svg`),
+        ]
+        return (
+          icons.every((icon) => icon?.closest('[aria-hidden="true"]')) &&
+          new Set(
+            icons.map((icon) =>
+              [...icon!.classList].filter((name) => name.startsWith('lucide-')).join(' '),
+            ),
+          ).size === 1
+        )
+      }, id)
+      expect(matching).toBe(true)
+    }
+    await expect(article.locator('section[aria-labelledby="rollout"] pre code')).toContainText(
+      '-f values.yaml',
+    )
+    await expect(article.locator('section[aria-labelledby="verify"] pre code')).toContainText(
+      'helm test okoscope',
+    )
+    await expect(article.locator('section[aria-labelledby="claim"] pre code')).toContainText(
+      "jsonpath='{.data.setup-token}'",
+    )
+    const networking = article.locator('section[aria-labelledby="production-values"] pre code')
+    await expect(networking).toContainText(
+      'publicGrpcEndpoint: https://agents.okoscope.example.com:443',
+    )
+    await expect(networking).toContainText('tlsSecret: okoscope-grpc-tls')
+    await expect(networking).toContainText('existingSecret: okoscope-database')
+    expect(
+      (await article.locator('section p, section li').allTextContents()).join('\n'),
+    ).not.toMatch(/\*\*|`/)
+    for (const width of [1280, 360]) {
+      await page.setViewportSize({ width, height: 800 })
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      )
+      expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+    }
+  }
+})
+
 test('quick start flow links six localized steps between prerequisites and access', async ({
   page,
 }) => {
@@ -115,6 +222,17 @@ test('quick start presents sequential semantic instructions in both languages', 
       await expect(article.locator(`section[aria-labelledby="${id}"] ol`)).toHaveCount(1)
     }
     await expect(article.locator('section[aria-labelledby="before-you-start"] ul')).toHaveCount(1)
+    const checkAgent = article.locator('section[aria-labelledby="check-agent"]')
+    await expect(checkAgent).toContainText(
+      locale === 'en'
+        ? 'As soon as the agents connect to the server, they should appear automatically in the Application’s Worker nodes section.'
+        : 'Как только агенты подключатся к серверу, они должны автоматически появиться в разделе приложения «Рабочие узлы».',
+    )
+    await expect(
+      checkAgent
+        .locator('strong')
+        .getByText(locale === 'en' ? 'Worker nodes' : '«Рабочие узлы»', { exact: true }),
+    ).toBeVisible()
     await expect(
       article
         .locator('section[aria-labelledby="workload"] code')
@@ -250,8 +368,8 @@ test('overview offers separate Cloud and Self-hosted journeys with preserved rou
     await page.locator('.docs-toc a[href="#connect-agents"]').click()
     await expect(page).toHaveURL(/\/docs\/self-hosting#connect-agents$/)
     await expect(page.locator('#connect-agents')).toBeVisible()
-    await expect(page.locator('section[aria-labelledby="connect-agents"] code')).toContainText(
-      '--set server.endpoint=https://<grpc-host>:443',
+    await expect(page.locator('section[aria-labelledby="values-agent"] pre code')).toContainText(
+      'endpoint: https://agents.example.com:443',
     )
   }
 })
@@ -524,21 +642,25 @@ test('installation journeys match the secure Helm chart contract in both languag
     await expect(selfHosting).toContainText('oci://ghcr.io/ihippik/charts/okoscope')
     await expect(selfHosting).toContainText('database.existingSecret')
     await expect(selfHosting).toContainText('database.urlKey')
-    await expect(selfHosting).toContainText('server.caSecret.name')
+    await expect(
+      selfHosting.locator('section[aria-labelledby="values-agent"] pre code'),
+    ).toContainText('caSecret:\n    name: ""')
     await expect(selfHosting.locator('section[aria-labelledby="connect-agents"]')).toContainText(
-      'server.endpoint=https://<grpc-host>:443',
+      locale === 'en'
+        ? 'Its endpoint must point to your server.'
+        : 'Её endpoint должен указывать на ваш сервер.',
     )
     await expect(selfHosting).toContainText('internalSecret.existingSecret')
     await expect(selfHosting).toContainText('imagePullSecrets')
     await expect(selfHosting).toContainText('helm rollback')
     await expect(selfHosting).toContainText('helm uninstall')
     await expect(selfHosting).toContainText(
-      locale === 'en' ? 'does not install PostgreSQL' : 'PostgreSQL он не устанавливает',
+      locale === 'en' ? 'Provision PostgreSQL separately.' : 'PostgreSQL подготовьте отдельно.',
     )
     await expect(selfHosting).toContainText(
       locale === 'en'
-        ? 'provision, secure, monitor, back up, restore, upgrade and delete'
-        : 'создаёте, защищаете, мониторите, резервируете и восстанавливаете, обновляете и удаляете',
+        ? 'Chart migrations update the database schema; the chart does not provision or delete the database infrastructure.'
+        : 'Миграции чарта обновляют схему данных; саму инфраструктуру базы чарт не создаёт и не удаляет.',
     )
     await expect(selfHosting).not.toContainText('postgresql.enabled')
     await expect(selfHosting).not.toContainText('deploy/kubernetes/common/postgres.yaml')
@@ -560,8 +682,8 @@ test('quick start and agent reference explain onboarding identities and selector
         'This is an explanation of the chart defaults, with no editable fields',
       ],
       agent: [
-        'cluster name passed to the agent',
-        'Kubernetes UID remains the authoritative cluster identity',
+        'TLS endpoint, cluster name, Deployment selector and Application Secret reference',
+        'Each entry selects exactly one',
         'clusterName: production',
         'saved installation name passed to the agent',
       ],
@@ -576,8 +698,8 @@ test('quick start and agent reference explain onboarding identities and selector
         'Это описание настроек чарта по умолчанию, без редактируемых полей',
       ],
       agent: [
-        'какое название кластера передать агенту',
-        'Авторитетным идентификатором кластера остаётся Kubernetes UID',
+        'TLS endpoint, название кластера, селектор Deployment и ссылку на Secret приложения',
+        'Каждый выбирает ровно один',
         'clusterName: production',
         'сохранённое имя, передаваемое агенту',
       ],
@@ -602,24 +724,23 @@ test('self-hosting documents exact per-installation browser Origins in both lang
   const expected = {
     en: {
       managedTls:
-        'browser Origin derived from this installation’s ingress.web.host: https://<ingress.web.host> when ingress.web.tlsSecret is set',
-      managedPlaintext: 'and http://<ingress.web.host> otherwise',
-      external:
-        'external ingress, reverse proxy or alternate browser address exposes Web/API, add every such Origin to server.corsOrigins explicitly',
-      exact: 'scheme://host plus a non-default port when present',
-      invalid: 'wildcards, paths, queries, fragments and trailing slashes are not accepted',
-      empty: 'server.corsOrigins can stay empty when the chart manages Web ingress',
+        'The chart trusts its Web ingress Origin automatically: HTTPS when a TLS Secret is configured',
+      managedPlaintext: 'otherwise HTTP',
+      external: 'For another proxy or browser address, add its exact Origin to server.corsOrigins',
+      exact: 'scheme, host and optional port',
+      invalid: 'without a path, query, fragment, wildcard or trailing slash',
+      empty: 'corsOrigins: []',
       valuesComment: 'https with tlsSecret, otherwise http; add exact external Origins',
     },
     ru: {
       managedTls:
-        'Origin браузера, выведенному из ingress.web.host именно этой установки: https://<ingress.web.host>, если задан ingress.web.tlsSecret',
-      managedPlaintext: 'и http://<ingress.web.host> в противном случае',
+        'Чарт автоматически доверяет Origin своего Web ingress: HTTPS при заданном TLS Secret',
+      managedPlaintext: 'иначе HTTP',
       external:
-        'внешний ingress, reverse proxy или альтернативный адрес, явно добавьте каждый такой Origin в server.corsOrigins',
-      exact: 'строго scheme://host и, при наличии, нестандартный порт',
-      invalid: 'wildcard, пути, query-параметры, fragment и завершающий слеш недопустимы',
-      empty: 'server.corsOrigins можно оставить пустым, когда Web ingress создаёт чарт',
+        'Для другого прокси или адреса браузера добавьте точный Origin в server.corsOrigins',
+      exact: 'схему, хост и при необходимости порт',
+      invalid: 'без пути, query-параметров, fragment, wildcard и завершающего слеша',
+      empty: 'corsOrigins: []',
       valuesComment: 'https с tlsSecret, иначе http; добавьте точные внешние Origins',
     },
   } as const
@@ -693,10 +814,16 @@ test('chart values are copyable localized files with intact shell continuations'
       expect(/[А-Яа-яЁё]/.test(text)).toBe(locale === 'ru')
       expect(text).toMatch(/ \\\n/)
       expect(text).toMatch(new RegExp(`^${required}$`, 'm'))
-      for (const line of text.split('\n').filter((entry) => /^\s*-?\s*[\w.-]+: \S/.test(entry)))
-        expect(line).toMatch(
-          /#\s*(required|обязательно|default|по умолчанию|optional|необязательно)/,
-        )
+      expect(text).not.toMatch(/^\s*(?:tag|digest):\s*["']{2}/m)
+      expect(text).not.toMatch(/^\s*resources:\s*\{\}/m)
+      if (id === 'values-server') {
+        expect(text).toContain('existingSecret: okoscope-database')
+        expect(text).toContain('urlKey: database-url')
+      } else {
+        expect(text).toContain('credentialSecret:')
+        expect(text).toContain('name: okoscope-application-credentials')
+        expect(text).toContain('key: payment-api')
+      }
       const comments = block.locator('.token.comment')
       expect(await comments.count()).toBeGreaterThan(10)
       for (const comment of await comments.all()) {
@@ -778,6 +905,181 @@ test('capability sections carry decorative icons without changing their names', 
       expect(iconBox!.y + iconBox!.height).toBeLessThanOrEqual(linkBox!.y + 40)
     }
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  }
+})
+
+test('operational documentation uses distinct decorative section icons', async ({ page }) => {
+  const articlesWithIcons = [
+    {
+      slug: 'troubleshooting',
+      sections: [
+        ['connection', 'lucide-unplug', 'The agent does not connect', 'Агент не подключается'],
+        [
+          'empty',
+          'lucide-search-x',
+          'No events or missing details',
+          'Нет событий или подробностей',
+        ],
+        [
+          'web',
+          'lucide-monitor-x',
+          'The web interface cannot start',
+          'Веб-интерфейс не запускается',
+        ],
+        ['delivery', 'lucide-bell-off', 'A notification did not arrive', 'Уведомление не пришло'],
+      ],
+    },
+    {
+      slug: 'data-and-security',
+      sections: [
+        [
+          'collection',
+          'lucide-scan-search',
+          'Collected and excluded data',
+          'Собираемые и исключённые данные',
+        ],
+        [
+          'permissions',
+          'lucide-shield-keyhole',
+          'Agent permissions and credentials',
+          'Права агента и токены',
+        ],
+        [
+          'runtime-retention',
+          'lucide-rotate-ccw-clock',
+          'Runtime details and numerical history',
+          'Подробности событий и числовая история',
+        ],
+        [
+          'notification-retention',
+          'lucide-bell-ring',
+          'Notification history',
+          'История уведомлений',
+        ],
+      ],
+    },
+    {
+      slug: 'compatibility-and-limits',
+      sections: [
+        [
+          'platform',
+          'lucide-server-cog',
+          'Supported agent platform',
+          'Поддерживаемая платформа агента',
+        ],
+        [
+          'profiles',
+          'lucide-gauge',
+          'Enablement and resource bounds',
+          'Включение функций и ограничения ресурсов',
+        ],
+        ['evidence', 'lucide-eye-off', 'Evidence boundaries', 'Границы выводов'],
+      ],
+    },
+    {
+      slug: 'workflows',
+      sections: [
+        [
+          'new-connection',
+          'lucide-network',
+          'Investigate a new connection',
+          'Исследуйте новое соединение',
+        ],
+        ['policies', 'lucide-scroll-text', 'Work with Policies', 'Работа с политиками'],
+        ['release', 'lucide-git-compare-arrows', 'Compare releases', 'Сравните релизы'],
+        ['restarts', 'lucide-rotate-ccw', 'Explain a restart', 'Разберитесь с перезапуском'],
+        [
+          'notifications',
+          'lucide-bell-check',
+          'Configure and verify notifications',
+          'Настройте и проверьте уведомления',
+        ],
+      ],
+    },
+  ] as const
+
+  for (const viewport of [
+    { width: 1280, height: 900 },
+    { width: 360, height: 800 },
+  ]) {
+    await page.setViewportSize(viewport)
+    for (const article of articlesWithIcons) {
+      await page.goto(`/docs/${article.slug}`)
+      for (const [locale, labelIndex] of [
+        ['en', 2],
+        ['ru', 3],
+      ] as const) {
+        await page.getByLabel(/Language|Язык/).selectOption(locale)
+        const contents = page.getByRole('navigation', {
+          name: locale === 'en' ? 'On this page' : 'На этой странице',
+          exact: true,
+        })
+        await expect(contents.locator('svg.docs-toc-icon')).toHaveCount(article.sections.length)
+        await expect(page.locator('main svg.docs-section-icon')).toHaveCount(
+          article.sections.length,
+        )
+
+        const tocIconNames: string[] = []
+        const headingIconNames: string[] = []
+        for (const section of article.sections) {
+          const [id, iconClass] = section
+          const expectedLabel = section[labelIndex]
+          const tocLink = contents.locator(`a[href="#${id}"]`)
+          const heading = page.locator(`section[aria-labelledby="${id}"] :is(h2, h3)#${id}`)
+          const headingLink = heading.locator(`a[href="#${id}"]`)
+          const tocIcon = tocLink.locator('svg.docs-toc-icon')
+          const headingIcon = heading.locator('svg.docs-section-icon')
+
+          await expect(tocLink).toHaveAccessibleName(expectedLabel)
+          await expect(headingLink).toHaveAccessibleName(expectedLabel)
+          await expect(tocIcon).toHaveClass(new RegExp(`(?:^|\\s)${iconClass}(?:\\s|$)`))
+          await expect(headingIcon).toHaveClass(new RegExp(`(?:^|\\s)${iconClass}(?:\\s|$)`))
+          await expect(tocIcon).toHaveAttribute('aria-hidden', 'true')
+          await expect(headingIcon).toHaveAttribute('aria-hidden', 'true')
+          await expect(tocIcon).toHaveCSS('color', 'rgb(130, 214, 229)')
+          await expect(headingIcon).toHaveCSS('color', 'rgb(130, 214, 229)')
+
+          const [tocBox, headingBox] = await Promise.all([
+            tocIcon.boundingBox(),
+            headingIcon.boundingBox(),
+          ])
+          expect(tocBox).not.toBeNull()
+          expect(headingBox).not.toBeNull()
+          for (const box of [tocBox!, headingBox!]) {
+            expect(box.x).toBeGreaterThanOrEqual(0)
+            expect(box.x + box.width).toBeLessThanOrEqual(viewport.width)
+          }
+
+          tocIconNames.push(
+            await tocIcon.evaluate(
+              (icon) =>
+                [...icon.classList].find(
+                  (name) => name.startsWith('lucide-') && name !== 'lucide',
+                ) ?? '',
+            ),
+          )
+          headingIconNames.push(
+            await headingIcon.evaluate(
+              (icon) =>
+                [...icon.classList].find(
+                  (name) => name.startsWith('lucide-') && name !== 'lucide',
+                ) ?? '',
+            ),
+          )
+
+          await tocLink.click()
+          expect(new URL(page.url()).hash).toBe(`#${id}`)
+          await expect(heading).toBeVisible()
+        }
+
+        expect(new Set(tocIconNames).size).toBe(article.sections.length)
+        expect(headingIconNames).toEqual(tocIconNames)
+        expect(
+          await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+        ).toBe(true)
+        expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+      }
+    }
   }
 })
 
