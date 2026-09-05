@@ -1,6 +1,7 @@
 import type { Locale } from '../../shared/i18n'
 
 type Localized = Record<Locale, string>
+export type SectionIcon = 'processes' | 'network' | 'files' | 'review'
 export type Article = {
   slug: string
   title: Localized
@@ -14,6 +15,7 @@ export type Article = {
       alt: Localized
     }
     code?: string | Localized
+    icon?: SectionIcon
     headingLevel?: 2 | 3
     definitions?: { term: Localized; description: Localized }[]
   }[]
@@ -867,6 +869,7 @@ imagePullSecrets:
     sections: [
       {
         id: 'processes',
+        icon: 'processes',
         title: {
           en: 'Processes, system calls and termination',
           ru: 'Процессы, системные вызовы и завершения',
@@ -884,6 +887,7 @@ imagePullSecrets:
       },
       {
         id: 'network',
+        icon: 'network',
         title: {
           en: 'Outbound, inbound and DNS',
           ru: 'Исходящая сеть, входящая сеть и DNS',
@@ -901,6 +905,7 @@ imagePullSecrets:
       },
       {
         id: 'files',
+        icon: 'files',
         title: {
           en: 'Experimental file activity',
           ru: 'Экспериментальная файловая активность',
@@ -919,6 +924,7 @@ imagePullSecrets:
       },
       {
         id: 'review',
+        icon: 'review',
         title: {
           en: 'Inventory, releases, policies and notifications',
           ru: 'Инвентаризация, релизы, политики и уведомления',

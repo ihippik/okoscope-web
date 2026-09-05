@@ -90,6 +90,90 @@ select:focus-visible {
   box-shadow: 0 12px 36px rgb(0 0 0 / 24%);
   backdrop-filter: blur(18px);
 }
+.app-header-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 1rem;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding: 0.75rem 1rem;
+}
+.mobile-menu-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: none;
+  border: 1px solid rgb(71 104 143 / 65%);
+  border-radius: 0.65rem;
+  background: rgb(5 18 34 / 72%);
+  color: #edf5ff;
+  cursor: pointer;
+}
+nav.app-navigation {
+  display: none;
+  width: 100%;
+  min-width: 0;
+  align-items: stretch;
+  gap: 0.25rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgb(50 112 168 / 30%);
+  max-height: calc(100dvh - 6rem);
+  overflow-y: auto;
+}
+nav.app-navigation.is-open {
+  display: flex;
+  flex-direction: column;
+}
+.app-navigation .nav-link {
+  min-height: 2.75rem;
+  align-items: center;
+}
+.app-navigation-language {
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  border-top: 1px solid rgb(50 112 168 / 30%);
+}
+.app-navigation-language select {
+  min-height: 2.75rem;
+}
+@media (min-width: 64rem) {
+  .app-header-inner {
+    flex-wrap: nowrap;
+    gap: 1rem;
+    padding-inline: 1.5rem;
+  }
+  .mobile-menu-toggle {
+    display: none;
+  }
+  nav.app-navigation,
+  nav.app-navigation.is-open {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    width: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    max-height: none;
+    overflow: visible;
+  }
+  .app-navigation-language {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .app-navigation-language select {
+    min-height: auto;
+  }
+}
 .brand-link {
   display: inline-flex;
   color: white;

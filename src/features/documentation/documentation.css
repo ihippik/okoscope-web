@@ -86,6 +86,12 @@
 .docs-reading h3 a {
   color: inherit;
 }
+.docs-section-icon {
+  display: inline;
+  vertical-align: -0.18em;
+  margin-right: 0.55rem;
+  color: #82d6e5;
+}
 .docs-reading p {
   line-height: 1.85;
   color: #c5d5e8;

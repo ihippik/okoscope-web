@@ -369,6 +369,33 @@ test('chart values are copyable localized files with intact shell continuations'
   }
 })
 
+test('capability sections carry decorative icons without changing their names', async ({
+  page,
+}) => {
+  const sections = ['processes', 'network', 'files', 'review'] as const
+  for (const locale of ['en', 'ru'] as const) {
+    await page.goto('/docs/capabilities')
+    await page.getByLabel(/Language|Язык/).selectOption(locale)
+    await expect(page.locator('main .docs-section-icon')).toHaveCount(sections.length)
+    for (const id of sections) {
+      const heading = page.locator(`section[aria-labelledby="${id}"] h2`)
+      const icon = heading.locator('svg.docs-section-icon')
+      await expect(icon).toHaveCount(1)
+      await expect(icon).toHaveAttribute('aria-hidden', 'true')
+      await expect(icon).toHaveCSS('color', 'rgb(130, 214, 229)')
+      const link = heading.locator('a')
+      await expect(link).toHaveAccessibleName((await link.textContent()) ?? '')
+      const [iconBox, linkBox] = await Promise.all([icon.boundingBox(), link.boundingBox()])
+      expect(iconBox).not.toBeNull()
+      expect(linkBox).not.toBeNull()
+      expect(iconBox!.x + iconBox!.width).toBeLessThanOrEqual(linkBox!.x + 1)
+      expect(iconBox!.y).toBeGreaterThanOrEqual(linkBox!.y - 4)
+      expect(iconBox!.y + iconBox!.height).toBeLessThanOrEqual(linkBox!.y + 40)
+    }
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  }
+})
+
 test('all articles have translated content, stable anchors and accessible desktop structure', async ({
   page,
 }) => {

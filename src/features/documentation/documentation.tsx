@@ -1,11 +1,18 @@
 import { Link, useRouterState } from '@tanstack/react-router'
 import { Fragment, useEffect, useState } from 'react'
-import { ArrowUpRight, BookOpen } from 'lucide-react'
+import { ArrowUpRight, BookOpen, Cpu, FileCog, ListChecks, Network } from 'lucide-react'
 import { useLocalization } from '../../shared/i18n'
 import { LanguageSelector } from '../../shared/i18n/language-selector'
 import { Brand } from '../../shared/ui/brand'
-import { articles, controls } from './content'
+import { articles, controls, type SectionIcon } from './content'
 import './documentation.css'
+
+const sectionIcons = {
+  processes: Cpu,
+  network: Network,
+  files: FileCog,
+  review: ListChecks,
+} satisfies Record<SectionIcon, typeof Cpu>
 
 export function Documentation({ slug }: { slug: string }) {
   const { locale, t } = useLocalization()
@@ -89,9 +96,13 @@ export function Documentation({ slug }: { slug: string }) {
                 </nav>
                 {article.sections.map((section) => {
                   const Heading = section.headingLevel === 3 ? 'h3' : 'h2'
+                  const Icon = section.icon ? sectionIcons[section.icon] : null
                   return (
                     <section key={section.id} aria-labelledby={section.id}>
                       <Heading id={section.id}>
+                        {Icon && (
+                          <Icon className="docs-section-icon" size={22} aria-hidden="true" />
+                        )}
                         <a href={`#${section.id}`}>
                           <BrandText text={section.title[locale]} />
                         </a>

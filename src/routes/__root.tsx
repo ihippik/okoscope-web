@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { Link, Outlet, createRootRoute, useRouterState } from '@tanstack/react-router'
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { Menu, X } from 'lucide-react'
 import { getCurrentUser, isAnonymousResponse, login, register } from '../shared/api/auth'
 import { useApi } from '../shared/api/context'
 import { buildInfoOptions } from '../shared/api/queries'
@@ -117,45 +118,10 @@ function SessionGate() {
 
 function AuthenticatedShell() {
   const t = useT()
+  const locationHref = useRouterState({ select: (state) => state.location.href })
   return (
     <div className="min-h-screen">
-      <header className="app-header">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <Link to="/" className="brand-link" aria-label="OKOSCOPE">
-            <Brand />
-          </Link>
-          <nav
-            aria-label={t('primaryNavigation')}
-            className="flex flex-wrap items-center justify-end gap-2"
-          >
-            <Link
-              to="/projects"
-              className="nav-link"
-              activeProps={{ className: 'nav-link text-cyan-300' }}
-            >
-              {t('projects')}
-            </Link>
-            <Link
-              to="/profile"
-              className="nav-link"
-              activeProps={{ className: 'nav-link text-cyan-300' }}
-            >
-              {t('profile')}
-            </Link>
-            <Link
-              to="/onboarding"
-              className="nav-link"
-              activeProps={{ className: 'nav-link text-cyan-300' }}
-            >
-              {t('connectAgent')}
-            </Link>
-            <Link to="/docs" className="nav-link">
-              {t('documentation')}
-            </Link>
-            <LanguageSelector />
-          </nav>
-        </div>
-      </header>
+      <ApplicationHeader key={locationHref} />
       <main id="main-content" className="page">
         <Outlet />
       </main>
@@ -163,6 +129,86 @@ function AuthenticatedShell() {
         {t('webVersion', { version: __APP_VERSION__, commit: __GIT_COMMIT__ })}
       </footer>
     </div>
+  )
+}
+
+function ApplicationHeader() {
+  const t = useT()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const toggleRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    const desktop = window.matchMedia('(min-width: 64rem)')
+    const closeOnDesktop = () => {
+      if (desktop.matches) setMenuOpen(false)
+    }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && menuOpen) {
+        setMenuOpen(false)
+        toggleRef.current?.focus()
+      }
+    }
+    desktop.addEventListener('change', closeOnDesktop)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      desktop.removeEventListener('change', closeOnDesktop)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [menuOpen])
+
+  return (
+    <header className="app-header">
+      <div className="app-header-inner">
+        <Link to="/" className="brand-link" aria-label="OKOSCOPE">
+          <Brand />
+        </Link>
+        <button
+          ref={toggleRef}
+          type="button"
+          className="mobile-menu-toggle"
+          aria-label={t(menuOpen ? 'closeMenu' : 'openMenu')}
+          aria-expanded={menuOpen}
+          aria-controls="primary-navigation"
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          {menuOpen ? <X size={22} aria-hidden="true" /> : <Menu size={22} aria-hidden="true" />}
+        </button>
+        <nav
+          id="primary-navigation"
+          aria-label={t('primaryNavigation')}
+          className={`app-navigation${menuOpen ? ' is-open' : ''}`}
+          onClick={(event) => {
+            if (event.target instanceof Element && event.target.closest('a')) setMenuOpen(false)
+          }}
+        >
+          <Link
+            to="/projects"
+            className="nav-link"
+            activeProps={{ className: 'nav-link text-cyan-300' }}
+          >
+            {t('projects')}
+          </Link>
+          <Link
+            to="/profile"
+            className="nav-link"
+            activeProps={{ className: 'nav-link text-cyan-300' }}
+          >
+            {t('profile')}
+          </Link>
+          <Link
+            to="/onboarding"
+            className="nav-link"
+            activeProps={{ className: 'nav-link text-cyan-300' }}
+          >
+            {t('connectAgent')}
+          </Link>
+          <Link to="/docs" className="nav-link">
+            {t('documentation')}
+          </Link>
+          <LanguageSelector className="app-navigation-language" />
+        </nav>
+      </div>
+    </header>
   )
 }
 
