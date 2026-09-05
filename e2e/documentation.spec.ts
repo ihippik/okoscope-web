@@ -15,6 +15,132 @@ const titles = [
   ['troubleshooting', 'Troubleshooting and FAQ', 'Устранение проблем и FAQ'],
 ] as const
 
+test('quick start flow links six localized steps between prerequisites and access', async ({
+  page,
+}) => {
+  await page.goto('/docs/quick-start')
+  for (const locale of ['en', 'ru'] as const) {
+    await page.getByLabel(/Language|Язык/).selectOption(locale)
+    const flow = page.getByRole('navigation', {
+      name: locale === 'en' ? 'From access to the first event' : 'От доступа до первого события',
+    })
+    await expect(flow).toBeVisible()
+    expect(
+      await flow.evaluate((element) => [
+        element.previousElementSibling?.getAttribute('aria-labelledby'),
+        element.nextElementSibling?.getAttribute('aria-labelledby'),
+      ]),
+    ).toEqual(['before-you-start', 'access'])
+    await expect(flow.locator('ol')).toHaveCount(3)
+    await expect(flow.locator('a svg')).toHaveCount(6)
+    await expect(flow.locator('.docs-setup-flow-eyebrow, .docs-setup-flow-title')).toHaveCount(0)
+    const names =
+      locale === 'en'
+        ? [
+            'Access & Application',
+            'Kubernetes workload',
+            'Token Secret',
+            'Install agent',
+            'Check startup',
+            'First observation',
+          ]
+        : [
+            'Доступ и приложение',
+            'Нагрузка Kubernetes',
+            'Secret с токеном',
+            'Установка агента',
+            'Проверка запуска',
+            'Первое наблюдение',
+          ]
+    const ids = ['access', 'workload', 'secret', 'deploy', 'check-agent', 'first-event']
+    for (const [index, id] of ids.entries()) {
+      const link = flow.getByRole('link').nth(index)
+      await expect(link).toHaveAttribute('href', `#${id}`)
+      await expect(link).toHaveAccessibleName(names[index]!)
+      await link.click()
+      expect(new URL(page.url()).hash).toBe(`#${id}`)
+      await expect(page.locator(`h2#${id}`)).toBeVisible()
+    }
+    await expect(flow.locator('svg:not([aria-hidden="true"])')).toHaveCount(0)
+    for (const width of [1280, 360]) {
+      await page.setViewportSize({ width, height: 800 })
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      )
+      expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+    }
+  }
+})
+
+test('quick start presents sequential semantic instructions in both languages', async ({
+  page,
+}) => {
+  await page.goto('/docs/quick-start#access')
+  for (const locale of ['en', 'ru'] as const) {
+    await page.getByLabel(/Language|Язык/).selectOption(locale)
+    const article = page.locator('main')
+    expect(
+      await article
+        .locator('section')
+        .evaluateAll((sections) =>
+          sections.map((section) => section.getAttribute('aria-labelledby')),
+        ),
+    ).toEqual([
+      'before-you-start',
+      'access',
+      'workload',
+      'secret',
+      'deploy',
+      'check-agent',
+      'first-event',
+      'agent-variants',
+    ])
+    const access = article.locator('section[aria-labelledby="access"]')
+    await expect(access.locator(':scope > p').first()).toHaveText(
+      locale === 'en'
+        ? 'Open https://okoscope.com and sign in or register.'
+        : 'Откройте https://okoscope.com и войдите в учётную запись или зарегистрируйтесь.',
+    )
+    await expect(access.locator('ol > li')).toHaveCount(3)
+    await expect(access.locator(':scope > p').nth(2)).toHaveText(
+      locale === 'en'
+        ? 'Organization → Project → Application'
+        : 'Организация → Проект → Приложение',
+    )
+    await expect(access.locator(':scope > p').nth(2).locator('strong')).toHaveCount(3)
+    expect(
+      await access.locator('aside').evaluate((element) => element.previousElementSibling?.tagName),
+    ).toBe('OL')
+    for (const id of ['workload', 'secret', 'first-event']) {
+      await expect(article.locator(`section[aria-labelledby="${id}"] ol`)).toHaveCount(1)
+    }
+    await expect(article.locator('section[aria-labelledby="before-you-start"] ul')).toHaveCount(1)
+    await expect(
+      article
+        .locator('section[aria-labelledby="workload"] code')
+        .filter({ hasText: 'identity.clusterName' }),
+    ).toHaveCount(1)
+    expect(
+      (await article.locator('section p, section li, section aside').allTextContents()).join('\n'),
+    ).not.toMatch(/\*\*|`/)
+    const guide = article.locator('section a[href="/docs/compatibility-and-limits"]').first()
+    await expect(guide).toHaveText(
+      locale === 'en' ? 'Compatibility and limits' : 'Совместимость и ограничения',
+    )
+    await guide.click()
+    await expect(page).toHaveURL(/\/docs\/compatibility-and-limits$/)
+    await expect(page.getByLabel(/Language|Язык/)).toHaveValue(locale)
+    await page.goto('/docs/quick-start#access')
+    for (const width of [1280, 360]) {
+      await page.setViewportSize({ width, height: 800 })
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+      ).toBe(true)
+      expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+    }
+  }
+})
+
 for (const expired of [false, true]) {
   test(`public articles never request the API with ${expired ? 'expired' : 'absent'} session`, async ({
     page,
@@ -108,7 +234,7 @@ test('overview offers separate Cloud and Self-hosted journeys with preserved rou
     await expect(cloud).toHaveAttribute('href', '/docs/quick-start')
     await cloud.click()
     await expect(page.locator('main h1')).toContainText('Okoscope Cloud')
-    const command = page.locator('section[aria-labelledby="deploy"] code')
+    const command = page.locator('section[aria-labelledby="deploy"] pre code')
     await expect(command).toContainText('--set server.endpoint=https://grpc.okoscope.com:443')
     await expect(command).not.toContainText('server.caSecret')
     await expect(command).not.toContainText('database')
@@ -136,7 +262,7 @@ test('Cloud explains the version placeholder without requiring server configurat
   await page.goto('/docs/quick-start')
   await expect(
     page.getByText(
-      '<OKOSCOPE_VERSION> is a placeholder, not an environment variable. Copy the actual version from the command generated by Connect agent; do not run the placeholder literally. Adapt the sample cluster and workload names to your cluster. If Cloud configuration is unavailable, contact the Okoscope operator; you do not need to install or configure the server.',
+      '<OKOSCOPE_VERSION> is a placeholder, not an environment variable. Replace it with the version from the wizard and use your cluster and workload values. Prefer copying the complete generated command. If Cloud configuration is unavailable, contact the Okoscope operator.',
       { exact: true },
     ),
   ).toBeVisible()
@@ -153,7 +279,7 @@ test('Cloud explains the version placeholder without requiring server configurat
   await page.getByLabel('Language').selectOption('ru')
   await expect(
     page.getByText(
-      '<OKOSCOPE_VERSION> — плейсхолдер, а не переменная окружения. Возьмите конкретную версию из команды мастера «Подключение агента»; не выполняйте плейсхолдер буквально. Замените примерные имена кластера и нагрузки своими. Если конфигурация Cloud недоступна, обратитесь к оператору Okoscope; устанавливать или настраивать сервер вам не нужно.',
+      '<OKOSCOPE_VERSION> — заполнитель, а не переменная окружения. Замените его версией из мастера и укажите свои значения кластера и нагрузки. Удобнее скопировать готовую команду целиком. Если конфигурация Cloud недоступна, обратитесь к оператору Okoscope.',
       { exact: true },
     ),
   ).toBeVisible()
@@ -428,11 +554,10 @@ test('quick start and agent reference explain onboarding identities and selector
       quickStart: [
         'Worker nodes section offers a Connect agent button',
         'select the Project and Application',
-        'Cluster name is saved with the installation and passed to the agent as identity.clusterName',
-        'Kubernetes UID remains the authoritative cluster identity',
-        'Workload namespace says where the Deployment lives',
-        'exact name or by a bounded comma-separated key=value label set',
-        'Advanced observation settings are informational here',
+        'It is saved with the installation and passed to the agent as identity.clusterName',
+        'Workload namespace — the namespace containing your Deployment',
+        'Labels must match exactly one Deployment in the selected namespace',
+        'This is an explanation of the chart defaults, with no editable fields',
       ],
       agent: [
         'cluster name passed to the agent',
@@ -444,12 +569,11 @@ test('quick start and agent reference explain onboarding identities and selector
     ru: {
       quickStart: [
         'в разделе «Рабочие узлы» доступна кнопка «Подключить агента»',
-        'нужно выбрать проект и приложение',
-        'Название кластера сохраняется в установке и передаётся агенту как identity.clusterName',
-        'авторитетным идентификатором остаётся Kubernetes UID',
-        'Namespace нагрузки указывает, где находится Deployment',
-        'по точному имени либо по ограниченному набору меток key=value через запятую',
-        '«Расширенные настройки наблюдения» здесь информационные',
+        'с выбором проекта и приложения',
+        'Оно сохраняется в установке и передаётся агенту как identity.clusterName',
+        '«Namespace нагрузки» — пространство имён, в котором находится Deployment',
+        'Метки должны выбирать ровно один Deployment в указанном пространстве имён',
+        'Это описание настроек чарта по умолчанию, без редактируемых полей',
       ],
       agent: [
         'какое название кластера передать агенту',
@@ -1021,8 +1145,7 @@ async function verifyContentsCaption(contents: Locator, text: string) {
 }
 
 async function verifyQuickStartSubsection(page: Page, contents: Locator, locale: 'en' | 'ru') {
-  const sectionName =
-    locale === 'en' ? '2. Create the credential Secret' : '2. Создайте Secret с токеном'
+  const sectionName = locale === 'en' ? 'Create the credential Secret' : 'Создайте Secret с токеном'
   const sectionHeading = page.getByRole('heading', { level: 2, name: sectionName })
   await expect(sectionHeading).toHaveAttribute('id', 'secret')
   await contents.getByRole('link', { name: sectionName }).click()
@@ -1075,7 +1198,13 @@ async function verifyRenderedBrandNames(page: Page) {
 
   for (const name of await branded.all()) {
     await expect(name).toHaveText('Okoscope')
-    await expect(name).toHaveCSS('color', 'rgb(103, 232, 249)')
+    const inArticleNavigation = await name.evaluate((element) =>
+      Boolean(element.closest('.docs-sidebar, .docs-mobile')),
+    )
+    await expect(name).toHaveCSS(
+      'color',
+      inArticleNavigation ? 'rgb(255, 255, 255)' : 'rgb(103, 232, 249)',
+    )
     const style = await name.evaluate((element) => {
       const foreground = getComputedStyle(element)
         .color.match(/[\d.]+/g)!

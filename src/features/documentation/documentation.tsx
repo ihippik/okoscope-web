@@ -1,5 +1,5 @@
 import { Link, useRouterState } from '@tanstack/react-router'
-import { useEffect, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useState, type ReactNode } from 'react'
 import Prism from 'prismjs'
 import 'prismjs/components/prism-bash'
 import 'prismjs/components/prism-yaml'
@@ -11,12 +11,16 @@ import {
   FileCog,
   ListChecks,
   Network,
+  Server,
+  ShieldCheck,
+  Wrench,
 } from 'lucide-react'
-import { useLocalization } from '../../shared/i18n'
+import { useLocalization, type Locale } from '../../shared/i18n'
 import { LanguageSelector } from '../../shared/i18n/language-selector'
 import { Brand } from '../../shared/ui/brand'
-import { articles, controls, type SectionIcon } from './content'
+import { articles, controls, type ArticleList, type ListIcon, type SectionIcon } from './content'
 import './documentation.css'
+import { getQuickStartIcon, QuickStartFlow } from './quick-start-flow'
 
 const sectionIcons = {
   processes: Cpu,
@@ -24,6 +28,13 @@ const sectionIcons = {
   files: FileCog,
   review: ListChecks,
 } satisfies Record<SectionIcon, typeof Cpu>
+
+const listIcons = {
+  cluster: Server,
+  tools: Wrench,
+  network: Network,
+  security: ShieldCheck,
+} satisfies Record<ListIcon, typeof Cpu>
 
 export function Documentation({ slug }: { slug: string }) {
   const { locale, t } = useLocalization()
@@ -81,7 +92,10 @@ export function Documentation({ slug }: { slug: string }) {
             {article ? (
               <>
                 <p className="docs-intro">
-                  <BrandText text={article.intro[locale]} />
+                  <DocumentationText
+                    text={article.intro[locale]}
+                    accent={article.introAccent?.[locale]}
+                  />
                 </p>
                 {(slug === 'quick-start' || slug === 'self-hosting') && (
                   <p>
@@ -93,81 +107,99 @@ export function Documentation({ slug }: { slug: string }) {
                 <nav className="docs-toc" aria-label={ui.onPage}>
                   <p className="docs-toc-label">{ui.onPage}</p>
                   <ul>
-                    {article.sections.map((section) => (
-                      <li
-                        key={section.id}
-                        className={`docs-toc-level-${section.headingLevel ?? 2}`}
-                      >
-                        <a href={`#${section.id}`}>
-                          <BrandText text={section.title[locale]} />
-                        </a>
-                      </li>
-                    ))}
+                    {article.sections.map((section) => {
+                      const Icon =
+                        slug === 'quick-start' ? getQuickStartIcon(section.id) : undefined
+                      return (
+                        <li
+                          key={section.id}
+                          className={`docs-toc-level-${section.headingLevel ?? 2}${Icon ? ' docs-toc-icon-item' : ''}`}
+                        >
+                          <a href={`#${section.id}`}>
+                            {Icon && (
+                              <Icon className="docs-toc-icon" size={16} aria-hidden="true" />
+                            )}
+                            <BrandText text={section.title[locale]} />
+                          </a>
+                        </li>
+                      )
+                    })}
                   </ul>
                 </nav>
                 {article.sections.map((section) => {
                   const Heading = section.headingLevel === 3 ? 'h3' : 'h2'
-                  const Icon = section.icon ? sectionIcons[section.icon] : null
+                  const Icon =
+                    (slug === 'quick-start' ? getQuickStartIcon(section.id) : undefined) ??
+                    (section.icon ? sectionIcons[section.icon] : null)
                   return (
-                    <section key={section.id} aria-labelledby={section.id}>
-                      <Heading id={section.id}>
-                        {Icon && (
-                          <Icon className="docs-section-icon" size={22} aria-hidden="true" />
+                    <Fragment key={section.id}>
+                      {slug === 'quick-start' && section.id === 'access' && (
+                        <QuickStartFlow locale={locale} />
+                      )}
+                      <section aria-labelledby={section.id}>
+                        <Heading id={section.id}>
+                          {Icon && (
+                            <Icon className="docs-section-icon" size={22} aria-hidden="true" />
+                          )}
+                          <a href={`#${section.id}`}>
+                            <BrandText text={section.title[locale]} />
+                          </a>
+                        </Heading>
+                        {section.paragraphs.map((paragraph, index) => (
+                          <p key={index}>
+                            <DocumentationText text={paragraph[locale]} />
+                          </p>
+                        ))}
+                        {section.list && <DocumentationList list={section.list} locale={locale} />}
+                        {section.callout && (
+                          <aside
+                            className="docs-callout"
+                            aria-label={section.callout.title[locale]}
+                          >
+                            <AlertTriangle
+                              className="docs-callout-icon"
+                              size={20}
+                              aria-hidden="true"
+                            />
+                            <div>
+                              <strong>{section.callout.title[locale]}</strong>
+                              <p>
+                                <DocumentationText text={section.callout.body[locale]} />
+                              </p>
+                            </div>
+                          </aside>
                         )}
-                        <a href={`#${section.id}`}>
-                          <BrandText text={section.title[locale]} />
-                        </a>
-                      </Heading>
-                      {section.paragraphs.map((paragraph, index) => (
-                        <p key={index}>
-                          <DocumentationText text={paragraph[locale]} />
-                        </p>
-                      ))}
-                      {section.callout && (
-                        <aside className="docs-callout" aria-label={section.callout.title[locale]}>
-                          <AlertTriangle
-                            className="docs-callout-icon"
-                            size={20}
-                            aria-hidden="true"
+                        {section.diagram && (
+                          <figure className="docs-diagram">
+                            <img
+                              src={section.diagram.source[locale]}
+                              alt={section.diagram.alt[locale]}
+                            />
+                          </figure>
+                        )}
+                        {section.definitions && (
+                          <ul className="docs-definitions">
+                            {section.definitions.map((definition) => (
+                              <li key={definition.term.en}>
+                                <strong>
+                                  <BrandText text={definition.term[locale]} />
+                                </strong>{' '}
+                                <BrandText text={definition.description[locale]} />
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        {section.code && (
+                          <CodeExample
+                            key={locale}
+                            language={section.codeLanguage}
+                            code={
+                              typeof section.code === 'string' ? section.code : section.code[locale]
+                            }
                           />
-                          <div>
-                            <strong>{section.callout.title[locale]}</strong>
-                            <p>
-                              <DocumentationText text={section.callout.body[locale]} />
-                            </p>
-                          </div>
-                        </aside>
-                      )}
-                      {section.diagram && (
-                        <figure className="docs-diagram">
-                          <img
-                            src={section.diagram.source[locale]}
-                            alt={section.diagram.alt[locale]}
-                          />
-                        </figure>
-                      )}
-                      {section.definitions && (
-                        <ul className="docs-definitions">
-                          {section.definitions.map((definition) => (
-                            <li key={definition.term.en}>
-                              <strong>
-                                <BrandText text={definition.term[locale]} />
-                              </strong>{' '}
-                              <BrandText text={definition.description[locale]} />
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      {section.code && (
-                        <CodeExample
-                          key={locale}
-                          language={section.codeLanguage}
-                          code={
-                            typeof section.code === 'string' ? section.code : section.code[locale]
-                          }
-                        />
-                      )}
-                    </section>
+                        )}
+                      </section>
+                    </Fragment>
                   )
                 })}
                 <nav className="docs-related" aria-label={ui.related}>
@@ -223,6 +255,29 @@ function BrandText({ text }: { text: string }) {
   )
 }
 
+function DocumentationList({ list, locale }: { list: ArticleList; locale: Locale }) {
+  const List = list.ordered ? 'ol' : 'ul'
+  const hasIcons = !list.ordered && list.items.every((item) => item.icon)
+  return (
+    <List
+      className={`docs-instructions${hasIcons ? ' docs-icon-list' : ''}`}
+      role={hasIcons ? 'list' : undefined}
+    >
+      {list.items.map((item, index) => {
+        const Icon = hasIcons && item.icon ? listIcons[item.icon] : null
+        return (
+          <li key={index}>
+            {Icon && <Icon className="docs-list-icon" size={20} aria-hidden="true" />}
+            <span>
+              <DocumentationText text={item[locale]} />
+            </span>
+          </li>
+        )
+      })}
+    </List>
+  )
+}
+
 const documentationLinks = {
   'https://okoscope.com/onboarding': 'https://okoscope.com/onboarding',
   'https://okoscope.com': 'https://okoscope.com',
@@ -249,7 +304,46 @@ const documentationLinkPattern = new RegExp(
   'g',
 )
 
-function DocumentationText({ text }: { text: string }) {
+function DocumentationText({ text, accent }: { text: string; accent?: string | undefined }) {
+  return text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return (
+        <strong
+          className={part.slice(2, -2) === accent ? 'docs-intro-accent' : undefined}
+          key={index}
+        >
+          <BrandText text={part.slice(2, -2)} />
+        </strong>
+      )
+    }
+    if (part.startsWith('`') && part.endsWith('`')) {
+      return (
+        <code className="docs-inline-code" key={index}>
+          {part.slice(1, -1)}
+        </code>
+      )
+    }
+    return <DocumentationLinks text={part} key={index} />
+  })
+}
+
+function DocumentationLinks({ text }: { text: string }) {
+  const { locale } = useLocalization()
+  const guidePattern =
+    /(\/docs\/(?:self-hosting|compatibility-and-limits|data-and-security|troubleshooting))/g
+  return text.split(guidePattern).map((part, index) => {
+    const guide = articles.find((article) => `/docs/${article.slug}` === part)
+    return guide ? (
+      <Link to="/docs/$slug" params={{ slug: guide.slug }} key={index}>
+        <BrandText text={guide.title[locale]} />
+      </Link>
+    ) : (
+      <DocumentationExternalLinks text={part} key={index} />
+    )
+  })
+}
+
+function DocumentationExternalLinks({ text }: { text: string }) {
   return text.split(documentationLinkPattern).map((part, index) => {
     const href = documentationLinks[part as keyof typeof documentationLinks]
     return href ? (
