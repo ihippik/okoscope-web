@@ -166,6 +166,46 @@ test('shows heterogeneous worker kernels on the Application overview at a narrow
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
 })
 
+test('separates retention guidance from the empty worker state', async ({ page }) => {
+  const { project, application } = await mockApi(page)
+  await page.route(
+    `**/api/v1/projects/${project.id}/applications/${application.id}/workers**`,
+    (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          items: [],
+          next_cursor: null,
+          coverage: {
+            closed_before: null,
+            history_expired_before: null,
+            detail_scope: 'raw',
+          },
+        }),
+      }),
+  )
+  await page.setViewportSize({ width: 375, height: 812 })
+  await page.goto(`/projects/${project.id}/applications/${application.id}`)
+  await authenticate(page)
+  await page.evaluate(() => localStorage.setItem('okoscope.locale', 'ru'))
+  await page.reload()
+
+  const guidance = page.getByText(
+    'Подробная активность учитывает только сохранённые исходные события. Сводки доступны отдельно в истории групп.',
+  )
+  const emptyState = page.getByText('Наблюдений рабочих узлов пока нет.')
+  await expect(guidance).toBeVisible()
+  await expect(emptyState).toBeVisible()
+
+  const guidanceBox = await guidance.locator('..').boundingBox()
+  const emptyCardBox = await emptyState.locator('..').boundingBox()
+  expect(guidanceBox).not.toBeNull()
+  expect(emptyCardBox).not.toBeNull()
+  expect(emptyCardBox!.y - (guidanceBox!.y + guidanceBox!.height)).toBeGreaterThanOrEqual(12)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375)
+})
+
 test('authentication flow and primary navigation have no detectable accessibility violations', async ({
   page,
 }) => {

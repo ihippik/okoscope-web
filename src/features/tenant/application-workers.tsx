@@ -86,7 +86,9 @@ export function ApplicationWorkers({
         <p className="mt-1 text-sm text-slate-400">{t('workerNodesHelp')}</p>
       </div>
       {query.data.pages[0] && (
-        <RetentionCoverage coverage={query.data.pages[0].coverage} inventory />
+        <div className="mb-4">
+          <RetentionCoverage coverage={query.data.pages[0].coverage} inventory />
+        </div>
       )}
       {query.isRefetchError && (
         <p
