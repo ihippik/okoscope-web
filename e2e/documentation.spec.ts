@@ -322,11 +322,50 @@ test('installation journeys match the secure Helm chart contract in both languag
     await expect(selfHosting).toContainText(
       locale === 'en'
         ? 'provision, secure, monitor, back up, restore, upgrade and delete'
-        : 'создаёте, защищаете, наблюдаете, резервируете, восстанавливаете, обновляете и удаляете',
+        : 'создаёте, защищаете, мониторите, резервируете и восстанавливаете, обновляете и удаляете',
     )
     await expect(selfHosting).not.toContainText('postgresql.enabled')
     await expect(selfHosting).not.toContainText('deploy/kubernetes/common/postgres.yaml')
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  }
+})
+
+test('chart values are copyable localized files with intact shell continuations', async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  for (const locale of ['en', 'ru'] as const) {
+    await page.goto('/docs/self-hosting')
+    await page.getByLabel(/Language|Язык/).selectOption(locale)
+    for (const [id, required] of [
+      ['values-server', 'database:'],
+      ['values-agent', 'workloads:'],
+    ] as const) {
+      const block = page.locator(`section[aria-labelledby="${id}"] .docs-code`)
+      const code = block.locator('code')
+      const text = (await code.textContent()) ?? ''
+      expect(text.startsWith('# values.yaml')).toBe(true)
+      expect(text).toContain('helm upgrade --install')
+      expect(/[А-Яа-яЁё]/.test(text)).toBe(locale === 'ru')
+      expect(text).toMatch(/ \\\n/)
+      expect(text).toMatch(new RegExp(`^${required}$`, 'm'))
+      for (const line of text.split('\n').filter((entry) => /^\s*-?\s*[\w.-]+: \S/.test(entry)))
+        expect(line).toMatch(
+          /#\s*(required|обязательно|default|по умолчанию|optional|необязательно)/,
+        )
+      const comments = block.locator('.docs-code-comment')
+      expect(await comments.count()).toBeGreaterThan(10)
+      for (const comment of await comments.all()) {
+        await expect(comment).toHaveCSS('color', 'rgb(216, 189, 122)')
+        expect((await comment.textContent())?.startsWith('#')).toBe(true)
+      }
+      await block.getByRole('button').click()
+      expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(text)
+    }
+    const installCommand =
+      (await page.locator('section[aria-labelledby="rollout"] .docs-code code').textContent()) ?? ''
+    expect(installCommand).toContain(' \\\n  oci://ghcr.io/ihippik/charts/okoscope')
   }
 })
 

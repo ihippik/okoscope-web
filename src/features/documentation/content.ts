@@ -13,7 +13,7 @@ export type Article = {
       source: Localized
       alt: Localized
     }
-    code?: string
+    code?: string | Localized
     headingLevel?: 2 | 3
     definitions?: { term: Localized; description: Localized }[]
   }[]
@@ -270,8 +270,8 @@ export const articles: Article[] = [
             ru: 'Попросите у того, кто обслуживает установку, адрес сайта, доступный из кластера gRPC endpoint, сертификат CA и доступ к организации. Регистрация может быть отключена; если она открыта, при регистрации вы становитесь владельцем новой организации, а не системным администратором. Участники могут читать данные, но создавать проекты и приложения в организации вправе владелец или системный администратор.',
           },
           {
-            en: 'Open Connect agent. The owner wizard resumes from server-side Projects, Applications and installation state, so a reload does not create duplicates. Choose or create a Project and Application, then identify one Deployment by namespace and name or bounded labels. The server supplies the compatible chart version, endpoint and Secret convention; no system administrator credential is needed.',
-            ru: 'Откройте «Подключение агента». Мастер владельца продолжает работу по сохранённым на сервере проектам, приложениям и установкам, поэтому перезагрузка не создаёт дубликаты. Выберите или создайте проект и приложение, затем укажите один Deployment через namespace и имя либо ограниченный набор labels. Сервер передаёт совместимую версию чарта, endpoint и параметры Secret; системный административный токен не нужен.',
+            en: 'Open Connect agent. The wizard reads Projects, Applications and installation state from the server, so reloading the page continues where you left off instead of creating duplicates. Choose or create a Project and an Application, then name one Deployment by namespace and name, or by a bounded set of labels. The server hands you the compatible chart version, the endpoint and the Secret convention; no system administrator credential is involved.',
+            ru: 'Откройте «Подключение агента». Мастер берёт проекты, приложения и состояние установки с сервера, поэтому перезагрузка страницы продолжает начатое, а не создаёт дубликаты. Выберите или создайте проект и приложение, затем укажите один Deployment — через namespace и имя либо через ограниченный набор labels. Совместимую версию чарта, endpoint и правила именования Secret подскажет сервер; системный административный токен для этого не нужен.',
           },
         ],
       },
@@ -283,13 +283,13 @@ export const articles: Article[] = [
         },
         paragraphs: [
           {
-            en: 'The chart reads Application credentials only from an existing Kubernetes Secret. It deliberately has no plaintext token value: Helm stores supplied values in the release Secret. Read the token without echoing it, create the namespace and Secret, then clear the shell variable. Do not put the token in a values file, command argument, ConfigMap, Git, screenshot or log.',
-            ru: 'Чарт читает токены приложений только из уже существующего Kubernetes Secret. Значения для открытого токена намеренно нет: Helm сохраняет переданные values в Secret релиза. Считайте токен без вывода на экран, создайте namespace и Secret, затем очистите переменную shell. Не помещайте токен в values-файл, аргумент команды, ConfigMap, Git, скриншот или журнал.',
+            en: 'The chart takes Application credentials only from a Kubernetes Secret that already exists. There is deliberately no value for the token itself, because Helm keeps whatever you pass it in the release Secret. So read the token without echoing it, create the namespace and the Secret, then clear the shell variable. The token has no business being in a values file, a command argument, a ConfigMap, Git, a screenshot or a log.',
+            ru: 'Токены приложений чарт берёт только из уже существующего Kubernetes Secret. Параметра для самого токена намеренно нет: всё, что вы передадите через values, Helm сохранит в Secret релиза. Поэтому считайте токен без вывода на экран, создайте namespace и Secret, а затем очистите переменную shell. Токену нечего делать в values-файле, аргументе команды, ConfigMap, Git, скриншоте или журнале.',
           },
         ],
         code: `kubectl create namespace okoscope-system
 read -rsp "Okoscope Application token: " OKOSCOPE_APPLICATION_TOKEN
-kubectl -n okoscope-system create secret generic okoscope-application-credentials \
+kubectl -n okoscope-system create secret generic okoscope-application-credentials \\
   --from-literal=payment-api="$OKOSCOPE_APPLICATION_TOKEN"
 unset OKOSCOPE_APPLICATION_TOKEN`,
       },
@@ -301,24 +301,24 @@ unset OKOSCOPE_APPLICATION_TOKEN`,
         },
         paragraphs: [
           {
-            en: 'Install the versioned okoscope-agent OCI chart. Supply only the reachable TLS gRPC endpoint, a cluster name, a bounded Deployment selector and the existing Secret reference. The chart creates the ServiceAccount, read-only workload RBAC, complete agent configuration and DaemonSet; you do not edit Kubernetes manifests. Pin the chart version used by your Okoscope server.',
-            ru: 'Установите версионированный OCI-чарт okoscope-agent. Передайте только доступный TLS gRPC endpoint, имя кластера, ограниченный селектор Deployment и ссылку на существующий Secret. Чарт создаст ServiceAccount, RBAC только для чтения нагрузок, полную конфигурацию агента и DaemonSet; редактировать Kubernetes-манифесты не нужно. Зафиксируйте версию чарта, совместимую с вашим сервером Okoscope.',
+            en: 'Install the versioned okoscope-agent OCI chart. You supply four things: a reachable TLS gRPC endpoint, a cluster name, a bounded Deployment selector, and a reference to the Secret you just created. The chart builds the rest — ServiceAccount, read-only workload RBAC, the full agent configuration and the DaemonSet — so there are no Kubernetes manifests for you to edit. Pin the chart version your Okoscope server asks for.',
+            ru: 'Установите версионированный OCI-чарт okoscope-agent. От вас нужны четыре вещи: доступный TLS gRPC endpoint, имя кластера, ограниченный селектор Deployment и ссылка на только что созданный Secret. Всё остальное чарт соберёт сам — ServiceAccount, RBAC только для чтения нагрузок, полную конфигурацию агента и DaemonSet, — так что править Kubernetes-манифесты не придётся. Зафиксируйте ту версию чарта, которую называет ваш сервер Okoscope.',
           },
           {
-            en: 'The example uses system certificate trust. If the server uses a private CA, create a separate CA Secret and select it through the chart values. Plaintext transport is reserved for explicitly isolated development. Review Data and security before installation: the eBPF agent needs node-level capabilities and host mounts even though its Kubernetes API access is read-only.',
-            ru: 'В примере используется системное хранилище доверенных сертификатов. Если сервер подписан частным CA, создайте отдельный Secret с CA и укажите его в values чарта. Открытый транспорт допустим только для явно изолированной разработки. Перед установкой прочитайте раздел о данных и безопасности: агенту eBPF нужны права уровня узла и host mounts, хотя доступ к Kubernetes API остаётся только для чтения.',
+            en: 'The example trusts the system certificate store. If your server is signed by a private CA, create a separate Secret with the certificate and select it through the chart values; plaintext transport stays reserved for development you have deliberately isolated. Read Data and security before you install: the eBPF agent needs node-level capabilities and host mounts, even though its access to the Kubernetes API is read-only.',
+            ru: 'В примере используется системное хранилище доверенных сертификатов. Если сервер подписан частным CA, создайте отдельный Secret с сертификатом и укажите его в values чарта; открытый транспорт остаётся только для намеренно изолированной разработки. Перед установкой прочитайте раздел о данных и безопасности: агенту eBPF нужны права уровня узла и host mounts, хотя доступ к Kubernetes API у него только на чтение.',
           },
         ],
-        code: `helm upgrade --install okoscope-agent \
-  oci://ghcr.io/ihippik/charts/okoscope-agent \
-  --version <OKOSCOPE_VERSION> \
-  --namespace okoscope-system \
-  --set server.endpoint=https://<grpc-host>:443 \
-  --set identity.clusterName=production \
-  --set 'workloads[0].namespace=production' \
-  --set 'workloads[0].kind=Deployment' \
-  --set 'workloads[0].name=payment-api' \
-  --set 'workloads[0].credentialSecret.name=okoscope-application-credentials' \
+        code: `helm upgrade --install okoscope-agent \\
+  oci://ghcr.io/ihippik/charts/okoscope-agent \\
+  --version <OKOSCOPE_VERSION> \\
+  --namespace okoscope-system \\
+  --set server.endpoint=https://<grpc-host>:443 \\
+  --set identity.clusterName=production \\
+  --set 'workloads[0].namespace=production' \\
+  --set 'workloads[0].kind=Deployment' \\
+  --set 'workloads[0].name=payment-api' \\
+  --set 'workloads[0].credentialSecret.name=okoscope-application-credentials' \\
   --set 'workloads[0].credentialSecret.key=payment-api'
 
 kubectl -n okoscope-system rollout status daemonset/okoscope-agent-okoscope-agent --timeout=5m
@@ -332,12 +332,12 @@ kubectl -n okoscope-system logs daemonset/okoscope-agent-okoscope-agent --tail=1
         },
         paragraphs: [
           {
-            en: 'One agent release can map up to 32 Applications. Add one workloads entry per Application; each entry selects exactly one Deployment name or a bounded labels map and references its own existing Secret name and key. Use imagePullSecrets for an existing private-registry pull Secret. No credential value belongs in the values file.',
-            ru: 'Один релиз агента может сопоставить до 32 приложений. Добавьте по одному элементу workloads на приложение: каждый выбирает ровно одно имя Deployment или ограниченный набор labels и ссылается на собственные имя Secret и ключ. Для существующего pull Secret private registry используйте imagePullSecrets. Самих токенов в values-файле быть не должно.',
+            en: 'One agent release can cover up to 32 Applications. Add a workloads entry per Application: each entry picks exactly one Deployment — by name, or by a bounded labels map — and points at its own Secret name and key. For a private registry, reference an existing pull Secret through imagePullSecrets. No credential value ever belongs in the values file.',
+            ru: 'Один релиз агента может обслуживать до 32 приложений. Добавьте по элементу workloads на приложение: каждый выбирает ровно один Deployment — по имени или по ограниченному набору labels — и ссылается на собственные имя Secret и ключ. Для private registry укажите существующий pull Secret через imagePullSecrets. Самих токенов в values-файле быть не должно никогда.',
           },
           {
-            en: 'For a server signed by a private CA, create the CA Secret named by the installation page in the agent namespace, using the displayed key. The generated Helm command passes only server.caSecret.name and server.caSecret.key references; certificate content never enters Helm values or the browser. The chart projects the Secret read-only. Keep server.developmentPlaintext false outside isolated development, and keep the https:// prefix in server.endpoint.',
-            ru: 'Для сервера с сертификатом частного CA создайте в namespace агента CA Secret с именем и ключом со страницы установки. Сгенерированная Helm-команда передаёт только ссылки server.caSecret.name и server.caSecret.key; содержимое сертификата не попадает в Helm values или браузер. Чарт монтирует Secret только для чтения. Не включайте server.developmentPlaintext за пределами изолированной разработки и сохраняйте префикс https:// в server.endpoint.',
+            en: 'If the server is signed by a private CA, create the CA Secret in the agent namespace with the name and key shown on the installation page. The generated Helm command passes only the server.caSecret.name and server.caSecret.key references — the certificate itself never reaches Helm values or the browser — and the chart mounts that Secret read-only. Outside isolated development, leave server.developmentPlaintext off and keep the https:// prefix in server.endpoint.',
+            ru: 'Если сервер подписан частным CA, создайте в namespace агента Secret с тем именем и ключом, которые показывает страница установки. Сгенерированная Helm-команда передаёт только ссылки server.caSecret.name и server.caSecret.key — сам сертификат не попадает ни в values, ни в браузер, — а чарт монтирует этот Secret только для чтения. За пределами изолированной разработки оставляйте server.developmentPlaintext выключенным и не убирайте префикс https:// из server.endpoint.',
           },
         ],
       },
@@ -380,12 +380,12 @@ kubectl -n okoscope-system logs daemonset/okoscope-agent-okoscope-agent --tail=1
         },
         paragraphs: [
           {
-            en: 'The okoscope OCI chart installs the server, web interface, a migration hook and optional agent and ingress resources. It does not install PostgreSQL. Before you begin, provide a supported PostgreSQL database that is reachable from the cluster and a Kubernetes Secret containing its connection URL.',
-            ru: 'OCI-чарт okoscope устанавливает сервер, веб-интерфейс, hook миграций и, при необходимости, агент и ingress-ресурсы. PostgreSQL он не устанавливает. До начала подготовьте поддерживаемую базу PostgreSQL, доступную из кластера, и Kubernetes Secret со строкой подключения.',
+            en: 'The okoscope OCI chart installs the server, the web interface, a migration hook and, if you ask for them, the agent and ingress resources. It does not install PostgreSQL. Before you start, have a supported PostgreSQL database that the cluster can reach, and a Kubernetes Secret holding its connection URL.',
+            ru: 'OCI-чарт okoscope устанавливает сервер, веб-интерфейс, hook миграций и, если попросить, ресурсы агента и ingress. PostgreSQL он не устанавливает. К началу работы у вас должны быть поддерживаемая база PostgreSQL, доступная из кластера, и Kubernetes Secret со строкой подключения к ней.',
           },
           {
-            en: 'PostgreSQL remains entirely user-owned: you or your provider provision, secure, monitor, back up, restore, upgrade and delete it. Installing, upgrading, rolling back or uninstalling the Okoscope chart never creates, changes or deletes the database or the existing Secret. Repository Kustomize manifests are a legacy internal mechanism, not the supported interface for new installations.',
-            ru: 'PostgreSQL полностью остаётся под управлением пользователя: вы или ваш провайдер создаёте, защищаете, наблюдаете, резервируете, восстанавливаете, обновляете и удаляете её. Установка, обновление, откат или удаление чарта Okoscope не создаёт, не изменяет и не удаляет базу и существующий Secret. Kustomize-манифесты в репозитории — устаревающий внутренний механизм, а не поддерживаемый интерфейс новых установок.',
+            en: 'The database stays entirely yours: you or your provider provision, secure, monitor, back up, restore, upgrade and delete it. Installing, upgrading, rolling back or uninstalling the Okoscope chart never creates, changes or deletes the database or the Secret you made for it. The Kustomize manifests still sitting in the repository are a legacy internal mechanism, not the supported way to build a new installation.',
+            ru: 'База целиком остаётся вашей: вы или ваш провайдер её создаёте, защищаете, мониторите, резервируете и восстанавливаете, обновляете и удаляете. Установка, обновление, откат или удаление чарта Okoscope никогда не создаёт, не меняет и не удаляет ни базу, ни созданный вами для неё Secret. Kustomize-манифесты, которые ещё лежат в репозитории, — устаревающий внутренний механизм, а не поддерживаемый способ развернуть новую установку.',
           },
         ],
       },
@@ -397,17 +397,17 @@ kubectl -n okoscope-system logs daemonset/okoscope-agent-okoscope-agent --tail=1
         },
         paragraphs: [
           {
-            en: 'Create the namespace and the database Secret before Helm runs. The supported chart accepts only database.existingSecret and database.urlKey; it has no direct database URL value. The example reads the URL without echoing it and avoids placing it in Helm values or a committed file.',
-            ru: 'Создайте namespace и Secret базы до запуска Helm. Поддерживаемый чарт принимает только database.existingSecret и database.urlKey; параметра для прямой строки подключения нет. Пример читает URL без вывода на экран и не помещает его в Helm values или отслеживаемый файл.',
+            en: 'Create the namespace and the database Secret before Helm runs. The chart accepts only database.existingSecret and database.urlKey — there is no value for the URL itself. The example below reads the URL without echoing it and keeps it out of Helm values and out of any committed file.',
+            ru: 'Namespace и Secret с базой создайте до запуска Helm. Чарт принимает только database.existingSecret и database.urlKey — параметра для самой строки подключения нет. Пример ниже читает URL без вывода на экран и не оставляет его ни в values, ни в файле под контролем версий.',
           },
           {
-            en: 'By default the chart generates internal cryptographic keys and preserves them across upgrades. Production GitOps and disaster-recovery installations should supply an externally managed internal Secret instead, because offline template rendering cannot use Helm lookup to preserve generated values. Back up those keys separately from PostgreSQL.',
-            ru: 'По умолчанию чарт генерирует внутренние криптографические ключи и сохраняет их при обновлениях. Для production GitOps и аварийного восстановления следует передать отдельный внешний Secret с внутренними ключами: при офлайн-рендеринге Helm lookup не может сохранить сгенерированные значения. Резервируйте эти ключи отдельно от PostgreSQL.',
+            en: 'By default the chart generates its internal cryptographic keys and keeps them across upgrades. For production GitOps and disaster recovery, supply an externally managed Secret instead: rendering templates offline cannot use Helm lookup, so generated keys would not survive. Back those keys up separately from PostgreSQL, because losing them is a different problem from losing the database and neither backup covers the other.',
+            ru: 'По умолчанию чарт сам генерирует внутренние криптографические ключи и сохраняет их при обновлениях. Для production GitOps и аварийного восстановления передайте вместо этого внешний Secret: при офлайн-рендеринге шаблонов Helm lookup недоступен, поэтому сгенерированные ключи не сохранятся. Резервируйте эти ключи отдельно от PostgreSQL: потерять их — совсем не то же самое, что потерять базу, и одна копия не заменяет другую.',
           },
         ],
         code: `kubectl create namespace okoscope-system
 read -rsp "PostgreSQL URL: " OKOSCOPE_DATABASE_URL
-kubectl -n okoscope-system create secret generic okoscope-database \
+kubectl -n okoscope-system create secret generic okoscope-database \\
   --from-literal=database-url="$OKOSCOPE_DATABASE_URL"
 unset OKOSCOPE_DATABASE_URL`,
       },
@@ -416,8 +416,12 @@ unset OKOSCOPE_DATABASE_URL`,
         title: { en: 'Claim a fresh installation', ru: 'Активируйте новую установку' },
         paragraphs: [
           {
-            en: 'On first open, Okoscope asks for the setup token stored in the chart-managed Secret and creates the first owner, Organization and Project in one operation. Retrieve the token with the command printed by Helm NOTES; do not put it in a URL query, values file or shell history. Ordinary public registration remains disabled. After the first owner exists, setup is permanently closed and the normal sign-in page is shown.',
-            ru: 'При первом открытии Okoscope запрашивает setup-токен из управляемого чартом Secret и одной операцией создаёт первого владельца, организацию и проект. Получите токен командой из Helm NOTES; не помещайте его в query-параметр URL, values-файл или историю shell. Обычная публичная регистрация остаётся выключенной. После создания первого владельца setup закрывается навсегда и показывается обычная страница входа.',
+            en: 'When you first open a new installation, Okoscope asks for the setup token that the chart keeps in a Secret, and creates the first owner, the Organization and a Project in a single operation. Helm prints the command that retrieves the token in its NOTES output; do not move that token into a URL query, a values file or your shell history. Once the first owner exists, setup closes for good and the normal sign-in page takes over.',
+            ru: 'При первом открытии новой установки Okoscope спрашивает setup-токен, который чарт хранит в Secret, и одной операцией создаёт первого владельца, организацию и проект. Команду для получения токена Helm печатает в NOTES; не переносите этот токен ни в query-параметр URL, ни в values-файл, ни в историю shell. Как только первый владелец создан, setup закрывается навсегда и его место занимает обычная страница входа.',
+          },
+          {
+            en: 'Public registration is off by default, with or without Web ingress. If you do want open signup, set server.registrationEnabled=true in Helm values: every signup then creates its own Organization together with its owner, and setup plays no part in it.',
+            ru: 'Публичная регистрация по умолчанию выключена — независимо от того, включён Web ingress или нет. Если открытая регистрация всё же нужна, задайте server.registrationEnabled=true в values: тогда каждая регистрация создаёт свою организацию вместе с её владельцем, а setup в этом не участвует.',
           },
         ],
       },
@@ -429,29 +433,370 @@ unset OKOSCOPE_DATABASE_URL`,
         },
         paragraphs: [
           {
-            en: 'Install a pinned semantic chart version. The pre-install/pre-upgrade migration hook uses the database Secret and blocks the release if the database is unreachable or migration fails; the server is not rolled out past a failed migration. Re-running the same release is safe. Inspect the hook Job and correct the external database or permissions before retrying.',
-            ru: 'Устанавливайте зафиксированную семантическую версию чарта. Hook миграций перед установкой или обновлением использует Secret базы и останавливает релиз, если база недоступна или миграция не удалась; сервер не разворачивается поверх неуспешной миграции. Повторный запуск той же версии безопасен. Перед повтором изучите Job hook и исправьте внешнюю базу или права.',
+            en: 'Install a pinned chart version. Before an install and before every upgrade, a migration hook runs with the database Secret: if the database is unreachable or the migration fails, the release stops right there, and the server is never rolled out on top of a failed migration. Re-running the same release is safe. When the hook fails, read its Job, fix the external database or its permissions, and try again.',
+            ru: 'Устанавливайте зафиксированную версию чарта. Перед установкой и перед каждым обновлением запускается hook миграций с Secret базы: если база недоступна или миграция не удалась, релиз на этом останавливается, и сервер поверх неуспешной миграции не разворачивается. Повторный запуск той же версии безопасен. Если hook упал, изучите его Job, исправьте внешнюю базу или права и повторите.',
           },
           {
-            en: 'The default installation is cluster-internal. Use port-forward for the first check. Production ingress is opt-in: configure separate HTTPS Web/API and TLS gRPC hosts, a supported ingress class and existing TLS Secrets. An existing CA Secret can be supplied to remote agents. Certificate automation and private registries are optional chart settings; do not edit rendered resources.',
-            ru: 'По умолчанию установка доступна только внутри кластера. Для первой проверки используйте port-forward. Production ingress включается явно: задайте отдельные HTTPS-хосты Web/API и TLS gRPC, поддерживаемый ingress class и существующие TLS Secrets. Удалённым агентам можно передать существующий Secret с CA. Автоматизация сертификатов и private registry настраиваются values чарта; не редактируйте отрендеренные ресурсы.',
+            en: 'A default installation is reachable only inside the cluster, so use port-forward for the first check. Ingress is opt-in and deliberate: separate HTTPS hosts for Web/API and for TLS gRPC, a supported ingress class, and TLS Secrets that already exist. Remote agents can be given an existing CA Secret. Certificate automation and private registries are chart settings too — configure them there rather than editing the rendered resources.',
+            ru: 'По умолчанию установка доступна только внутри кластера, поэтому для первой проверки используйте port-forward. Ingress включается отдельно и осознанно: разные HTTPS-хосты для Web/API и для TLS gRPC, поддерживаемый ingress class и уже существующие TLS Secrets. Удалённым агентам можно передать существующий Secret с CA. Автоматизация сертификатов и private registry — тоже параметры чарта: настраивайте их там, а не правьте отрендеренные ресурсы.',
           },
           {
-            en: 'Wait for Helm and the Deployments, then forward the Web service. Installation is ready when /readyz responds, /api/v1/build-info reports the expected version, the web interface opens and a refreshed documentation deep link still works. Installing a local agent is optional; use the same existing-Secret mapping described in Quick start.',
-            ru: 'Дождитесь Helm и готовности Deployments, затем перенаправьте локальный порт на Web Service. Установка готова, когда отвечает /readyz, /api/v1/build-info сообщает ожидаемую версию, интерфейс открывается, а прямая ссылка документации работает после обновления страницы. Локальный агент необязателен; используйте ту же привязку к существующему Secret, что описана в быстром старте.',
+            en: 'Wait for Helm and for the Deployments, then forward the Web service. The installation is ready when /readyz answers, /api/v1/build-info reports the expected version, the interface opens, and a documentation deep link still works after a refresh. A local agent is optional; if you install one, use the same existing-Secret mapping as in Quick start.',
+            ru: 'Дождитесь Helm и готовности Deployments, затем перенаправьте локальный порт на Web Service. Установка готова, когда отвечает /readyz, /api/v1/build-info сообщает ожидаемую версию, интерфейс открывается, а прямая ссылка на документацию продолжает работать после обновления страницы. Локальный агент необязателен; если ставите его, используйте ту же привязку к существующему Secret, что и в быстром старте.',
           },
         ],
-        code: `helm upgrade --install okoscope \
-  oci://ghcr.io/ihippik/charts/okoscope \
-  --version <OKOSCOPE_VERSION> \
-  --namespace okoscope-system \
-  --set database.existingSecret=okoscope-database \
-  --set database.urlKey=database-url \
+        code: `helm upgrade --install okoscope \\
+  oci://ghcr.io/ihippik/charts/okoscope \\
+  --version <OKOSCOPE_VERSION> \\
+  --namespace okoscope-system \\
+  --set database.existingSecret=okoscope-database \\
+  --set database.urlKey=database-url \\
   --wait --timeout 10m
 
 kubectl -n okoscope-system rollout status deployment/okoscope-server --timeout=5m
 kubectl -n okoscope-system rollout status deployment/okoscope-web --timeout=5m
 kubectl -n okoscope-system port-forward service/okoscope-web 8080:80`,
+      },
+      {
+        id: 'helm-values',
+        title: { en: 'Helm values for both charts', ru: 'Values обоих Helm-чартов' },
+        paragraphs: [
+          {
+            en: 'There are two charts and they share a version: okoscope brings the server and the web interface, okoscope-agent brings the node agent. The commands below print the complete defaults for the exact version you are about to install, and docs/helm-values.md in the repository lists every value with its validation limits. What follows here is the part you are most likely to touch.',
+            ru: 'Чартов два, и версия у них общая: okoscope ставит сервер и веб-интерфейс, okoscope-agent — агент на узлах. Команды ниже печатают полный список значений по умолчанию для той версии, которую вы собираетесь ставить, а справочник docs/helm-values.md в репозитории перечисляет все параметры вместе с ограничениями. Здесь собрано то, что меняют чаще всего.',
+          },
+          {
+            en: 'One rule holds for both charts: values may carry the names and keys of Secrets that already exist, and never a database URL or an Application credential, because Helm stores everything you pass in the release Secret. Image tags in the sources are placeholders; a published release pins the component images.',
+            ru: 'Для обоих чартов действует одно правило: в values можно указывать имена и ключи уже существующих Secrets и никогда — строку подключения к базе или токен приложения, потому что всё переданное Helm сохраняет в Secret релиза. Теги образов в исходниках — заглушки; опубликованный релиз фиксирует образы компонентов.',
+          },
+        ],
+        code: `helm show values oci://ghcr.io/ihippik/charts/okoscope --version <OKOSCOPE_VERSION>
+helm show values oci://ghcr.io/ihippik/charts/okoscope-agent --version <OKOSCOPE_VERSION>`,
+      },
+      {
+        id: 'values-server',
+        headingLevel: 3,
+        title: { en: 'okoscope: server and web', ru: 'okoscope: сервер и интерфейс' },
+        paragraphs: [
+          {
+            en: 'Only the database values are required; every other line carries the chart default and says so in its comment, so you can keep it, change it or delete it. Copy the file, replace the Secret names, the hosts and the version, and pass it with -f values.yaml.',
+            ru: 'Обязательны только параметры базы данных; в каждой другой строке стоит значение по умолчанию, и об этом сказано в комментарии, так что её можно оставить, изменить или удалить. Скопируйте файл, замените имена Secrets, хосты и версию и передайте его через -f values.yaml.',
+          },
+        ],
+        code: {
+          en: `# values.yaml - chart okoscope: server, web interface and migration hook.
+# Values marked required have no default. The rest are shown with the chart
+# default, so any of those lines can be deleted instead of pinned.
+#
+# helm upgrade --install okoscope oci://ghcr.io/ihippik/charts/okoscope \\
+#   --version <OKOSCOPE_VERSION> --namespace okoscope-system -f values.yaml
+
+database:
+  existingSecret: okoscope-database   # required - Secret that already holds the PostgreSQL URL
+  urlKey: database-url                # required - key inside it; the chart has no value for the URL
+
+# Internal keys. Left empty, Helm generates them and keeps them across upgrades.
+# Name your own Secrets when templates are rendered offline for GitOps,
+# where generated values cannot survive.
+internalSecret:
+  existingSecret: ""                  # default: empty - externally managed internal keys
+setupAuthorization:
+  existingSecret: ""                  # default: empty - externally managed setup token
+
+server:
+  registrationEnabled: false          # default - public signup, off with or without ingress
+  sessionLifetimeSeconds: 43200       # default - session lifetime, twelve hours
+  replicas: 1                         # default - more replicas need a PostgreSQL topology built for it
+  image:
+    tag: ""                           # default: empty - a published release pins the image
+    digest: ""                        # default: empty - digest wins over tag when both are set
+  resources: {}                       # default - measure your load before setting limits
+
+web:
+  replicas: 1                         # default
+  image:
+    tag: ""                           # default: empty
+  resources: {}                       # default
+
+# Public routing. Both routes are off by default and independent of each other:
+# browsers arrive through web, agents through grpc.
+ingress:
+  web:
+    enabled: false                    # default - turn on for browser and API access
+    className: ""                     # default: empty - the cluster default; or nginx, traefik
+    host: ""                          # required when enabled, e.g. okoscope.example.com
+    tlsSecret: ""                     # required when enabled, unless cert-manager creates it
+  grpc:
+    enabled: false                    # default - turn on for agents outside the cluster
+    className: ""                     # default: empty
+    host: ""                          # required when enabled, e.g. agents.okoscope.example.com
+    tlsSecret: ""                     # required when enabled
+
+certManager:
+  enabled: false                      # default - on: cert-manager issues the TLS Secrets above
+  clusterIssuer: ""                   # required when certManager is enabled
+
+podDisruptionBudget:
+  enabled: true                       # default - blocks voluntary eviction while you run one replica
+  minAvailable: 1                     # default
+
+migration:
+  backoffLimit: 2                     # default - retries of the migration hook
+  activeDeadlineSeconds: 300          # default - and its deadline
+
+# Delivery worker for notifications. Saving a destination does not start it.
+notifications:
+  enabled: false                      # default
+  pollMilliseconds: 1000              # default
+  claimSize: 50                       # default
+  concurrency: 8                      # default
+  leaseSeconds: 30                    # default
+  drainSeconds: 15                    # default
+
+# What the Connect agent wizard offers. It installs no agent by itself, and an
+# empty publicGrpcEndpoint omits this metadata entirely.
+agentInstallation:
+  publicGrpcEndpoint: ""              # default: empty, e.g. https://agents.okoscope.example.com:443
+  chartReference: oci://ghcr.io/ihippik/charts/okoscope-agent  # required with an endpoint
+  chartVersion: <OKOSCOPE_VERSION>          # required with an endpoint
+  recommendedAgentVersion: <OKOSCOPE_VERSION>  # required with an endpoint
+  minimumAgentVersion: <OKOSCOPE_VERSION>   # required with an endpoint
+  tlsMode: system                     # default - or custom_ca with the CA Secret below
+  caSecret:
+    name: ""                          # required when tlsMode is custom_ca
+    key: ""                           # required when tlsMode is custom_ca
+
+imagePullSecrets: []                  # default - existing private-registry credentials
+
+okoscope-agent:
+  enabled: false                      # default - on: install the agent chart as a dependency;
+                                      # its settings nest here and inherit nothing from the parent`,
+          ru: `# values.yaml - чарт okoscope: сервер, веб-интерфейс и hook миграций.
+# У значений с пометкой «обязательно» умолчания нет. Остальные показаны со
+# значением по умолчанию, поэтому любую такую строку можно просто удалить.
+#
+# helm upgrade --install okoscope oci://ghcr.io/ihippik/charts/okoscope \\
+#   --version <OKOSCOPE_VERSION> --namespace okoscope-system -f values.yaml
+
+database:
+  existingSecret: okoscope-database   # обязательно - уже созданный Secret со строкой подключения
+  urlKey: database-url                # обязательно - ключ в нём; параметра для самого URL нет
+
+# Внутренние ключи. Если оставить пустыми, Helm сгенерирует их и сохранит при обновлениях.
+# Указывайте свои Secrets, когда шаблоны рендерятся офлайн для GitOps:
+# там сгенерированные значения не выживают.
+internalSecret:
+  existingSecret: ""                  # по умолчанию пусто - внешние внутренние ключи
+setupAuthorization:
+  existingSecret: ""                  # по умолчанию пусто - внешний setup-токен
+
+server:
+  registrationEnabled: false          # по умолчанию - открытая регистрация, выключена при любом ingress
+  sessionLifetimeSeconds: 43200       # по умолчанию - время жизни сессии, двенадцать часов
+  replicas: 1                         # по умолчанию - больше реплик требует подходящей топологии PostgreSQL
+  image:
+    tag: ""                           # по умолчанию пусто - опубликованный релиз фиксирует образ
+    digest: ""                        # по умолчанию пусто - при обоих заданных digest важнее tag
+  resources: {}                       # по умолчанию - измерьте нагрузку, прежде чем ставить лимиты
+
+web:
+  replicas: 1                         # по умолчанию
+  image:
+    tag: ""                           # по умолчанию пусто
+  resources: {}                       # по умолчанию
+
+# Публичная маршрутизация. Оба маршрута выключены по умолчанию и независимы:
+# браузеры приходят через web, агенты - через grpc.
+ingress:
+  web:
+    enabled: false                    # по умолчанию - включите для доступа к интерфейсу и API
+    className: ""                     # по умолчанию пусто - класс кластера; либо nginx, traefik
+    host: ""                          # обязательно при включении, например okoscope.example.com
+    tlsSecret: ""                     # обязательно при включении, если его не создаёт cert-manager
+  grpc:
+    enabled: false                    # по умолчанию - включите для агентов вне кластера
+    className: ""                     # по умолчанию пусто
+    host: ""                          # обязательно при включении, например agents.okoscope.example.com
+    tlsSecret: ""                     # обязательно при включении
+
+certManager:
+  enabled: false                      # по умолчанию - при включении cert-manager выпустит TLS Secrets выше
+  clusterIssuer: ""                   # обязательно, если certManager включён
+
+podDisruptionBudget:
+  enabled: true                       # по умолчанию - запрещает вытеснение, пока реплика одна
+  minAvailable: 1                     # по умолчанию
+
+migration:
+  backoffLimit: 2                     # по умолчанию - повторы hook миграций
+  activeDeadlineSeconds: 300          # по умолчанию - и его предельное время
+
+# Обработчик доставки уведомлений. Сохранение получателя его не запускает.
+notifications:
+  enabled: false                      # по умолчанию
+  pollMilliseconds: 1000              # по умолчанию
+  claimSize: 50                       # по умолчанию
+  concurrency: 8                      # по умолчанию
+  leaseSeconds: 30                    # по умолчанию
+  drainSeconds: 15                    # по умолчанию
+
+# Что предлагает мастер подключения агента. Сам агент этим не устанавливается,
+# а при пустом publicGrpcEndpoint метаданные не передаются вовсе.
+agentInstallation:
+  publicGrpcEndpoint: ""              # по умолчанию пусто, например https://agents.okoscope.example.com:443
+  chartReference: oci://ghcr.io/ihippik/charts/okoscope-agent  # обязательно, если задан endpoint
+  chartVersion: <OKOSCOPE_VERSION>          # обязательно, если задан endpoint
+  recommendedAgentVersion: <OKOSCOPE_VERSION>  # обязательно, если задан endpoint
+  minimumAgentVersion: <OKOSCOPE_VERSION>   # обязательно, если задан endpoint
+  tlsMode: system                     # по умолчанию - либо custom_ca с CA Secret ниже
+  caSecret:
+    name: ""                          # обязательно при tlsMode: custom_ca
+    key: ""                           # обязательно при tlsMode: custom_ca
+
+imagePullSecrets: []                  # по умолчанию - существующие credentials private registry
+
+okoscope-agent:
+  enabled: false                      # по умолчанию - при включении чарт агента ставится зависимостью;
+                                      # его настройки живут здесь и ничего не наследуют от родителя`,
+        },
+      },
+      {
+        id: 'values-agent',
+        headingLevel: 3,
+        title: { en: 'okoscope-agent: the node agent', ru: 'okoscope-agent: агент на узлах' },
+        paragraphs: [
+          {
+            en: 'Three things are required: where to send the data, what to call the cluster, and which workloads to watch. The observation defaults are deliberately modest, so widen them only once the basics work.',
+            ru: 'Обязательны три вещи: куда отправлять данные, как называется кластер и за какими нагрузками наблюдать. Значения наблюдения по умолчанию намеренно скромные: расширяйте их, когда базовый сценарий уже заработал.',
+          },
+        ],
+        code: {
+          en: `# values.yaml - chart okoscope-agent: the DaemonSet with the eBPF agent.
+# Values marked required have no default. The rest are shown with the chart default.
+#
+# helm upgrade --install okoscope-agent oci://ghcr.io/ihippik/charts/okoscope-agent \\
+#   --version <OKOSCOPE_VERSION> --namespace okoscope-system -f values.yaml
+
+server:
+  endpoint: https://agents.example.com:443  # required - TLS gRPC address, https:// included
+  developmentPlaintext: false         # default - true turns TLS off, isolated development only
+  caSecret:
+    name: ""                          # required for a private CA; only the reference travels through values
+    key: ""                           # required for a private CA - the key holding the certificate
+
+identity:
+  clusterName: production             # required - the name this cluster is shown under
+
+# One entry per Application, 1 to 32 of them. Each entry selects exactly one
+# Deployment, by name or by a bounded labels map, never by both.
+workloads:
+  - namespace: production             # required
+    kind: Deployment                  # required - the only supported kind
+    name: payment-api                 # required unless you select by labels instead
+    credentialSecret:
+      name: okoscope-application-credentials  # required - existing Secret in the agent namespace
+      key: payment-api                        # required - the key holding that Application token
+
+observation:
+  processExec: true                   # default - which executables ran
+  processExit: true                   # default - and how they ended
+  syscalls: []                        # default: empty allowlist - nothing until you name calls, e.g. [ptrace, setns]
+  network:
+    connect: true                     # default - outbound attempts
+    listen: true                      # default - TCP listening endpoints
+    accept: true                      # default - accepted inbound activity
+    maxAcceptedEventsPerSecond: 25    # default - the rate bound for accept
+    dns:
+      enabled: false                  # default - once on, udp and tcp are both enabled
+  files:
+    enabled: false                    # default - experimental
+    operations: [create, modify, delete, rename]  # required when files are enabled
+    includePaths: [/app/data]         # required when files are enabled - absolute paths only
+    excludePaths: [/app/data/private] # optional - exclusions take precedence over inclusions
+
+safety:
+  queueCapacity: 4096                 # default - the bounds on collection
+  batchSize: 256                      # default
+  maxEventsPerSecond: 1000            # default
+  maxApplicationStreams: 32           # default
+
+image:
+  tag: ""                             # default: empty - a published release pins the image
+imagePullSecrets: []                  # default
+resources: {}                         # default
+nodeSelector: {}                      # default
+tolerations: []                       # default
+affinity: {}                          # default
+podAnnotations: {}                    # default`,
+          ru: `# values.yaml - чарт okoscope-agent: DaemonSet с агентом eBPF.
+# У значений с пометкой «обязательно» умолчания нет. Остальные показаны со значением по умолчанию.
+#
+# helm upgrade --install okoscope-agent oci://ghcr.io/ihippik/charts/okoscope-agent \\
+#   --version <OKOSCOPE_VERSION> --namespace okoscope-system -f values.yaml
+
+server:
+  endpoint: https://agents.example.com:443  # обязательно - TLS gRPC-адрес вместе с https://
+  developmentPlaintext: false         # по умолчанию - true отключает TLS, только для изолированной разработки
+  caSecret:
+    name: ""                          # обязательно для частного CA; через values идёт только ссылка
+    key: ""                           # обязательно для частного CA - ключ с сертификатом
+
+identity:
+  clusterName: production             # обязательно - имя, под которым кластер виден в интерфейсе
+
+# По одному элементу на приложение, от 1 до 32. Каждый выбирает ровно один
+# Deployment - по имени либо по ограниченному набору labels, но не по обоим сразу.
+workloads:
+  - namespace: production             # обязательно
+    kind: Deployment                  # обязательно - единственный поддерживаемый kind
+    name: payment-api                 # обязательно, если не выбираете по labels
+    credentialSecret:
+      name: okoscope-application-credentials  # обязательно - существующий Secret в namespace агента
+      key: payment-api                        # обязательно - ключ с токеном этого приложения
+
+observation:
+  processExec: true                   # по умолчанию - какие исполняемые файлы запускались
+  processExit: true                   # по умолчанию - и как они завершились
+  syscalls: []                        # по умолчанию пустой allowlist - пока не перечислите, например [ptrace, setns]
+  network:
+    connect: true                     # по умолчанию - исходящие попытки
+    listen: true                      # по умолчанию - слушающие точки TCP
+    accept: true                      # по умолчанию - принятая входящая активность
+    maxAcceptedEventsPerSecond: 25    # по умолчанию - ограничение скорости для accept
+    dns:
+      enabled: false                  # по умолчанию - при включении работают и udp, и tcp
+  files:
+    enabled: false                    # по умолчанию - экспериментально
+    operations: [create, modify, delete, rename]  # обязательно при включении файлов
+    includePaths: [/app/data]         # обязательно при включении - только абсолютные пути
+    excludePaths: [/app/data/private] # необязательно - исключения важнее включений
+
+safety:
+  queueCapacity: 4096                 # по умолчанию - границы сбора
+  batchSize: 256                      # по умолчанию
+  maxEventsPerSecond: 1000            # по умолчанию
+  maxApplicationStreams: 32           # по умолчанию
+
+image:
+  tag: ""                             # по умолчанию пусто - опубликованный релиз фиксирует образ
+imagePullSecrets: []                  # по умолчанию
+resources: {}                         # по умолчанию
+nodeSelector: {}                      # по умолчанию
+tolerations: []                       # по умолчанию
+affinity: {}                          # по умолчанию
+podAnnotations: {}                    # по умолчанию`,
+        },
+      },
+      {
+        id: 'values-validation',
+        headingLevel: 3,
+        title: { en: 'When values are wrong', ru: 'Если values заданы неверно' },
+        paragraphs: [
+          {
+            en: 'Helm checks your file against the chart schema, and the agent checks it again when it starts. A combination that cannot work therefore fails at install time instead of turning into an agent that quietly collects nothing.',
+            ru: 'Helm проверяет ваш файл по схеме чарта, а агент — ещё раз при запуске. Поэтому неработоспособная комбинация проявляется при установке, а не превращается в агента, который молча ничего не собирает.',
+          },
+        ],
       },
       {
         id: 'backups',
@@ -461,12 +806,16 @@ kubectl -n okoscope-system port-forward service/okoscope-web 8080:80`,
         },
         paragraphs: [
           {
-            en: 'Before helm upgrade, back up your PostgreSQL database and test restoration into a separate database. Okoscope neither schedules backups nor verifies them. Back up externally managed Secrets and chart-generated internal keys separately. Check the target release notes and migration compatibility, then upgrade to an explicitly pinned chart version.',
-            ru: 'Перед helm upgrade создайте резервную копию PostgreSQL и проверьте восстановление в отдельную базу. Okoscope не запускает и не проверяет резервное копирование. Отдельно сохраните внешние Secrets и сгенерированные чартом внутренние ключи. Проверьте примечания к целевому релизу и совместимость миграций, затем обновитесь до явно зафиксированной версии чарта.',
+            en: 'Before every helm upgrade, back up PostgreSQL and test the restore into a separate database — Okoscope neither schedules backups nor checks that yours work. Back up externally managed Secrets and the chart-generated internal keys as well, separately from the database. Then read the release notes of the version you are moving to, confirm migration compatibility, and upgrade to an explicitly pinned chart version.',
+            ru: 'Перед каждым helm upgrade делайте резервную копию PostgreSQL и проверяйте восстановление в отдельную базу: Okoscope не запускает резервное копирование и не проверяет, что ваше работает. Отдельно от базы сохраните внешние Secrets и сгенерированные чартом внутренние ключи. Затем прочитайте примечания к версии, на которую переходите, убедитесь в совместимости миграций и обновляйтесь до явно зафиксированной версии чарта.',
           },
           {
-            en: 'helm rollback restores chart-owned stateless resources only; it does not reverse database migrations. Roll back only when the older version supports the current schema. helm uninstall removes chart-owned resources but leaves your PostgreSQL database and all pre-existing Secrets untouched. Never delete migration records or data to force a rollback.',
-            ru: 'helm rollback восстанавливает только stateless-ресурсы чарта и не отменяет миграции базы. Откатывайтесь лишь тогда, когда старая версия поддерживает текущую схему. helm uninstall удаляет ресурсы чарта, но не трогает вашу PostgreSQL и все существовавшие до установки Secrets. Никогда не удаляйте записи миграций или данные ради принудительного отката.',
+            en: 'For a release that already exists, the backend repository offers make deploy-preview VERSION=<chart-version> and make deploy VERSION=<chart-version>. Point KUBE_NAMESPACE and HELM_RELEASE at your installation — they default to okoscope in the aliens context — and add VALUES=production-values.yaml if you keep one. Both commands merge the new chart defaults with the overrides saved in the release and the values you pass, which means an image tag or digest you pinned by hand has to be updated in your own values file. The preview hides Secret manifests, the real upgrade runs the migration hooks, and neither builds images or creates a new installation.',
+            ru: 'Для уже существующего релиза в backend-репозитории есть make deploy-preview VERSION=<версия-чарта> и make deploy VERSION=<версия-чарта>. Укажите в KUBE_NAMESPACE и HELM_RELEASE свою установку — по умолчанию это okoscope в контексте aliens — и добавьте VALUES=production-values.yaml, если такой файл у вас есть. Обе команды объединяют новые значения чарта с сохранёнными в релизе переопределениями и переданными values, а значит, закреплённый вручную тег или digest образа нужно обновить в своём values-файле. Предварительная проверка скрывает манифесты Secrets, настоящее обновление запускает хуки миграции, и ни то ни другое не собирает образы и не создаёт новую установку.',
+          },
+          {
+            en: 'helm rollback restores only the stateless resources the chart owns; it does not reverse a database migration. So roll back only when the older version can work with the schema you now have. helm uninstall removes the chart-owned resources and leaves your PostgreSQL database and every pre-existing Secret untouched. Never delete migration records or data to force a rollback through.',
+            ru: 'helm rollback восстанавливает только stateless-ресурсы, которыми владеет чарт, и не отменяет миграции базы. Поэтому откатывайтесь лишь тогда, когда старая версия работает с текущей схемой. helm uninstall удаляет ресурсы чарта, но не трогает ни вашу PostgreSQL, ни один из существовавших до установки Secrets. Никогда не удаляйте записи миграций или данные ради принудительного отката.',
           },
         ],
       },
@@ -478,12 +827,12 @@ kubectl -n okoscope-system port-forward service/okoscope-web 8080:80`,
         },
         paragraphs: [
           {
-            en: 'For public access, enable the Web/API and gRPC ingresses independently. Each route needs an ingress class, host and TLS Secret. ingress-nginx and Traefik gRPC routing are supported by the chart; controller-specific annotations can be added under the matching route. To let cert-manager create the named TLS Secrets, enable certManager and provide an existing ClusterIssuer. Otherwise the TLS Secrets must already exist.',
-            ru: 'Для публичного доступа включайте ingress Web/API и gRPC независимо. Каждому маршруту нужны ingress class, host и TLS Secret. Чарт поддерживает gRPC-маршрутизацию ingress-nginx и Traefik; специфичные для контроллера аннотации добавляются в соответствующий маршрут. Чтобы cert-manager создал указанные TLS Secrets, включите certManager и задайте существующий ClusterIssuer. В противном случае TLS Secrets должны уже существовать.',
+            en: 'The two ingresses are independent: browsers reach Web and the API through one, agents reach gRPC through the other, and each route needs its own ingress class, host and TLS Secret. The chart supports gRPC routing for both ingress-nginx and Traefik, and controller-specific annotations go under the matching route. If you would rather cert-manager issued those TLS Secrets, enable certManager and give it an existing ClusterIssuer; otherwise the Secrets have to exist before you install.',
+            ru: 'Два ingress независимы: через один браузеры попадают в интерфейс и API, через другой агенты приходят по gRPC, и каждому маршруту нужны свои ingress class, host и TLS Secret. gRPC-маршрутизацию чарт поддерживает и для ingress-nginx, и для Traefik, а специфичные для контроллера аннотации задаются в соответствующем маршруте. Если TLS Secrets должен выпускать cert-manager, включите certManager и укажите существующий ClusterIssuer; иначе эти Secrets нужно создать до установки.',
           },
           {
-            en: 'Use internalSecret.existingSecret when keys are managed by External Secrets or another controller. The Secret must provide the keys selected by adminCredentialKey, webhookEncryptionKey and identityTokenKey. imagePullSecrets configures existing private-registry credentials. Increasing server replicas also requires an external PostgreSQL topology sized and operated for that availability; the chart does not make the database highly available.',
-            ru: 'Используйте internalSecret.existingSecret, если ключами управляет External Secrets или другой контроллер. Secret должен содержать ключи, выбранные параметрами adminCredentialKey, webhookEncryptionKey и identityTokenKey. imagePullSecrets подключает существующие credentials private registry. Увеличение числа реплик сервера также требует внешней PostgreSQL, рассчитанной и настроенной на такую доступность; чарт не делает базу высокодоступной.',
+            en: 'When External Secrets or a similar controller manages your keys, point internalSecret.existingSecret at the Secret it maintains; that Secret has to carry the keys named by adminCredentialKey, webhookEncryptionKey and identityTokenKey. Private registry credentials go in imagePullSecrets. And if you scale the server beyond one replica, remember that the database has to be ready for it too: the chart never makes PostgreSQL highly available, so that part is a topology you size and operate yourself.',
+            ru: 'Если ключами управляет External Secrets или похожий контроллер, укажите в internalSecret.existingSecret тот Secret, который он поддерживает; в этом Secret должны быть ключи, названные в adminCredentialKey, webhookEncryptionKey и identityTokenKey. Учётные данные private registry задаются в imagePullSecrets. А если увеличиваете число реплик сервера, помните, что к этому должна быть готова и база: высокодоступной PostgreSQL чарт не делает никогда, так что эту топологию вы рассчитываете и обслуживаете сами.',
           },
         ],
         code: `ingress:

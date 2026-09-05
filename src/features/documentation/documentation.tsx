@@ -1,5 +1,5 @@
 import { Link, useRouterState } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { ArrowUpRight, BookOpen } from 'lucide-react'
 import { useLocalization } from '../../shared/i18n'
 import { LanguageSelector } from '../../shared/i18n/language-selector'
@@ -121,7 +121,13 @@ export function Documentation({ slug }: { slug: string }) {
                           ))}
                         </ul>
                       )}
-                      {section.code && <CodeExample code={section.code} />}
+                      {section.code && (
+                        <CodeExample
+                          code={
+                            typeof section.code === 'string' ? section.code : section.code[locale]
+                          }
+                        />
+                      )}
                     </section>
                   )
                 })}
@@ -215,6 +221,26 @@ function DocumentationText({ text }: { text: string }) {
   })
 }
 
+function CommentedCode({ code }: { code: string }) {
+  return code.split('\n').map((line, index) => {
+    const comment = line.search(/(?:^|\s)#/)
+    const start = comment === -1 ? -1 : line.indexOf('#', comment)
+    return (
+      <Fragment key={index}>
+        {index > 0 && '\n'}
+        {start === -1 ? (
+          line
+        ) : (
+          <>
+            {line.slice(0, start)}
+            <span className="docs-code-comment">{line.slice(start)}</span>
+          </>
+        )}
+      </Fragment>
+    )
+  })
+}
+
 function CodeExample({ code }: { code: string }) {
   const { locale } = useLocalization()
   const ui = controls[locale]
@@ -236,7 +262,9 @@ function CodeExample({ code }: { code: string }) {
         <span role="status">{status ? ui[status] : ''}</span>
       </div>
       <pre tabIndex={0} aria-label={ui.example}>
-        <code>{code}</code>
+        <code>
+          <CommentedCode code={code} />
+        </code>
       </pre>
     </div>
   )
