@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { useApi } from '../../shared/api/context'
 import { ApiClientError } from '../../shared/api/client'
 import {
@@ -284,8 +284,18 @@ function InstallationStep({
       <h1 className="mt-2 text-3xl font-semibold">{application.name}</h1>
       <p className="mt-3 text-slate-400">{t('workloadHelp')}</p>
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <Field label={t('clusterName')} value={cluster} onChange={setCluster} />
-        <Field label={t('workloadNamespace')} value={namespace} onChange={setNamespace} />
+        <Field
+          label={t('clusterName')}
+          help={t('clusterNameHelp')}
+          value={cluster}
+          onChange={setCluster}
+        />
+        <Field
+          label={t('workloadNamespace')}
+          help={t('workloadNamespaceHelp')}
+          value={namespace}
+          onChange={setNamespace}
+        />
       </div>
       <div className="mt-4 flex gap-2">
         <Button variant={mode === 'name' ? 'default' : 'outline'} onClick={() => setMode('name')}>
@@ -301,6 +311,7 @@ function InstallationStep({
       <div className="mt-4">
         <Field
           label={mode === 'name' ? t('deploymentName') : t('labelsExample')}
+          help={mode === 'name' ? t('deploymentNameHelp') : t('labelSelectorHelp')}
           value={mode === 'name' ? name : labels}
           onChange={mode === 'name' ? setName : setLabels}
         />
@@ -380,8 +391,18 @@ function ReviseInstallation({
     <Card>
       <h2 className="text-xl font-semibold">{t('reviseSelector')}</h2>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <Field label={t('clusterName')} value={cluster} onChange={setCluster} />
-        <Field label={t('workloadNamespace')} value={namespace} onChange={setNamespace} />
+        <Field
+          label={t('clusterName')}
+          help={t('clusterNameHelp')}
+          value={cluster}
+          onChange={setCluster}
+        />
+        <Field
+          label={t('workloadNamespace')}
+          help={t('workloadNamespaceHelp')}
+          value={namespace}
+          onChange={setNamespace}
+        />
       </div>
       <div className="mt-4 flex gap-2">
         <Button variant={mode === 'name' ? 'default' : 'outline'} onClick={() => setMode('name')}>
@@ -397,6 +418,7 @@ function ReviseInstallation({
       <div className="mt-4">
         <Field
           label={mode === 'name' ? t('deploymentName') : t('labelsExample')}
+          help={mode === 'name' ? t('deploymentNameHelp') : t('labelSelectorHelp')}
           value={mode === 'name' ? name : labels}
           onChange={mode === 'name' ? setName : setLabels}
         />
@@ -551,22 +573,33 @@ const parseLabels = (value: string): Record<string, string> => {
 const quote = (value: string) => `'${value.replaceAll("'", `'"'"'`)}'`
 function Field({
   label,
+  help,
   value,
   onChange,
 }: {
   label: string
+  help: string
   value: string
   onChange: (value: string) => void
 }) {
+  const inputId = useId(),
+    helpId = useId()
   return (
-    <label className="block text-sm font-medium">
-      {label}
+    <div>
+      <label className="block text-sm font-medium" htmlFor={inputId}>
+        {label}
+      </label>
       <input
+        id={inputId}
+        aria-describedby={helpId}
         className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />
-    </label>
+      <span id={helpId} className="mt-1 block text-xs font-normal leading-5 text-slate-400">
+        {help}
+      </span>
+    </div>
   )
 }
 function Command({

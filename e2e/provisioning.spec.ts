@@ -209,6 +209,13 @@ async function selectApplication(page: Page) {
   await page.getByRole('button', { name: /Payment API/ }).click()
 }
 
+async function expectDescribedTextbox(page: Page, name: string, description: string) {
+  const textbox = page.getByRole('textbox', { name, exact: true })
+  await expect(textbox).toBeVisible()
+  await expect(textbox).toHaveAccessibleDescription(description)
+  await expect(textbox).toHaveAttribute('aria-describedby', /\S+/)
+}
+
 async function mockMetadataError(page: Page, code: string, message: string) {
   await page.route('**/api/v1/**', (route) => {
     const path = new URL(route.request().url()).pathname
@@ -321,13 +328,106 @@ test('other installation metadata failures do not show operator configuration gu
   await expect(page.getByRole('link', { name: 'Open self-hosting configuration' })).toHaveCount(0)
 })
 
+test('installation and revision fields explain their purpose accessibly in both languages', async ({
+  page,
+}) => {
+  await mockOnboarding(page)
+  await page.goto('/onboarding')
+  await selectApplication(page)
+
+  const expected = {
+    en: {
+      cluster: {
+        name: 'Cluster name',
+        help: 'Saved with this installation and passed to the agent as identity.clusterName. The Kubernetes UID remains the authoritative cluster identity.',
+      },
+      namespace: {
+        name: 'Workload namespace',
+        help: 'Kubernetes namespace containing the Deployment to observe.',
+      },
+      deployment: {
+        name: 'Deployment name',
+        help: 'Exact name of the single Deployment to observe in this namespace.',
+      },
+      labels: {
+        name: 'Labels (key=value, comma separated)',
+        help: 'Comma-separated key=value labels that must select one Deployment in this namespace.',
+      },
+      advanced:
+        'No fields are changed here. The chart enables process lifecycle and core network activity; file and experimental observations stay off until configured after connection.',
+    },
+    ru: {
+      cluster: {
+        name: 'Название кластера',
+        help: 'Сохраняется в установке и передаётся агенту как identity.clusterName. Авторитетным идентификатором кластера остаётся Kubernetes UID.',
+      },
+      namespace: {
+        name: 'Namespace нагрузки',
+        help: 'Kubernetes namespace, где находится Deployment для наблюдения.',
+      },
+      deployment: {
+        name: 'Имя Deployment',
+        help: 'Точное имя единственного Deployment для наблюдения в этом namespace.',
+      },
+      labels: {
+        name: 'Метки (key=value через запятую)',
+        help: 'Метки key=value через запятую, которые должны выбрать один Deployment в этом namespace.',
+      },
+      advanced:
+        'В этом блоке нет изменяемых полей. Chart включает жизненный цикл процессов и основную сетевую активность; наблюдение файлов и экспериментальные функции остаются выключенными до настройки после подключения.',
+    },
+  } as const
+
+  for (const locale of ['en', 'ru'] as const) {
+    await page.getByLabel(/Language|Язык/).selectOption(locale)
+    const copy = expected[locale]
+    await expectDescribedTextbox(page, copy.cluster.name, copy.cluster.help)
+    await expectDescribedTextbox(page, copy.namespace.name, copy.namespace.help)
+    await expectDescribedTextbox(page, copy.deployment.name, copy.deployment.help)
+    await page
+      .getByRole('button', { name: locale === 'en' ? 'Label selector' : 'Селектор меток' })
+      .click()
+    await expectDescribedTextbox(page, copy.labels.name, copy.labels.help)
+    await page
+      .getByRole('button', { name: locale === 'en' ? 'Deployment name' : 'Имя Deployment' })
+      .click()
+    const disclosure = page.locator('details')
+    await disclosure.locator('summary').click()
+    await expect(disclosure).toContainText(copy.advanced)
+    await expect(disclosure.getByRole('textbox')).toHaveCount(0)
+    await disclosure.locator('summary').click()
+  }
+
+  await page.getByRole('button', { name: 'Создать установку' }).click()
+  await page.reload()
+  await selectApplication(page)
+  await page.getByRole('button', { name: 'Изменить селектор нагрузки' }).click()
+
+  for (const locale of ['ru', 'en'] as const) {
+    await page.getByLabel(/Language|Язык/).selectOption(locale)
+    const copy = expected[locale]
+    await expectDescribedTextbox(page, copy.cluster.name, copy.cluster.help)
+    await expectDescribedTextbox(page, copy.namespace.name, copy.namespace.help)
+    await expectDescribedTextbox(page, copy.deployment.name, copy.deployment.help)
+    await page
+      .getByRole('button', { name: locale === 'en' ? 'Label selector' : 'Селектор меток' })
+      .click()
+    await expectDescribedTextbox(page, copy.labels.name, copy.labels.help)
+    await page
+      .getByRole('button', { name: locale === 'en' ? 'Deployment name' : 'Имя Deployment' })
+      .click()
+  }
+
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+})
+
 test('owner gets secret-safe commands, resume/replacement/revision and every readiness state', async ({
   page,
 }) => {
   const model = await mockOnboarding(page)
   await page.goto('/onboarding')
   await selectApplication(page)
-  await page.getByLabel('Namespace').fill('payments')
+  await page.getByRole('textbox', { name: /^Workload namespace/ }).fill('payments')
   await page.getByText('Advanced observation settings').click()
   await expect(page.getByText('Process lifecycle and core network activity')).toBeVisible()
   await page.getByRole('button', { name: 'Create installation' }).click()
@@ -385,7 +485,7 @@ test('system TLS omits custom CA guidance and Helm values', async ({ page }) => 
   await mockOnboarding(page, 'system')
   await page.goto('/onboarding')
   await selectApplication(page)
-  await page.getByLabel('Namespace').fill('payments')
+  await page.getByRole('textbox', { name: /^Workload namespace/ }).fill('payments')
   await page.getByRole('button', { name: 'Create installation' }).click()
   const commands = (await page.locator('pre').allTextContents()).slice(1).join('\n')
   expect(commands).not.toContain('server.caSecret.name')

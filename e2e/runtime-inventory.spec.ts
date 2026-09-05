@@ -64,11 +64,13 @@ test('explores Application Activity scope, views, cursors, and observation histo
   await expect(page.getByText(/absent|removed|safe/i)).toHaveCount(0)
 
   await page.getByRole('tab', { name: 'Where observed' }).click()
+  await expect(page).toHaveURL(/evidence=sightings/)
   await expect(page.getByText("<script>alert('scope')</script>")).toBeVisible()
   await expect(page.locator('script', { hasText: "alert('scope')" })).toHaveCount(0)
   await expect(page.getByRole('link', { name: /javascript:alert/ })).toHaveCount(0)
   const occurrencesTab = page.getByRole('tab', { name: 'Observation history' })
   await occurrencesTab.click()
+  await expect(page).toHaveURL(/evidence=occurrences/)
   await expect(occurrencesTab).toHaveAttribute('aria-selected', 'true')
   await page.getByText('Technical details').first().click()
   await expect(page.getByText('203.0.113.7')).toBeVisible()

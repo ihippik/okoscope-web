@@ -371,6 +371,131 @@ test('installation journeys match the secure Helm chart contract in both languag
   }
 })
 
+test('quick start and agent reference explain onboarding identities and selectors', async ({
+  page,
+}) => {
+  const expected = {
+    en: {
+      quickStart: [
+        'Cluster name is saved with the installation and passed to the agent as identity.clusterName',
+        'Kubernetes UID remains the authoritative cluster identity',
+        'Workload namespace says where the Deployment lives',
+        'exact name or by a bounded comma-separated key=value label set',
+        'Advanced observation settings are informational here',
+      ],
+      agent: [
+        'cluster name passed to the agent',
+        'Kubernetes UID remains the authoritative cluster identity',
+        'clusterName: production',
+        'saved installation name passed to the agent',
+      ],
+    },
+    ru: {
+      quickStart: [
+        'Название кластера сохраняется в установке и передаётся агенту как identity.clusterName',
+        'авторитетным идентификатором остаётся Kubernetes UID',
+        'Namespace нагрузки указывает, где находится Deployment',
+        'по точному имени либо по ограниченному набору меток key=value через запятую',
+        '«Расширенные настройки наблюдения» здесь информационные',
+      ],
+      agent: [
+        'какое название кластера передать агенту',
+        'Авторитетным идентификатором кластера остаётся Kubernetes UID',
+        'clusterName: production',
+        'сохранённое имя, передаваемое агенту',
+      ],
+    },
+  } as const
+
+  for (const locale of ['en', 'ru'] as const) {
+    await page.goto('/docs/quick-start')
+    await page.getByLabel(/Language|Язык/).selectOption(locale)
+    for (const statement of expected[locale].quickStart)
+      await expect(page.locator('main')).toContainText(statement)
+
+    await page.goto('/docs/self-hosting#values-agent')
+    for (const statement of expected[locale].agent)
+      await expect(page.locator('main')).toContainText(statement)
+  }
+})
+
+test('self-hosting documents exact per-installation browser Origins in both languages', async ({
+  page,
+}) => {
+  const expected = {
+    en: {
+      managedTls:
+        'browser Origin derived from this installation’s ingress.web.host: https://<ingress.web.host> when ingress.web.tlsSecret is set',
+      managedPlaintext: 'and http://<ingress.web.host> otherwise',
+      external:
+        'external ingress, reverse proxy or alternate browser address exposes Web/API, add every such Origin to server.corsOrigins explicitly',
+      exact: 'scheme://host plus a non-default port when present',
+      invalid: 'wildcards, paths, queries, fragments and trailing slashes are not accepted',
+      empty: 'server.corsOrigins can stay empty when the chart manages Web ingress',
+      valuesComment: 'https with tlsSecret, otherwise http; add exact external Origins',
+    },
+    ru: {
+      managedTls:
+        'Origin браузера, выведенному из ingress.web.host именно этой установки: https://<ingress.web.host>, если задан ingress.web.tlsSecret',
+      managedPlaintext: 'и http://<ingress.web.host> в противном случае',
+      external:
+        'внешний ingress, reverse proxy или альтернативный адрес, явно добавьте каждый такой Origin в server.corsOrigins',
+      exact: 'строго scheme://host и, при наличии, нестандартный порт',
+      invalid: 'wildcard, пути, query-параметры, fragment и завершающий слеш недопустимы',
+      empty: 'server.corsOrigins можно оставить пустым, когда Web ingress создаёт чарт',
+      valuesComment: 'https с tlsSecret, иначе http; добавьте точные внешние Origins',
+    },
+  } as const
+
+  await page.goto('/docs/self-hosting')
+  for (const locale of ['en', 'ru'] as const) {
+    await page.getByLabel(/Language|Язык/).selectOption(locale)
+    const article = page.locator('main')
+    for (const statement of Object.values(expected[locale]))
+      await expect(article).toContainText(statement)
+    await expect(article).toContainText('corsOrigins: []')
+    await expect(article).not.toContainText('okoscope.com')
+  }
+})
+
+test('troubleshooting identifies untrusted Origin failures without implying GET failure', async ({
+  page,
+}) => {
+  const expected = {
+    en: {
+      symptom:
+        'logout or a state-changing POST or PUT fails with untrusted_origin while pages and GET requests still work',
+      managedTls:
+        'A chart-managed ingress trusts the derived Origin automatically — https with ingress.web.tlsSecret',
+      managedPlaintext: 'otherwise http',
+      external:
+        'external ingress and alternate browser addresses must appear in server.corsOrigins.',
+      exact:
+        'Match the scheme, host and non-default port, and remove any wildcard, path, query, fragment or trailing slash.',
+    },
+    ru: {
+      symptom:
+        'logout или изменяющий состояние POST либо PUT завершается ошибкой untrusted_origin, хотя страницы и GET-запросы работают',
+      managedTls:
+        'Ingress, созданный чартом, автоматически доверяет выведенному Origin — https с ingress.web.tlsSecret',
+      managedPlaintext: 'иначе http',
+      external:
+        'внешний ingress и альтернативные адреса браузера нужно перечислить в server.corsOrigins.',
+      exact:
+        'Проверьте scheme, host и нестандартный порт и удалите wildcard, путь, query-параметры, fragment и завершающий слеш.',
+    },
+  } as const
+
+  await page.goto('/docs/troubleshooting')
+  for (const locale of ['en', 'ru'] as const) {
+    await page.getByLabel(/Language|Язык/).selectOption(locale)
+    const article = page.locator('main')
+    for (const statement of Object.values(expected[locale]))
+      await expect(article).toContainText(statement)
+    await expect(article).not.toContainText('okoscope.com')
+  }
+})
+
 test('chart values are copyable localized files with intact shell continuations', async ({
   page,
   context,

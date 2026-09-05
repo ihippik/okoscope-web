@@ -90,11 +90,17 @@ export const englishMessages = {
     'Select one Kubernetes Deployment by name or labels. Safe observation defaults are applied by the chart.',
   advancedObservation: 'Advanced observation settings',
   safeObservationDefaults:
-    'Process lifecycle and core network activity are enabled. File and experimental observations remain off until explicitly configured after connection.',
+    'No fields are changed here. The chart enables process lifecycle and core network activity; file and experimental observations stay off until configured after connection.',
   clusterName: 'Cluster name',
+  clusterNameHelp:
+    'Saved with this installation and passed to the agent as identity.clusterName. The Kubernetes UID remains the authoritative cluster identity.',
   deploymentName: 'Deployment name',
+  deploymentNameHelp: 'Exact name of the single Deployment to observe in this namespace.',
   labelSelector: 'Label selector',
   labelsExample: 'Labels (key=value, comma separated)',
+  labelSelectorHelp:
+    'Comma-separated key=value labels that must select one Deployment in this namespace.',
+  workloadNamespaceHelp: 'Kubernetes namespace containing the Deployment to observe.',
   agentContract: 'Agent chart {chart}; endpoint {endpoint}',
   installationCreateFailed: 'Installation could not be created',
   createInstallation: 'Create installation',
@@ -544,11 +550,17 @@ export const russianMessages = {
     'Выберите один Kubernetes Deployment по имени или меткам. Chart применит безопасные настройки наблюдения.',
   advancedObservation: 'Расширенные настройки наблюдения',
   safeObservationDefaults:
-    'Включены жизненный цикл процессов и основная сетевая активность. Наблюдение файлов и экспериментальные функции остаются выключенными до явной настройки после подключения.',
+    'В этом блоке нет изменяемых полей. Chart включает жизненный цикл процессов и основную сетевую активность; наблюдение файлов и экспериментальные функции остаются выключенными до настройки после подключения.',
   clusterName: 'Название кластера',
+  clusterNameHelp:
+    'Сохраняется в установке и передаётся агенту как identity.clusterName. Авторитетным идентификатором кластера остаётся Kubernetes UID.',
   deploymentName: 'Имя Deployment',
+  deploymentNameHelp: 'Точное имя единственного Deployment для наблюдения в этом namespace.',
   labelSelector: 'Селектор меток',
   labelsExample: 'Метки (key=value через запятую)',
+  labelSelectorHelp:
+    'Метки key=value через запятую, которые должны выбрать один Deployment в этом namespace.',
+  workloadNamespaceHelp: 'Kubernetes namespace, где находится Deployment для наблюдения.',
   agentContract: 'Chart агента {chart}; endpoint {endpoint}',
   installationCreateFailed: 'Не удалось создать установку',
   createInstallation: 'Создать установку',

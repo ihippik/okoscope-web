@@ -276,8 +276,8 @@ export const articles: Article[] = [
             ru: 'Попросите у того, кто обслуживает установку, адрес сайта, доступный из кластера gRPC endpoint, сертификат CA и доступ к организации. Регистрация может быть отключена; если она открыта, при регистрации вы становитесь владельцем новой организации, а не системным администратором. Участники могут читать данные, но создавать проекты и приложения в организации вправе владелец или системный администратор.',
           },
           {
-            en: 'Open Connect agent. The wizard reads Projects, Applications and installation state from the server, so reloading the page continues where you left off instead of creating duplicates. Choose or create a Project and an Application, then name one Deployment by namespace and name, or by a bounded set of labels. The server hands you the compatible chart version, the endpoint and the Secret convention; no system administrator credential is involved.',
-            ru: 'Откройте «Подключение агента». Мастер берёт проекты, приложения и состояние установки с сервера, поэтому перезагрузка страницы продолжает начатое, а не создаёт дубликаты. Выберите или создайте проект и приложение, затем укажите один Deployment — через namespace и имя либо через ограниченный набор labels. Совместимую версию чарта, endpoint и правила именования Secret подскажет сервер; системный административный токен для этого не нужен.',
+            en: 'Open Connect agent. The wizard reads Projects, Applications and installation state from the server, so reloading the page continues where you left off instead of creating duplicates. Cluster name is saved with the installation and passed to the agent as identity.clusterName, while the Kubernetes UID remains the authoritative cluster identity. Workload namespace says where the Deployment lives; then select that one Deployment by its exact name or by a bounded comma-separated key=value label set. Advanced observation settings are informational here: the chart applies the stated defaults, and you can change them after connection. The server hands you the compatible chart version, the endpoint and the Secret convention; no system administrator credential is involved.',
+            ru: 'Откройте «Подключение агента». Мастер берёт проекты, приложения и состояние установки с сервера, поэтому перезагрузка страницы продолжает начатое, а не создаёт дубликаты. Название кластера сохраняется в установке и передаётся агенту как identity.clusterName, но авторитетным идентификатором остаётся Kubernetes UID. Namespace нагрузки указывает, где находится Deployment; затем выберите этот единственный Deployment по точному имени либо по ограниченному набору меток key=value через запятую. «Расширенные настройки наблюдения» здесь информационные: чарт применяет указанные значения по умолчанию, изменить их можно после подключения. Совместимую версию чарта, endpoint и правила именования Secret подскажет сервер; системный административный токен для этого не нужен.',
           },
         ],
       },
@@ -461,8 +461,8 @@ unset OKOSCOPE_DATABASE_URL`,
             ru: 'По умолчанию установка доступна только внутри кластера, поэтому для первой проверки используйте port-forward. Ingress включается отдельно и осознанно: разные HTTPS-хосты для Web/API и для TLS gRPC, поддерживаемый ingress class и уже существующие TLS Secrets. Удалённым агентам можно передать существующий Secret с CA. Автоматизация сертификатов и private registry — тоже параметры чарта: настраивайте их там, а не правьте отрендеренные ресурсы.',
           },
           {
-            en: 'When the chart creates the Web ingress, it automatically trusts the browser Origin derived from this installation’s ingress.web.host: https://<ingress.web.host>. If an external ingress, reverse proxy or alternate browser address exposes Web/API, add every such Origin to server.corsOrigins explicitly. An Origin is exactly scheme://host plus a non-default port when present; wildcards, paths, queries, fragments and trailing slashes are not accepted.',
-            ru: 'Когда Web ingress создаёт чарт, он автоматически доверяет Origin браузера, выведенному из ingress.web.host именно этой установки: https://<ingress.web.host>. Если Web/API публикует внешний ingress, reverse proxy или альтернативный адрес, явно добавьте каждый такой Origin в server.corsOrigins. Origin — это строго scheme://host и, при наличии, нестандартный порт; wildcard, пути, query-параметры, fragment и завершающий слеш недопустимы.',
+            en: 'When the chart creates the Web ingress, it automatically trusts the browser Origin derived from this installation’s ingress.web.host: https://<ingress.web.host> when ingress.web.tlsSecret is set, and http://<ingress.web.host> otherwise. If an external ingress, reverse proxy or alternate browser address exposes Web/API, add every such Origin to server.corsOrigins explicitly. An Origin is exactly scheme://host plus a non-default port when present; wildcards, paths, queries, fragments and trailing slashes are not accepted.',
+            ru: 'Когда Web ingress создаёт чарт, он автоматически доверяет Origin браузера, выведенному из ingress.web.host именно этой установки: https://<ingress.web.host>, если задан ingress.web.tlsSecret, и http://<ingress.web.host> в противном случае. Если Web/API публикует внешний ingress, reverse proxy или альтернативный адрес, явно добавьте каждый такой Origin в server.corsOrigins. Origin — это строго scheme://host и, при наличии, нестандартный порт; wildcard, пути, query-параметры, fragment и завершающий слеш недопустимы.',
           },
           {
             en: 'Wait for Helm and for the Deployments, then forward the Web service. The installation is ready when /readyz answers, /api/v1/build-info reports the expected version, the interface opens, and a documentation deep link still works after a refresh. A local agent is optional; if you install one, use the same existing-Secret mapping as in Quick start.',
@@ -530,8 +530,8 @@ setupAuthorization:
 server:
   registrationEnabled: false          # default - public signup, off with or without ingress
   sessionLifetimeSeconds: 43200       # default - session lifetime, twelve hours
-  corsOrigins: []                     # default: empty - chart trusts https://ingress.web.host
-                                      # add exact external Origins, e.g. https://console.example.com:8443
+  corsOrigins: []                     # default: empty - chart trusts the Web ingress Origin
+                                      # https with tlsSecret, otherwise http; add exact external Origins
   replicas: 1                         # default - more replicas need a PostgreSQL topology built for it
   image:
     tag: ""                           # default: empty - a published release pins the image
@@ -619,8 +619,8 @@ setupAuthorization:
 server:
   registrationEnabled: false          # по умолчанию - открытая регистрация, выключена при любом ingress
   sessionLifetimeSeconds: 43200       # по умолчанию - время жизни сессии, двенадцать часов
-  corsOrigins: []                     # по умолчанию пусто - чарт доверяет https://ingress.web.host
-                                      # добавьте точные внешние Origins, например https://console.example.com:8443
+  corsOrigins: []                     # по умолчанию пусто - чарт доверяет Origin Web ingress
+                                      # https с tlsSecret, иначе http; добавьте точные внешние Origins
   replicas: 1                         # по умолчанию - больше реплик требует подходящей топологии PostgreSQL
   image:
     tag: ""                           # по умолчанию пусто - опубликованный релиз фиксирует образ
@@ -694,8 +694,8 @@ okoscope-agent:
         title: { en: 'okoscope-agent: the node agent', ru: 'okoscope-agent: агент на узлах' },
         paragraphs: [
           {
-            en: 'Three things are required: where to send the data, what to call the cluster, and which workloads to watch. The observation defaults are deliberately modest, so widen them only once the basics work.',
-            ru: 'Обязательны три вещи: куда отправлять данные, как называется кластер и за какими нагрузками наблюдать. Значения наблюдения по умолчанию намеренно скромные: расширяйте их, когда базовый сценарий уже заработал.',
+            en: 'Three things are required: where to send the data, the cluster name passed to the agent, and which workloads to watch. The Kubernetes UID remains the authoritative cluster identity. The observation defaults are deliberately modest, so widen them only once the basics work.',
+            ru: 'Обязательны три вещи: куда отправлять данные, какое название кластера передать агенту и за какими нагрузками наблюдать. Авторитетным идентификатором кластера остаётся Kubernetes UID. Значения наблюдения по умолчанию намеренно скромные: расширяйте их, когда базовый сценарий уже заработал.',
           },
         ],
         code: {
@@ -713,7 +713,7 @@ server:
     key: ""                           # required for a private CA - the key holding the certificate
 
 identity:
-  clusterName: production             # required - the name this cluster is shown under
+  clusterName: production             # required - saved installation name passed to the agent
 
 # One entry per Application, 1 to 32 of them. Each entry selects exactly one
 # Deployment, by name or by a bounded labels map, never by both.
@@ -770,7 +770,7 @@ server:
     key: ""                           # обязательно для частного CA - ключ с сертификатом
 
 identity:
-  clusterName: production             # обязательно - имя, под которым кластер виден в интерфейсе
+  clusterName: production             # обязательно - сохранённое имя, передаваемое агенту
 
 # По одному элементу на приложение, от 1 до 32. Каждый выбирает ровно один
 # Deployment - по имени либо по ограниченному набору labels, но не по обоим сразу.
@@ -1278,8 +1278,8 @@ imagePullSecrets:
             ru: 'Защищённая страница сначала проверяет совместимость сервера и только затем сессию, поэтому по виду ошибки можно понять, какая проверка не прошла. Посмотрите на /readyz и /api/v1/build-info, на то, как обратный прокси маршрутизирует API, на состояние миграций и на настроенный браузерный origin. Если сессия просто истекла, войдите заново — и учтите, что повтор операции не превратит участника организации во владельца или системного администратора.',
           },
           {
-            en: 'If logout or a state-changing POST or PUT fails with untrusted_origin while pages and GET requests still work, compare the browser’s Origin with the trusted value character for character. A chart-managed ingress trusts https://<ingress.web.host> automatically; external ingress and alternate browser addresses must appear in server.corsOrigins. Match the scheme, host and non-default port, and remove any wildcard, path, query, fragment or trailing slash.',
-            ru: 'Если logout или изменяющий состояние POST либо PUT завершается ошибкой untrusted_origin, хотя страницы и GET-запросы работают, посимвольно сравните Origin браузера с доверенным значением. Ingress, созданный чартом, автоматически доверяет https://<ingress.web.host>; внешний ingress и альтернативные адреса браузера нужно перечислить в server.corsOrigins. Проверьте scheme, host и нестандартный порт и удалите wildcard, путь, query-параметры, fragment и завершающий слеш.',
+            en: 'If logout or a state-changing POST or PUT fails with untrusted_origin while pages and GET requests still work, compare the browser’s Origin with the trusted value character for character. A chart-managed ingress trusts the derived Origin automatically — https with ingress.web.tlsSecret, otherwise http; external ingress and alternate browser addresses must appear in server.corsOrigins. Match the scheme, host and non-default port, and remove any wildcard, path, query, fragment or trailing slash.',
+            ru: 'Если logout или изменяющий состояние POST либо PUT завершается ошибкой untrusted_origin, хотя страницы и GET-запросы работают, посимвольно сравните Origin браузера с доверенным значением. Ingress, созданный чартом, автоматически доверяет выведенному Origin — https с ingress.web.tlsSecret, иначе http; внешний ingress и альтернативные адреса браузера нужно перечислить в server.corsOrigins. Проверьте scheme, host и нестандартный порт и удалите wildcard, путь, query-параметры, fragment и завершающий слеш.',
           },
           {
             en: 'Documentation stays available without a login and without a working API, which makes it a useful signal by itself. If refreshing a direct URL such as /docs/quick-start fails at the web server, it is missing the SPA fallback the other frontend routes use. And if registration is unavailable, ask the installation operator for access instead of assuming your password is wrong.',
