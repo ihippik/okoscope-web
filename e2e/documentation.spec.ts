@@ -90,6 +90,44 @@ test('documentation language selector is visually compact and remains accessible
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
 })
 
+test('quick start explains the version placeholder and required server metadata in both languages', async ({
+  page,
+}) => {
+  await page.goto('/docs/quick-start')
+  await expect(
+    page.getByText(
+      '<OKOSCOPE_VERSION> in the generic example is a placeholder, not an environment variable. The Connect agent wizard replaces it with metadata from the server. If the wizard says configuration is unavailable, the operator must configure agentInstallation.publicGrpcEndpoint, chartReference, chartVersion, recommendedAgentVersion and minimumAgentVersion in the server Helm values.',
+      { exact: true },
+    ),
+  ).toBeVisible()
+  const englishArticle = page.locator('main')
+  for (const value of [
+    'agentInstallation.publicGrpcEndpoint',
+    'chartReference',
+    'chartVersion',
+    'recommendedAgentVersion',
+    'minimumAgentVersion',
+  ])
+    await expect(englishArticle).toContainText(value)
+
+  await page.getByLabel('Language').selectOption('ru')
+  await expect(
+    page.getByText(
+      '<OKOSCOPE_VERSION> в общем примере — плейсхолдер, а не переменная окружения. Мастер «Подключение агента» заменяет его данными сервера. Если мастер сообщает, что конфигурация недоступна, оператор должен настроить agentInstallation.publicGrpcEndpoint, chartReference, chartVersion, recommendedAgentVersion и minimumAgentVersion в Helm values сервера.',
+      { exact: true },
+    ),
+  ).toBeVisible()
+  const russianArticle = page.locator('main')
+  for (const value of [
+    'agentInstallation.publicGrpcEndpoint',
+    'chartReference',
+    'chartVersion',
+    'recommendedAgentVersion',
+    'minimumAgentVersion',
+  ])
+    await expect(russianArticle).toContainText(value)
+})
+
 test('how it works presents the responsive architecture diagram in the selected language', async ({
   page,
 }) => {
@@ -117,6 +155,9 @@ test('how it works presents the responsive architecture diagram in the selected 
       await expect(diagram).toHaveAttribute('src', expected[locale].source)
       await expect(diagram).toHaveAttribute('alt', expected[locale].alt)
       await expect(diagram).toBeVisible()
+      await expect
+        .poll(() => diagram.evaluate((element) => (element as HTMLImageElement).complete))
+        .toBe(true)
       const dimensions = await diagram.evaluate((element) => {
         if (!(element instanceof HTMLImageElement)) throw new Error('Expected an image element')
         return {

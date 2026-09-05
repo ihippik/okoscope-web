@@ -101,6 +101,30 @@
   font-size: 1.2rem;
   color: #d9e9f8;
 }
+.docs-callout {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.85rem;
+  margin: 1.5rem 0;
+  padding: 1rem 1.15rem;
+  border: 1px solid #49677a;
+  border-left: 3px solid #d8bd7a;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #12283a, #0b1c2c);
+}
+.docs-callout-icon {
+  margin-top: 0.15rem;
+  color: #d8bd7a;
+}
+.docs-callout strong {
+  color: #f1dcaa;
+  font-size: 0.95rem;
+}
+.docs-reading .docs-callout p {
+  margin: 0.35rem 0 0;
+  color: #d9e9f8;
+  line-height: 1.7;
+}
 .docs-diagram {
   margin: 1.75rem 0;
   overflow: hidden;

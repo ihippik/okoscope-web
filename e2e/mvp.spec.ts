@@ -21,6 +21,24 @@ test('switches the interface to Russian and persists the choice', async ({ page 
   ).toBeVisible()
 })
 
+test('keeps the application header language selector compact and accessible', async ({ page }) => {
+  await mockApi(page)
+  await page.goto('/')
+  await authenticate(page)
+
+  const header = page.locator('.app-header')
+  const select = header.getByRole('combobox', { name: 'Language' })
+  await expect(header.locator('.app-navigation-language > span')).toHaveCount(0)
+  await expect(select).toHaveAccessibleName('Language')
+  await expect(select).toHaveValue('en')
+
+  await select.selectOption('ru')
+  const russianSelect = header.getByRole('combobox', { name: 'Язык' })
+  await expect(header.locator('.app-navigation-language > span')).toHaveCount(0)
+  await expect(russianSelect).toHaveAccessibleName('Язык')
+  await expect(russianSelect).toHaveValue('ru')
+})
+
 test('renders tenant, runtime, and notification surfaces fully in Russian', async ({ page }) => {
   test.setTimeout(60_000)
   const expectNoEnglishUi = async () =>

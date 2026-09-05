@@ -105,6 +105,7 @@ test('shows policy attention facts and opens a canonical review filter', async (
   )
   await authenticate(page)
   await expect(page.getByRole('heading', { name: 'Policy classification' })).toBeVisible()
+  await page.getByRole('button', { name: 'Open menu' }).click()
   await page.getByLabel('Language').selectOption('ru')
   await expect(page.getByRole('heading', { name: 'Классификация политиками' })).toBeVisible()
   await page.getByRole('link', { name: /Не классифицировано: 2/ }).click()
@@ -142,6 +143,7 @@ test('navigates Application attention tabs through URL history at mobile width',
     'aria-selected',
     'true',
   )
+  await page.getByRole('button', { name: 'Open menu' }).click()
   await page.getByLabel('Language').selectOption('ru')
   await expect(page.getByRole('tab', { name: /Приоритетная очередь \(\d+\)/ })).toBeVisible()
   expect(

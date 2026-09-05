@@ -1,7 +1,8 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { useApi } from '../../shared/api/context'
+import { ApiClientError } from '../../shared/api/client'
 import {
   createInstallation,
   installationMetadataOptions,
@@ -204,14 +205,32 @@ function InstallationStep({
   })
   if (metadata.isPending || installations.isPending)
     return <Loading label={t('loadingInstallation')} />
-  if (metadata.isError)
+  if (metadata.isError) {
+    const unavailable =
+      metadata.error instanceof ApiClientError &&
+      metadata.error.detail.kind === 'api' &&
+      metadata.error.detail.code === 'installation_metadata_unavailable'
     return (
-      <ErrorState
-        title={t('installationMetadataFailed')}
-        error={metadata.error}
-        onRetry={() => void metadata.refetch()}
-      />
+      <div className="space-y-4">
+        <ErrorState
+          title={t('installationMetadataFailed')}
+          error={metadata.error}
+          onRetry={() => void metadata.refetch()}
+          headingLevel={1}
+        />
+        {unavailable && (
+          <Card>
+            <p className="text-sm text-slate-300">{t('installationMetadataOperatorHelp')}</p>
+            <Button asChild className="mt-4" variant="outline">
+              <Link to="/docs/$slug" params={{ slug: 'self-hosting' }}>
+                {t('installationMetadataDocs')}
+              </Link>
+            </Button>
+          </Card>
+        )}
+      </div>
     )
+  }
   if (installations.isError)
     return (
       <ErrorState
@@ -417,7 +436,7 @@ function InstallCommands({
             `--set-string 'workloads[0].labels.${key.replaceAll('.', '\\.')}'=${quote(value)}`,
         )
         .join(' \\\n  ')
-  const secretCommand = `kubectl create namespace ${quote(metadata.namespace)} --dry-run=client -o yaml | kubectl apply -f -\nread -rsp "Okoscope application token: " OKOSCOPE_TOKEN\nkubectl -n ${quote(metadata.namespace)} create secret generic ${quote(metadata.credential_secret_name)} --from-literal=${quote(metadata.credential_secret_key)}="$OKOSCOPE_TOKEN" --dry-run=client -o yaml | kubectl apply -f -\nunset OKOSCOPE_TOKEN`
+  const secretCommand = `kubectl create namespace ${quote(metadata.namespace)} --dry-run=client -o yaml | kubectl apply -f -\nprintf "Okoscope application token: " >&2\nIFS= read -rs OKOSCOPE_TOKEN\nprintf '\\n' >&2\nkubectl -n ${quote(metadata.namespace)} create secret generic ${quote(metadata.credential_secret_name)} --from-literal=${quote(metadata.credential_secret_key)}="$OKOSCOPE_TOKEN" --dry-run=client -o yaml | kubectl apply -f -\nunset OKOSCOPE_TOKEN`
   const caOption =
     metadata.tls_mode === 'custom_ca' && metadata.ca_secret_name && metadata.ca_secret_key
       ? ` --set server.caSecret.name=${quote(metadata.ca_secret_name)} --set server.caSecret.key=${quote(metadata.ca_secret_key)}`

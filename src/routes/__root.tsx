@@ -205,7 +205,7 @@ function ApplicationHeader() {
           <Link to="/docs" className="nav-link">
             {t('documentation')}
           </Link>
-          <LanguageSelector className="app-navigation-language" />
+          <LanguageSelector className="app-navigation-language" showLabel={false} />
         </nav>
       </div>
     </header>

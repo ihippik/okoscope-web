@@ -209,6 +209,118 @@ async function selectApplication(page: Page) {
   await page.getByRole('button', { name: /Payment API/ }).click()
 }
 
+async function mockMetadataError(page: Page, code: string, message: string) {
+  await page.route('**/api/v1/**', (route) => {
+    const path = new URL(route.request().url()).pathname
+    if (path.endsWith('/build-info')) return reply(route, build)
+    if (path.endsWith('/setup/status')) return reply(route, { state: 'ready' })
+    if (path.endsWith('/auth/me')) return reply(route, auth)
+    if (path === '/api/v1/projects') return reply(route, { items: [project], next_cursor: null })
+    if (path === `/api/v1/projects/${project.id}/applications`)
+      return reply(route, { items: [app], next_cursor: null })
+    if (path.endsWith('/agent-installation-metadata'))
+      return reply(route, { error: code, message, request_id: 'metadata-request' }, 503)
+    const base = `/api/v1/projects/${project.id}/applications/${app.id}`
+    if (path === `${base}/installations`) return reply(route, { items: [] })
+    return reply(route, {}, 404)
+  })
+}
+
+test('legacy post-create flow shows only its token and continues in Connect agent', async ({
+  page,
+}) => {
+  await page.route('**/api/v1/**', (route) => {
+    const request = route.request(),
+      path = new URL(request.url()).pathname
+    if (path.endsWith('/build-info')) return reply(route, build)
+    if (path.endsWith('/setup/status')) return reply(route, { state: 'ready' })
+    if (path.endsWith('/auth/me')) return reply(route, auth)
+    if (path === `/api/v1/projects/${project.id}`) return reply(route, project)
+    if (path === '/api/v1/projects') return reply(route, { items: [project], next_cursor: null })
+    if (path.endsWith('/runtime-retention'))
+      return reply(route, {
+        override: null,
+        inherited: { enabled: false, raw_days: 30, history_days: 365 },
+        effective: { enabled: false, raw_days: 30, history_days: 365 },
+        source: 'organization',
+      })
+    if (path === `/api/v1/projects/${project.id}/applications`) {
+      if (request.method() === 'POST')
+        return reply(
+          route,
+          {
+            application: app,
+            credential: {
+              id: 'credential-created',
+              name: 'default',
+              token,
+              token_hint: 'cret',
+              created_at: '2026-01-01T00:00:00Z',
+              shown_once: true,
+            },
+          },
+          201,
+        )
+      return reply(route, { items: [], next_cursor: null })
+    }
+    return reply(route, {}, 404)
+  })
+
+  await page.goto(`/projects/${project.id}`)
+  await page.getByRole('button', { name: 'Create Application' }).click()
+  await page.getByLabel('Name').fill('Payment API')
+  await page.getByRole('button', { name: 'Create Application' }).last().click()
+  await expect(page.getByText(token, { exact: true })).toBeVisible()
+  await expect(page.getByText('Kubernetes Secret')).toHaveCount(0)
+  await expect(page.getByText('Agent configuration')).toHaveCount(0)
+  await expect(page.getByText(/applicationCredentialFile/)).toHaveCount(0)
+  await page.getByRole('link', { name: 'Continue in Connect agent' }).click()
+  await expect(page).toHaveURL('/onboarding')
+  await expect(page.getByRole('heading', { name: 'Connect your first application' })).toBeVisible()
+})
+
+test('missing installation metadata gives localized operator guidance and self-hosting navigation', async ({
+  page,
+}) => {
+  await mockMetadataError(
+    page,
+    'installation_metadata_unavailable',
+    'Agent installation metadata is unavailable.',
+  )
+  await page.goto('/onboarding')
+  await selectApplication(page)
+  await expect(
+    page.getByText(/Ask the Okoscope operator to configure agentInstallation\.publicGrpcEndpoint/),
+  ).toBeVisible()
+  const docs = page.getByRole('link', { name: 'Open self-hosting configuration' })
+  await expect(docs).toHaveAttribute('href', '/docs/self-hosting')
+  await page.getByLabel('Language').selectOption('ru')
+  await expect(
+    page.getByText(/Попросите оператора Okoscope настроить agentInstallation\.publicGrpcEndpoint/),
+  ).toBeVisible()
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  await page.getByRole('link', { name: 'Открыть настройку self-hosting' }).click()
+  await expect(page).toHaveURL('/docs/self-hosting')
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Самостоятельное развёртывание' }),
+  ).toBeVisible()
+})
+
+test('other installation metadata failures do not show operator configuration guidance', async ({
+  page,
+}) => {
+  await mockMetadataError(
+    page,
+    'service_unavailable',
+    'Metadata service is temporarily unavailable.',
+  )
+  await page.goto('/onboarding')
+  await selectApplication(page)
+  await expect(page.getByText('Metadata service is temporarily unavailable.')).toBeVisible()
+  await expect(page.getByText(/Ask the Okoscope operator to configure/)).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Open self-hosting configuration' })).toHaveCount(0)
+})
+
 test('owner gets secret-safe commands, resume/replacement/revision and every readiness state', async ({
   page,
 }) => {

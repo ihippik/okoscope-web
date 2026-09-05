@@ -1,6 +1,14 @@
 import { Link, useRouterState } from '@tanstack/react-router'
 import { Fragment, useEffect, useState } from 'react'
-import { ArrowUpRight, BookOpen, Cpu, FileCog, ListChecks, Network } from 'lucide-react'
+import {
+  AlertTriangle,
+  ArrowUpRight,
+  BookOpen,
+  Cpu,
+  FileCog,
+  ListChecks,
+  Network,
+} from 'lucide-react'
 import { useLocalization } from '../../shared/i18n'
 import { LanguageSelector } from '../../shared/i18n/language-selector'
 import { Brand } from '../../shared/ui/brand'
@@ -112,6 +120,21 @@ export function Documentation({ slug }: { slug: string }) {
                           <DocumentationText text={paragraph[locale]} />
                         </p>
                       ))}
+                      {section.callout && (
+                        <aside className="docs-callout" aria-label={section.callout.title[locale]}>
+                          <AlertTriangle
+                            className="docs-callout-icon"
+                            size={20}
+                            aria-hidden="true"
+                          />
+                          <div>
+                            <strong>{section.callout.title[locale]}</strong>
+                            <p>
+                              <DocumentationText text={section.callout.body[locale]} />
+                            </p>
+                          </div>
+                        </aside>
+                      )}
                       {section.diagram && (
                         <figure className="docs-diagram">
                           <img

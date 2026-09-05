@@ -7,16 +7,21 @@ export function ErrorState({
   error,
   title,
   onRetry,
+  headingLevel = 2,
 }: {
   error: unknown
   title?: string
   onRetry?: () => void
+  headingLevel?: 1 | 2
 }) {
   const t = useT()
   const detail = error instanceof ApiClientError ? error.detail : null
+  const Heading = headingLevel === 1 ? 'h1' : 'h2'
   return (
     <Card role="alert" className="border-rose-900/70">
-      <h2 className="text-lg font-semibold text-rose-200">{title ?? t('somethingWrong')}</h2>
+      <Heading className="text-lg font-semibold text-rose-200">
+        {title ?? t('somethingWrong')}
+      </Heading>
       <p className="mt-2 text-sm text-slate-300">{detail?.message ?? t('unexpectedError')}</p>
       {detail?.kind === 'api' && (
         <p className="mt-2 text-xs text-slate-400">{t('errorCode', { code: detail.code })}</p>

@@ -1,11 +1,17 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRouter,
+  RouterProvider,
+} from '@tanstack/react-router'
 import { describe, expect, it, vi } from 'vitest'
 import type { ApiClient } from '../../shared/api/client'
 import { ApiProvider } from '../../shared/api/context'
 import { AgentCredentials, credentialStatus } from './credentials'
-import { agentConfig, ConnectAgent, kubernetesSecret } from './connect-agent'
+import { ConnectAgent } from './connect-agent'
 import { NamedResourceForm, slugify, validateNamedResource } from './entity-form'
 
 function providers(node: React.ReactNode, api: Partial<ApiClient>) {
@@ -52,42 +58,63 @@ describe('entity form', () => {
 })
 
 describe('one-time agent setup', () => {
-  it('generates exact configuration, copies, and removes token on close', async () => {
+  const application = {
+    id: 'a',
+    organization_id: 'o',
+    project_id: 'p',
+    name: 'Payment',
+    slug: 'payment-api',
+    created_at: '2026-01-01T00:00:00Z',
+  }
+  const credential = {
+    id: 'c',
+    name: 'default',
+    token: 'oko_app_v1_secret',
+    token_hint: 'cret',
+    created_at: '2026-01-01T00:00:00Z',
+    shown_once: true as const,
+  }
+
+  function renderConnectAgent(onClose: () => void) {
+    const rootRoute = createRootRoute({
+      component: () => (
+        <ConnectAgent application={application} credential={credential} onClose={onClose} />
+      ),
+    })
+    const router = createRouter({
+      routeTree: rootRoute,
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+    })
+    return { ...render(<RouterProvider router={router} />), router }
+  }
+
+  it('shows only the one-time token and dismisses it on Done', async () => {
     const token = 'oko_app_v1_secret'
+    const user = userEvent.setup()
     const writeText = vi.fn().mockResolvedValue(undefined)
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
     const onClose = vi.fn()
-    const { unmount } = render(
-      <ConnectAgent
-        application={{
-          id: 'a',
-          organization_id: 'o',
-          project_id: 'p',
-          name: 'Payment',
-          slug: 'payment-api',
-          created_at: '2026-01-01T00:00:00Z',
-        }}
-        credential={{
-          id: 'c',
-          name: 'default',
-          token,
-          token_hint: 'cret',
-          created_at: '2026-01-01T00:00:00Z',
-          shown_once: true,
-        }}
-        onClose={onClose}
-      />,
-    )
-    expect(kubernetesSecret('payment-api', token)).toContain(`  payment-api: ${token}`)
-    expect(agentConfig('payment-api', 'production')).toContain('namespace: production')
-    await userEvent.click(screen.getByRole('button', { name: 'Copy token' }))
+    const { unmount } = renderConnectAgent(onClose)
+    expect(await screen.findByText(token, { exact: true })).toBeInTheDocument()
+    expect(screen.queryByText('Kubernetes Secret')).not.toBeInTheDocument()
+    expect(screen.queryByText('Agent configuration')).not.toBeInTheDocument()
+    expect(document.body).not.toHaveTextContent('applicationCredentialFile')
+    expect(document.body).not.toHaveTextContent('scope:')
+    await user.click(screen.getByRole('button', { name: 'Copy token' }))
     expect(writeText).toHaveBeenCalledWith(token)
-    await userEvent.click(screen.getByRole('button', { name: 'Done' }))
+    await user.click(screen.getByRole('button', { name: 'Done' }))
     expect(onClose).toHaveBeenCalledOnce()
     unmount()
     expect(document.body.textContent).not.toContain(token)
     expect(localStorage.getItem(token)).toBeNull()
     expect(sessionStorage.getItem(token)).toBeNull()
+  })
+
+  it('continues from the legacy post-create screen to Connect agent', async () => {
+    const { router } = renderConnectAgent(vi.fn())
+    const link = await screen.findByRole('link', { name: 'Continue in Connect agent' })
+    expect(link).toHaveAttribute('href', '/onboarding')
+    expect(router.state.location.pathname).toBe('/')
   })
 })
 

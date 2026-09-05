@@ -10,6 +10,10 @@ export type Article = {
     id: string
     title: Localized
     paragraphs: Localized[]
+    callout?: {
+      title: Localized
+      body: Localized
+    }
     diagram?: {
       source: Localized
       alt: Localized
@@ -285,12 +289,14 @@ export const articles: Article[] = [
         },
         paragraphs: [
           {
-            en: 'The chart takes Application credentials only from a Kubernetes Secret that already exists. There is deliberately no value for the token itself, because Helm keeps whatever you pass it in the release Secret. So read the token without echoing it, create the namespace and the Secret, then clear the shell variable. The token has no business being in a values file, a command argument, a ConfigMap, Git, a screenshot or a log.',
-            ru: 'Токены приложений чарт берёт только из уже существующего Kubernetes Secret. Параметра для самого токена намеренно нет: всё, что вы передадите через values, Helm сохранит в Secret релиза. Поэтому считайте токен без вывода на экран, создайте namespace и Secret, а затем очистите переменную shell. Токену нечего делать в values-файле, аргументе команды, ConfigMap, Git, скриншоте или журнале.',
+            en: 'The chart takes Application credentials only from a Kubernetes Secret that already exists. There is deliberately no value for the token itself, because Helm keeps whatever you pass it in the release Secret. The Connect agent wizard provides the exact namespace, Secret name and key command. Read the token without echoing it, create the Secret, then clear the shell variable. The example uses syntax shared by Bash and zsh. The token has no business being in a values file, a command argument, a ConfigMap, Git, a screenshot or a log.',
+            ru: 'Токены приложений чарт берёт только из уже существующего Kubernetes Secret. Параметра для самого токена намеренно нет: всё, что вы передадите через values, Helm сохранит в Secret релиза. Мастер «Подключение агента» выдаёт команду с точными namespace, именем Secret и ключом. Считайте токен без вывода на экран, создайте Secret, затем очистите переменную shell. В примере используется общий для Bash и zsh синтаксис. Токену нечего делать в values-файле, аргументе команды, ConfigMap, Git, скриншоте или журнале.',
           },
         ],
         code: `kubectl create namespace okoscope-system
-read -rsp "Okoscope Application token: " OKOSCOPE_APPLICATION_TOKEN
+printf "Okoscope Application token: " >&2
+IFS= read -rs OKOSCOPE_APPLICATION_TOKEN
+printf '\\n' >&2
 kubectl -n okoscope-system create secret generic okoscope-application-credentials \\
   --from-literal=payment-api="$OKOSCOPE_APPLICATION_TOKEN"
 unset OKOSCOPE_APPLICATION_TOKEN`,
@@ -311,6 +317,16 @@ unset OKOSCOPE_APPLICATION_TOKEN`,
             ru: 'В примере используется системное хранилище доверенных сертификатов. Если сервер подписан частным CA, создайте отдельный Secret с сертификатом и укажите его в values чарта; открытый транспорт остаётся только для намеренно изолированной разработки. Перед установкой прочитайте раздел о данных и безопасности: агенту eBPF нужны права уровня узла и host mounts, хотя доступ к Kubernetes API у него только на чтение.',
           },
         ],
+        callout: {
+          title: {
+            en: 'Important',
+            ru: 'Важно',
+          },
+          body: {
+            en: '<OKOSCOPE_VERSION> in the generic example is a placeholder, not an environment variable. The Connect agent wizard replaces it with metadata from the server. If the wizard says configuration is unavailable, the operator must configure agentInstallation.publicGrpcEndpoint, chartReference, chartVersion, recommendedAgentVersion and minimumAgentVersion in the server Helm values.',
+            ru: '<OKOSCOPE_VERSION> в общем примере — плейсхолдер, а не переменная окружения. Мастер «Подключение агента» заменяет его данными сервера. Если мастер сообщает, что конфигурация недоступна, оператор должен настроить agentInstallation.publicGrpcEndpoint, chartReference, chartVersion, recommendedAgentVersion и minimumAgentVersion в Helm values сервера.',
+          },
+        },
         code: `helm upgrade --install okoscope-agent \\
   oci://ghcr.io/ihippik/charts/okoscope-agent \\
   --version <OKOSCOPE_VERSION> \\
@@ -408,7 +424,9 @@ kubectl -n okoscope-system logs daemonset/okoscope-agent-okoscope-agent --tail=1
           },
         ],
         code: `kubectl create namespace okoscope-system
-read -rsp "PostgreSQL URL: " OKOSCOPE_DATABASE_URL
+printf "PostgreSQL URL: " >&2
+IFS= read -rs OKOSCOPE_DATABASE_URL
+printf '\\n' >&2
 kubectl -n okoscope-system create secret generic okoscope-database \\
   --from-literal=database-url="$OKOSCOPE_DATABASE_URL"
 unset OKOSCOPE_DATABASE_URL`,
@@ -441,6 +459,10 @@ unset OKOSCOPE_DATABASE_URL`,
           {
             en: 'A default installation is reachable only inside the cluster, so use port-forward for the first check. Ingress is opt-in and deliberate: separate HTTPS hosts for Web/API and for TLS gRPC, a supported ingress class, and TLS Secrets that already exist. Remote agents can be given an existing CA Secret. Certificate automation and private registries are chart settings too — configure them there rather than editing the rendered resources.',
             ru: 'По умолчанию установка доступна только внутри кластера, поэтому для первой проверки используйте port-forward. Ingress включается отдельно и осознанно: разные HTTPS-хосты для Web/API и для TLS gRPC, поддерживаемый ingress class и уже существующие TLS Secrets. Удалённым агентам можно передать существующий Secret с CA. Автоматизация сертификатов и private registry — тоже параметры чарта: настраивайте их там, а не правьте отрендеренные ресурсы.',
+          },
+          {
+            en: 'When the chart creates the Web ingress, it automatically trusts the browser Origin derived from this installation’s ingress.web.host: https://<ingress.web.host>. If an external ingress, reverse proxy or alternate browser address exposes Web/API, add every such Origin to server.corsOrigins explicitly. An Origin is exactly scheme://host plus a non-default port when present; wildcards, paths, queries, fragments and trailing slashes are not accepted.',
+            ru: 'Когда Web ingress создаёт чарт, он автоматически доверяет Origin браузера, выведенному из ingress.web.host именно этой установки: https://<ingress.web.host>. Если Web/API публикует внешний ingress, reverse proxy или альтернативный адрес, явно добавьте каждый такой Origin в server.corsOrigins. Origin — это строго scheme://host и, при наличии, нестандартный порт; wildcard, пути, query-параметры, fragment и завершающий слеш недопустимы.',
           },
           {
             en: 'Wait for Helm and for the Deployments, then forward the Web service. The installation is ready when /readyz answers, /api/v1/build-info reports the expected version, the interface opens, and a documentation deep link still works after a refresh. A local agent is optional; if you install one, use the same existing-Secret mapping as in Quick start.',
@@ -481,8 +503,8 @@ helm show values oci://ghcr.io/ihippik/charts/okoscope-agent --version <OKOSCOPE
         title: { en: 'okoscope: server and web', ru: 'okoscope: сервер и интерфейс' },
         paragraphs: [
           {
-            en: 'Only the database values are required; every other line carries the chart default and says so in its comment, so you can keep it, change it or delete it. Copy the file, replace the Secret names, the hosts and the version, and pass it with -f values.yaml.',
-            ru: 'Обязательны только параметры базы данных; в каждой другой строке стоит значение по умолчанию, и об этом сказано в комментарии, так что её можно оставить, изменить или удалить. Скопируйте файл, замените имена Secrets, хосты и версию и передайте его через -f values.yaml.',
+            en: 'The database values are always required. server.corsOrigins can stay empty when the chart manages Web ingress because the chart trusts the Origin derived from ingress.web.host automatically; it becomes an explicit required list when Web/API is exposed through an external ingress, reverse proxy or alternate browser Origin. Every other line carries the chart default and says so in its comment. Copy the file, replace the Secret names, hosts and version, and pass it with -f values.yaml.',
+            ru: 'Параметры базы данных обязательны всегда. server.corsOrigins можно оставить пустым, когда Web ingress создаёт чарт: Origin из ingress.web.host будет добавлен в доверенные автоматически. Для внешнего ingress, reverse proxy или альтернативного браузерного Origin нужен явный список. В каждой другой строке указано значение по умолчанию. Скопируйте файл, замените имена Secrets, хосты и версию и передайте его через -f values.yaml.',
           },
         ],
         code: {
@@ -508,6 +530,8 @@ setupAuthorization:
 server:
   registrationEnabled: false          # default - public signup, off with or without ingress
   sessionLifetimeSeconds: 43200       # default - session lifetime, twelve hours
+  corsOrigins: []                     # default: empty - chart trusts https://ingress.web.host
+                                      # add exact external Origins, e.g. https://console.example.com:8443
   replicas: 1                         # default - more replicas need a PostgreSQL topology built for it
   image:
     tag: ""                           # default: empty - a published release pins the image
@@ -595,6 +619,8 @@ setupAuthorization:
 server:
   registrationEnabled: false          # по умолчанию - открытая регистрация, выключена при любом ingress
   sessionLifetimeSeconds: 43200       # по умолчанию - время жизни сессии, двенадцать часов
+  corsOrigins: []                     # по умолчанию пусто - чарт доверяет https://ingress.web.host
+                                      # добавьте точные внешние Origins, например https://console.example.com:8443
   replicas: 1                         # по умолчанию - больше реплик требует подходящей топологии PostgreSQL
   image:
     tag: ""                           # по умолчанию пусто - опубликованный релиз фиксирует образ
@@ -1250,6 +1276,10 @@ imagePullSecrets:
           {
             en: 'A protected page checks backend compatibility first and the user session second, so the error you get depends on which check failed. Look at /readyz and /api/v1/build-info, at how the reverse proxy routes the API, at the database migration status and at the configured browser origin. If the session simply expired, sign in again — and note that retrying an operation will never turn an organization member into an owner or a system administrator.',
             ru: 'Защищённая страница сначала проверяет совместимость сервера и только затем сессию, поэтому по виду ошибки можно понять, какая проверка не прошла. Посмотрите на /readyz и /api/v1/build-info, на то, как обратный прокси маршрутизирует API, на состояние миграций и на настроенный браузерный origin. Если сессия просто истекла, войдите заново — и учтите, что повтор операции не превратит участника организации во владельца или системного администратора.',
+          },
+          {
+            en: 'If logout or a state-changing POST or PUT fails with untrusted_origin while pages and GET requests still work, compare the browser’s Origin with the trusted value character for character. A chart-managed ingress trusts https://<ingress.web.host> automatically; external ingress and alternate browser addresses must appear in server.corsOrigins. Match the scheme, host and non-default port, and remove any wildcard, path, query, fragment or trailing slash.',
+            ru: 'Если logout или изменяющий состояние POST либо PUT завершается ошибкой untrusted_origin, хотя страницы и GET-запросы работают, посимвольно сравните Origin браузера с доверенным значением. Ingress, созданный чартом, автоматически доверяет https://<ingress.web.host>; внешний ingress и альтернативные адреса браузера нужно перечислить в server.corsOrigins. Проверьте scheme, host и нестандартный порт и удалите wildcard, путь, query-параметры, fragment и завершающий слеш.',
           },
           {
             en: 'Documentation stays available without a login and without a working API, which makes it a useful signal by itself. If refreshing a direct URL such as /docs/quick-start fails at the web server, it is missing the SPA fallback the other frontend routes use. And if registration is unavailable, ask the installation operator for access instead of assuming your password is wrong.',

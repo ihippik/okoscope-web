@@ -72,6 +72,9 @@ export const englishMessages = {
   setupLater: 'Do this later',
   loadingInstallation: 'Loading installation…',
   installationMetadataFailed: 'Agent installation configuration is unavailable',
+  installationMetadataOperatorHelp:
+    'Ask the Okoscope operator to configure agentInstallation.publicGrpcEndpoint, chartReference, chartVersion, recommendedAgentVersion, and minimumAgentVersion in the server Helm values, then retry.',
+  installationMetadataDocs: 'Open self-hosting configuration',
   installationsLoadFailed: 'Agent installations could not be loaded',
   resumeInstallation: 'Resume agent installation',
   tokenCannotRecover:
@@ -166,10 +169,14 @@ export const englishMessages = {
   kubernetesSecret: 'Kubernetes Secret',
   copySecret: 'Copy Secret',
   secretCopied: 'Secret copied.',
+  agentSetupNamespace: 'Secret and workload namespace',
   workloadNamespace: 'Workload namespace',
   agentConfig: 'Agent configuration',
   copyAgentConfig: 'Copy agent config',
   configCopied: 'Agent configuration copied.',
+  connectInOnboardingHelp:
+    'To connect this Application to Kubernetes, continue in Connect agent. The wizard provides a separate installation credential and a complete Helm command with the compatible chart version and server endpoint.',
+  continueInOnboarding: 'Continue in Connect agent',
   agentCredentials: 'Agent credentials',
   issueCredential: 'Issue credential',
   issueCredentialHelp: 'Give the credential a unique name for this Application.',
@@ -519,6 +526,9 @@ export const russianMessages = {
   setupLater: 'Настроить позже',
   loadingInstallation: 'Загрузка установки…',
   installationMetadataFailed: 'Конфигурация установки агента недоступна',
+  installationMetadataOperatorHelp:
+    'Попросите оператора Okoscope настроить agentInstallation.publicGrpcEndpoint, chartReference, chartVersion, recommendedAgentVersion и minimumAgentVersion в Helm values сервера, затем повторите попытку.',
+  installationMetadataDocs: 'Открыть настройку self-hosting',
   installationsLoadFailed: 'Не удалось загрузить установки агента',
   resumeInstallation: 'Продолжить установку агента',
   tokenCannotRecover:
@@ -614,10 +624,14 @@ export const russianMessages = {
   kubernetesSecret: 'Kubernetes Secret',
   copySecret: 'Копировать Secret',
   secretCopied: 'Secret скопирован.',
+  agentSetupNamespace: 'Namespace для Secret и нагрузки',
   workloadNamespace: 'Namespace нагрузки',
   agentConfig: 'Конфигурация агента',
   copyAgentConfig: 'Копировать конфигурацию агента',
   configCopied: 'Конфигурация агента скопирована.',
+  connectInOnboardingHelp:
+    'Чтобы подключить это приложение к Kubernetes, продолжите в «Подключении агента». Мастер выдаст отдельный токен установки и готовую Helm-команду с совместимой версией чарта и endpoint сервера.',
+  continueInOnboarding: 'Продолжить в «Подключении агента»',
   agentCredentials: 'Учётные данные агента',
   issueCredential: 'Выпустить credential',
   issueCredentialHelp: 'Задайте уникальное для приложения имя credential.',
