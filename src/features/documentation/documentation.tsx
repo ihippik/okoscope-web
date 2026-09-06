@@ -230,7 +230,14 @@ export function Documentation({ slug }: { slug: string }) {
                             <img
                               src={section.diagram.source[locale]}
                               alt={section.diagram.alt[locale]}
+                              loading="lazy"
+                              decoding="async"
                             />
+                            {section.diagram.caption && (
+                              <figcaption>
+                                <DocumentationText text={section.diagram.caption[locale]} />
+                              </figcaption>
+                            )}
                           </figure>
                         )}
                         {section.definitions && (
