@@ -144,6 +144,13 @@
   width: 100%;
   height: auto;
 }
+.docs-diagram figcaption {
+  padding: 0.7rem 1rem;
+  border-top: 1px solid #29465f;
+  color: #9fb6cd;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
 .docs-reading .docs-intro .docs-intro-accent {
   color: #67e8f9;
   font-weight: 700;

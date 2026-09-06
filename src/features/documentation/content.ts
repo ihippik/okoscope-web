@@ -26,6 +26,7 @@ export type Article = {
     diagram?: {
       source: Localized
       alt: Localized
+      caption?: Localized
     }
     code?: string | Localized
     codeLanguage?: 'bash' | 'yaml'
@@ -98,6 +99,20 @@ export const articles: Article[] = [
             ru: 'Повторяющееся поведение объединяется в группы, поэтому понять, чем занята нагрузка, можно и не читая каждое событие подряд. Сравнение двух релизов показывает, что между ними изменилось — насколько об этом позволяют судить сохранённые данные. Относитесь к находкам как к месту, откуда начинать разбираться: они подсказывают, куда смотреть, но не доказывают, что нагрузка безопасна или, наоборот, вредоносна.',
           },
         ],
+        diagram: {
+          source: {
+            en: '/documentation/attention-overview.en.png',
+            ru: '/documentation/attention-overview.ru.png',
+          },
+          alt: {
+            en: 'The Requires attention page of an example Application, with counters for new discoveries, items awaiting review and behavior that appeared after the latest release.',
+            ru: 'Страница «Требует внимания» примерного приложения: счётчики новых находок, элементов, ожидающих разбора, и поведения, появившегося после последнего релиза.',
+          },
+          caption: {
+            en: 'Requires attention in the example Application **Gateway**. The counters are entry points into the evidence, not verdicts.',
+            ru: '«Требует внимания» в примерном приложении **Gateway**. Счётчики — это входы к свидетельствам, а не вердикты.',
+          },
+        },
       },
       {
         id: 'vocabulary',
@@ -349,6 +364,20 @@ export const articles: Article[] = [
             ru: 'Политики фиксируют, как вы решили относиться к поведению при разборе. Это инструмент анализа: они не ставят межсетевой экран в ядре и не блокируют системные вызовы. Уведомления проекта пересылают поддерживаемые находки настроенным получателям. Доставка учитывается отдельно от самой находки, поэтому смотрите запись доставки и её попытки: событие в интерфейсе ещё не значит, что webhook дошёл.',
           },
         ],
+        diagram: {
+          source: {
+            en: '/documentation/application-activity.en.png',
+            ru: '/documentation/application-activity.ru.png',
+          },
+          alt: {
+            en: 'Application Activity showing observed behavior by kind and the most observed DNS requests for an example Application.',
+            ru: '«Активность приложения»: наблюдаемое поведение по видам и наиболее часто наблюдаемые DNS-запросы примерного приложения.',
+          },
+          caption: {
+            en: 'Application Activity is where inventory is browsed. Shares describe recorded observations, not traffic volume or risk.',
+            ru: 'Инвентарь просматривают в «Активности приложения». Доли описывают записанные наблюдения, а не объём трафика или риск.',
+          },
+        },
       },
     ],
     related: ['workflows', 'compatibility-and-limits', 'data-and-security'],
@@ -380,6 +409,20 @@ export const articles: Article[] = [
             ru: 'Сравните адрес назначения с ожидаемыми зависимостями и с тем, что делал предыдущий релиз. Когда решение принято, зафиксируйте его политикой и убедитесь, что группа показывает нужную действующую политику. Помните, что при этом происходит: поведение размечается для разбора, но следующее соединение не блокируется.',
           },
         ],
+        diagram: {
+          source: {
+            en: '/documentation/runtime-group-evidence.en.png',
+            ru: '/documentation/runtime-group-evidence.ru.png',
+          },
+          alt: {
+            en: 'An outbound connection group for an example Application, showing the process, destination address and port, and the DNS evidence with its ambiguity and expiry.',
+            ru: 'Группа исходящего соединения примерного приложения: процесс, адрес и порт назначения, свидетельства DNS с пометкой неоднозначности и сроком действия.',
+          },
+          caption: {
+            en: 'The destination stands on its own; the DNS block states that several names were observed for this IP and when that evidence expires.',
+            ru: 'Адрес назначения самодостаточен; блок DNS сообщает, что для этого IP наблюдалось несколько имён, и когда это свидетельство истекает.',
+          },
+        },
       },
       {
         id: 'policies',
@@ -402,6 +445,20 @@ export const articles: Article[] = [
             ru: 'После создания откройте в приложении «Управляемые политики». Там видны текущая ревизия, её эффекты внутри и вне области действия и история ревизий; кнопки «Включить» и «Отключить» управляют активностью. Редактировать существующую ревизию текущий интерфейс не позволяет. Пока результаты пересчитываются, наблюдения показывают «Вычисление политики»; когда пересчёт закончится, проверьте действующий вердикт в группах событий или инвентаризации, а найти затронутое поведение помогут фильтры по вердикту и вычислению.',
           },
         ],
+        diagram: {
+          source: {
+            en: '/documentation/runtime-groups.en.png',
+            ru: '/documentation/runtime-groups.ru.png',
+          },
+          alt: {
+            en: 'New discoveries for an example Application with the policy verdict, suppression and evaluation filters above the observed behavior.',
+            ru: '«Новые находки» примерного приложения: фильтры по вердикту политики, подавлению и состоянию оценки над наблюдаемым поведением.',
+          },
+          caption: {
+            en: 'The policy verdict, suppression and evaluation filters are how you find the behavior a policy touched. Here the group is still **Unclassified**.',
+            ru: 'Фильтры по вердикту, подавлению и состоянию оценки — это способ найти поведение, которого коснулась политика. Здесь группа ещё **не классифицирована**.',
+          },
+        },
       },
       {
         id: 'release',
@@ -419,6 +476,20 @@ export const articles: Article[] = [
             ru: 'Прямо проговаривайте случаи, когда покрытие неизвестно. Числовая история может пережить подробности, на которых она построена, а по истёкшим данным нельзя уверенно утверждать, что чего-то не было. Завершайте разбор так: откройте сохранившийся показательный пример или отметьте, что подробности уже недоступны.',
           },
         ],
+        diagram: {
+          source: {
+            en: '/documentation/release-comparison.en.png',
+            ru: '/documentation/release-comparison.ru.png',
+          },
+          alt: {
+            en: 'Release comparison for an example Application, showing the target and baseline image identities, how the baseline was selected, and counts of new, no longer observed, still observed and unknown behavior.',
+            ru: 'Сравнение релизов примерного приложения: образы цели и базы, способ выбора базы и счётчики нового, более не наблюдаемого, по-прежнему наблюдаемого и неизвестного поведения.',
+          },
+          caption: {
+            en: 'Check the image identities and the observation windows before reading the counts. **Unknown** is a separate answer from **No longer observed**.',
+            ru: 'Сверьте образы и окна наблюдения прежде, чем читать счётчики. «Неизвестно» — это отдельный ответ, не то же самое, что «больше не наблюдается».',
+          },
+        },
       },
       {
         id: 'restarts',
@@ -453,6 +524,20 @@ export const articles: Article[] = [
             ru: 'На стороне получателя проверяйте HMAC-подпись с временной меткой и отсеивайте дубликаты по идентификатору доставки — он остаётся стабильным. Восстановление сохраняет этот идентификатор, поэтому повтор может прийти получателю, который уже обработал сообщение. Прежде чем подтверждать повтор или отмену, посмотрите, к чему они приведут: активная аренда может помешать отмене. Отличить отключённый обработчик от повторяющего или сбоящего помогает снимок состояния.',
           },
         ],
+        diagram: {
+          source: {
+            en: '/documentation/notification-delivery.en.png',
+            ru: '/documentation/notification-delivery.ru.png',
+          },
+          alt: {
+            en: 'A notification delivery record for an example Project, showing its stable identifier, pending status, attempt count and next attempt time.',
+            ru: 'Запись доставки уведомления примерного проекта: устойчивый идентификатор, статус ожидания, число попыток и время следующей попытки.',
+          },
+          caption: {
+            en: 'The delivery record is tracked separately from the finding. Deduplicate on this delivery ID: it survives a retry.',
+            ru: 'Запись доставки отслеживается отдельно от самой находки. Дедуплицируйте по этому идентификатору доставки: он переживает повторную отправку.',
+          },
+        },
       },
     ],
     related: ['capabilities', 'compatibility-and-limits', 'troubleshooting'],
@@ -547,8 +632,8 @@ export const articles: Article[] = [
             ru: 'В зависимости от включённых профилей наблюдение может нести идентичности нагрузки и процесса, имена исполняемых файлов, системные вызовы, сетевые адреса и порты, DNS-имена с ограниченными ответами, метаданные путей, время и сведения о завершении. Содержимого там нет, и всё же имена, пути и адреса сами по себе могут многое рассказать о вашем бизнесе. Именно поэтому держите селекторы и префиксы путей узкими.',
           },
           {
-            en: 'File contents, write buffers, environment variables and unrestricted command arguments are not collected. DNS observation exports no raw packets and decrypts nothing. This is neither packet capture nor a filesystem backup. Access to the web interface and the API is scoped to your organization, and this public documentation contains no observations from it.',
-            ru: 'Содержимое файлов, буферы записи, переменные окружения и произвольные аргументы команд не собираются. Наблюдение DNS не выгружает сырые пакеты и ничего не расшифровывает. Это ни захват трафика, ни резервная копия файловой системы. Доступ к сайту и API ограничен вашей организацией, а в этой публичной документации её наблюдений нет.',
+            en: 'File contents, write buffers, environment variables and unrestricted command arguments are not collected. DNS observation exports no raw packets and decrypts nothing. This is neither packet capture nor a filesystem backup. Access to the web interface and the API is scoped to your organization, and this public documentation contains no observations from it: its screenshots are produced from example data.',
+            ru: 'Содержимое файлов, буферы записи, переменные окружения и произвольные аргументы команд не собираются. Наблюдение DNS не выгружает сырые пакеты и ничего не расшифровывает. Это ни захват трафика, ни резервная копия файловой системы. Доступ к сайту и API ограничен вашей организацией, а в этой публичной документации её наблюдений нет: снимки экрана в ней сделаны на примерных данных.',
           },
         ],
       },
