@@ -355,7 +355,7 @@ kubectl -n okoscope-system logs daemonset/okoscope-agent-okoscope-agent --tail=1
     },
     {
       id: 'uninstall',
-      title: { en: 'Remove Okoscope from your cluster', ru: 'Удалите Okoscope из кластера' },
+      title: { en: 'Uninstall Okoscope from your cluster', ru: 'Удаление Okoscope из кластера' },
       paragraphs: [
         {
           en: 'To undo this installation, first check the current Kubernetes context and substitute your actual Helm release and agent namespace in the commands below. Uninstalling a shared release stops observation for **all Applications** configured in it.',
