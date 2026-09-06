@@ -24,6 +24,7 @@ import { useAuthentication } from '../../shared/auth/session'
 import { useT } from '../../shared/i18n'
 import { Button } from '../../shared/ui/button'
 import { Card } from '../../shared/ui/card'
+import { CodeExample } from '../../shared/ui/code-example'
 import { ErrorState } from '../../shared/ui/error-state'
 import { Loading } from '../../shared/ui/loading'
 import { NamedResourceForm } from './entity-form'
@@ -485,18 +486,45 @@ function InstallCommands({
           copyLabel={t('copyToken')}
           announce={setAnnouncement}
         />
-        <Command
-          label={t('createKubernetesSecret')}
-          value={secretCommand}
-          copyLabel={t('copyCommand')}
-          announce={setAnnouncement}
-        />
-        <Command
-          label={t('installWithHelm')}
-          value={helmCommand}
-          copyLabel={t('copyCommand')}
-          announce={setAnnouncement}
-        />
+        <div className="mt-5 min-w-0">
+          <h2 className="font-medium">{t('createKubernetesSecret')}</h2>
+          <CodeExample
+            language="bash"
+            code={secretCommand}
+            labels={{
+              copy: t('copyCommand'),
+              copied: t('commandCopied'),
+              copyFailed: t('copyFailed'),
+              example: t('createKubernetesSecret'),
+            }}
+          />
+        </div>
+        <p className="mt-4 text-sm text-slate-300">
+          {t('separateAgentInstallationHelp')}{' '}
+          <Link
+            to="/docs/$slug"
+            params={{ slug: 'quick-start' }}
+            hash="deploy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-cyan-300 underline underline-offset-4"
+          >
+            {t('separateAgentInstallationDocs')}
+          </Link>
+        </p>
+        <div className="mt-5 min-w-0">
+          <h2 className="font-medium">{t('installWithHelm')}</h2>
+          <CodeExample
+            language="bash"
+            code={helmCommand}
+            labels={{
+              copy: t('copyCommand'),
+              copied: t('commandCopied'),
+              copyFailed: t('copyFailed'),
+              example: t('installWithHelm'),
+            }}
+          />
+        </div>
         <p className="sr-only" aria-live="polite">
           {announcement}
         </p>
@@ -616,7 +644,7 @@ function Command({
   const t = useT()
   return (
     <div className="mt-5">
-      <h3 className="font-medium">{label}</h3>
+      <h2 className="font-medium">{label}</h2>
       <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-lg bg-slate-950 p-3 text-sm text-cyan-200">
         {value}
       </pre>

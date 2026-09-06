@@ -109,6 +109,9 @@ export const englishMessages = {
     'Before Helm, create the existing CA Secret {name} with certificate key {key} in the agent namespace. Certificate content is never sent to this page.',
   createKubernetesSecret: '1. Create the credential Secret',
   installWithHelm: '2. Install the pinned Helm chart',
+  separateAgentInstallationHelp:
+    'For a separate installation in another namespace, replace the Helm release name (okoscope-agent) with a unique name: its RBAC resource names are cluster-wide. Use the same agent namespace in kubectl create namespace, kubectl -n for the Secret, and Helm --namespace.',
+  separateAgentInstallationDocs: 'Installation guide',
   copyCommand: 'Copy command',
   commandCopied: 'Command copied.',
   checkingConnection: 'Checking connection…',
@@ -570,6 +573,9 @@ export const russianMessages = {
     'До запуска Helm создайте в namespace агента существующий CA Secret {name} с сертификатом в ключе {key}. Содержимое сертификата никогда не передаётся этой странице.',
   createKubernetesSecret: '1. Создайте Secret с credential',
   installWithHelm: '2. Установите закреплённую версию Helm chart',
+  separateAgentInstallationHelp:
+    'Для отдельной установки в другом namespace замените имя Helm-релиза (okoscope-agent) на уникальное: имена его RBAC-ресурсов общие для всего кластера. Укажите один и тот же namespace агента в kubectl create namespace, kubectl -n для Secret и Helm --namespace.',
+  separateAgentInstallationDocs: 'Инструкция по установке',
   copyCommand: 'Копировать команду',
   commandCopied: 'Команда скопирована.',
   checkingConnection: 'Проверяем подключение…',

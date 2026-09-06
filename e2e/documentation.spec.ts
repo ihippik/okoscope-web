@@ -201,7 +201,19 @@ test('quick start presents sequential semantic instructions in both languages', 
       'check-agent',
       'first-event',
       'agent-variants',
+      'uninstall',
+      'remove-agent-namespace',
     ])
+    const namespaceCleanup = article.locator('section[aria-labelledby="remove-agent-namespace"]')
+    await expect(namespaceCleanup.getByRole('heading', { level: 3 })).toHaveText(
+      locale === 'en'
+        ? 'Optional: remove the agent namespace'
+        : 'Необязательно: удалите пространство имён агента',
+    )
+    await expect(namespaceCleanup.locator('pre code')).toHaveText(
+      'kubectl delete namespace okoscope-system',
+    )
+    await expect(namespaceCleanup.locator('pre code')).toHaveClass('language-bash')
     const access = article.locator('section[aria-labelledby="access"]')
     await expect(access.locator(':scope > p').first()).toHaveText(
       locale === 'en'

@@ -34,8 +34,8 @@ export const quickStartArticle: Article = {
           },
           {
             icon: 'tools',
-            en: '**kubectl** and **Helm**, with access to the target cluster and permission to install the chart resources. Check your current context with `kubectl config current-context`.',
-            ru: '**kubectl** и **Helm**, доступ к нужному кластеру и права на установку ресурсов чарта. Проверьте текущий контекст командой `kubectl config current-context`.',
+            en: '**kubectl** and **Helm**, with access to the target cluster and permission to install the chart resources. Check your current context with the command below.',
+            ru: '**kubectl** и **Helm**, доступ к нужному кластеру и права на установку ресурсов чарта. Проверьте текущий контекст командой ниже.',
           },
           {
             icon: 'network',
@@ -49,6 +49,8 @@ export const quickStartArticle: Article = {
           },
         ],
       },
+      codeLanguage: 'bash',
+      code: 'kubectl config current-context',
     },
     {
       id: 'access',
@@ -225,6 +227,10 @@ unset OKOSCOPE_TOKEN`,
           en: 'The command below illustrates an installation for the `payment-api` Deployment in the `production` namespace. Both the Helm command and the Secret command must reference the same Secret name and key.',
           ru: 'Команда ниже показывает пример установки для Deployment `payment-api` в пространстве имён `production`. Имя Secret и ключ в команде Helm должны совпадать со значениями из команды создания Secret.',
         },
+        {
+          en: 'For separate installations, use unique Helm release names even across namespaces: the default ClusterRole and ClusterRoleBinding names derive from the release name and must be unique across the cluster. Change the first release argument (`okoscope-agent`) and `--namespace` in the Helm command, and create the credential Secret in that same agent namespace. Use the matching release name and namespace in the verification commands too.',
+          ru: 'Для отдельных установок используйте уникальные имена Helm-релизов даже в разных пространствах имён: имена ClusterRole и ClusterRoleBinding по умолчанию зависят от имени релиза и должны быть уникальны во всём кластере. Измените первый аргумент имени релиза (`okoscope-agent`) и `--namespace` в команде Helm и создайте Secret с токеном в том же пространстве имён агента. В командах проверки также укажите соответствующие имя релиза и пространство имён.',
+        },
       ],
       callout: {
         title: {
@@ -346,6 +352,55 @@ kubectl -n okoscope-system logs daemonset/okoscope-agent-okoscope-agent --tail=1
           },
         ],
       },
+    },
+    {
+      id: 'uninstall',
+      title: { en: 'Remove Okoscope from your cluster', ru: 'Удалите Okoscope из кластера' },
+      paragraphs: [
+        {
+          en: 'To undo this installation, first check the current Kubernetes context and substitute your actual Helm release and agent namespace in the commands below. Uninstalling a shared release stops observation for **all Applications** configured in it.',
+          ru: 'Чтобы отменить установку, сначала проверьте текущий контекст Kubernetes и подставьте в команды ниже фактические имя Helm-релиза и пространство имён агента. Удаление общего релиза остановит наблюдение за **всеми приложениями**, настроенными в нём.',
+        },
+        {
+          en: '`helm uninstall` removes the release’s DaemonSet and agent Pods, ConfigMap, ServiceAccount, ClusterRole and ClusterRoleBinding. The credential Secret was created separately and remains: delete it only if no other installation uses it. Use its actual name: the wizard uses `okoscope-agent-credentials`, while the example in this guide uses `okoscope-application-credentials`.',
+          ru: '`helm uninstall` удаляет DaemonSet и поды агента, ConfigMap, ServiceAccount, ClusterRole и ClusterRoleBinding этого релиза. Созданный отдельно Secret с токеном остаётся: удалите его, только если он не нужен другим установкам. Укажите его фактическое имя: мастер использует `okoscope-agent-credentials`, а пример в этом руководстве — `okoscope-application-credentials`.',
+        },
+        {
+          en: 'If keeping the agent namespace, remove any unused pull or private CA Secrets created solely for this installation. Do not delete shared Secrets or unrelated resources.',
+          ru: 'Если сохраняете пространство имён агента, удалите ненужные Secret для реестра или частного CA, созданные только для этой установки. Не удаляйте общие Secret и посторонние ресурсы.',
+        },
+        {
+          en: 'Cluster cleanup does not revoke the Application token or delete data already sent to Okoscope Cloud. Revoke unused credentials in Cloud separately; contact your Okoscope operator if you also want stored data removed.',
+          ru: 'Очистка кластера не отзывает токен приложения и не удаляет данные, уже отправленные в Okoscope Cloud. Отдельно отзовите ненужные учётные данные в Cloud; для удаления сохранённых данных обратитесь к оператору Okoscope.',
+        },
+      ],
+      callout: {
+        title: { en: 'Agents in different namespaces', ru: 'Агенты в разных пространствах имён' },
+        body: {
+          en: 'Find your Okoscope releases with `helm list --all-namespaces` and repeat uninstall and cleanup for each release in its agent namespace. Deleting one namespace does not remove installations in others.',
+          ru: 'Найдите свои релизы Okoscope командой `helm list --all-namespaces` и повторите удаление и очистку для каждого релиза в его пространстве имён агента. Удаление одного пространства имён не удаляет установки в других.',
+        },
+      },
+      codeLanguage: 'bash',
+      code: `kubectl config current-context
+helm uninstall okoscope-agent --namespace okoscope-system --wait
+kubectl -n okoscope-system delete secret okoscope-application-credentials`,
+    },
+    {
+      id: 'remove-agent-namespace',
+      headingLevel: 3,
+      title: {
+        en: 'Optional: remove the agent namespace',
+        ru: 'Необязательно: удалите пространство имён агента',
+      },
+      paragraphs: [
+        {
+          en: 'After uninstalling the Helm release, delete its namespace only if you created it exclusively for the agent and it contains no resources you need. This removes everything inside it: keep your observed Deployment and its workload namespace. Replace the example namespace with your actual agent namespace.',
+          ru: 'После удаления Helm-релиза удаляйте его пространство имён, только если вы создали его исключительно для агента и в нём нет нужных ресурсов. Это уничтожит всё его содержимое: сохраните наблюдаемый Deployment и пространство имён нагрузки. Замените пространство имён в примере фактическим пространством имён агента.',
+        },
+      ],
+      codeLanguage: 'bash',
+      code: 'kubectl delete namespace okoscope-system',
     },
   ],
   related: ['compatibility-and-limits', 'self-hosting', 'troubleshooting', 'data-and-security'],

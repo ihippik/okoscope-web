@@ -1,8 +1,5 @@
 import { Link, useRouterState } from '@tanstack/react-router'
-import { Fragment, useEffect, useState, type ReactNode } from 'react'
-import Prism from 'prismjs'
-import 'prismjs/components/prism-bash'
-import 'prismjs/components/prism-yaml'
+import { Fragment, useEffect } from 'react'
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -34,6 +31,7 @@ import {
 import { useLocalization, type Locale } from '../../shared/i18n'
 import { LanguageSelector } from '../../shared/i18n/language-selector'
 import { Brand } from '../../shared/ui/brand'
+import { CodeExample } from '../../shared/ui/code-example'
 import { articles, controls, type ArticleList, type ListIcon, type SectionIcon } from './content'
 import './documentation.css'
 import { getQuickStartIcon, QuickStartFlow } from './quick-start-flow'
@@ -250,6 +248,7 @@ export function Documentation({ slug }: { slug: string }) {
                         {section.code && (
                           <CodeExample
                             key={locale}
+                            labels={ui}
                             language={section.codeLanguage}
                             code={
                               typeof section.code === 'string' ? section.code : section.code[locale]
@@ -412,53 +411,4 @@ function DocumentationExternalLinks({ text }: { text: string }) {
       <BrandText text={part} key={index} />
     )
   })
-}
-
-function renderCodeTokens(tokens: string | Prism.Token | (string | Prism.Token)[]): ReactNode {
-  if (typeof tokens === 'string') return tokens
-  if (Array.isArray(tokens)) {
-    return tokens.map((token, index) =>
-      typeof token === 'string' ? (
-        token
-      ) : (
-        <span className={`token ${token.type}`} key={index}>
-          {renderCodeTokens(token.content)}
-        </span>
-      ),
-    )
-  }
-  return <span className={`token ${tokens.type}`}>{renderCodeTokens(tokens.content)}</span>
-}
-
-function CodeExample({ code, language }: { code: string; language: 'bash' | 'yaml' | undefined }) {
-  const { locale } = useLocalization()
-  const ui = controls[locale]
-  const grammar = language ? Prism.languages[language] : undefined
-  const [status, setStatus] = useState<'copied' | 'copyFailed' | null>(null)
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(code)
-      setStatus('copied')
-    } catch {
-      setStatus('copyFailed')
-    }
-  }
-  return (
-    <div className="docs-code">
-      <div className="docs-code-toolbar">
-        {language && (
-          <span className="docs-code-language">{language === 'bash' ? 'Bash' : 'YAML'}</span>
-        )}
-        <button type="button" onClick={() => void copy()}>
-          {ui.copy}
-        </button>
-        <span role="status">{status ? ui[status] : ''}</span>
-      </div>
-      <pre tabIndex={0} aria-label={ui.example}>
-        <code translate="no" className={language ? `language-${language}` : undefined}>
-          {grammar ? renderCodeTokens(Prism.tokenize(code, grammar)) : code}
-        </code>
-      </pre>
-    </div>
-  )
 }

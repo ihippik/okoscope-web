@@ -423,7 +423,9 @@ test('installation and revision fields explain their purpose accessibly in both 
 
 test('owner gets secret-safe commands, resume/replacement/revision and every readiness state', async ({
   page,
+  context,
 }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
   const model = await mockOnboarding(page)
   await page.goto('/onboarding')
   await selectApplication(page)
@@ -433,6 +435,48 @@ test('owner gets secret-safe commands, resume/replacement/revision and every rea
   await page.getByRole('button', { name: 'Create installation' }).click()
   await expect(page.getByText(token, { exact: true })).toBeVisible()
   const commands = (await page.locator('pre').allTextContents()).slice(1).join('\n')
+  await expect(page.locator('pre')).toHaveCount(3)
+  const commandBlocks = page.locator('.docs-code')
+  await expect(commandBlocks).toHaveCount(2)
+  for (const block of await commandBlocks.all()) {
+    await expect(block.locator('code')).toHaveClass('language-bash')
+    expect(await block.locator('.token').count()).toBeGreaterThan(0)
+    const source = await block.locator('code').innerText()
+    expect(source).not.toContain(token)
+    const copy = block.getByRole('button', { name: 'Copy command', exact: true })
+    await copy.focus()
+    await page.keyboard.press('Enter')
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(source)
+    await expect(block.getByRole('status')).toHaveText('Command copied.')
+    await page.keyboard.press('Tab')
+    await expect(block.locator('pre')).toBeFocused()
+  }
+  await page.setViewportSize({ width: 360, height: 800 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  await page.setViewportSize({ width: 1280, height: 720 })
+  const installGuide = page.getByRole('link', { name: 'Installation guide', exact: true })
+  await expect(installGuide).toHaveAttribute('href', '/docs/quick-start#deploy')
+  await expect(installGuide).toHaveAttribute('target', '_blank')
+  await expect(installGuide).toHaveAttribute('rel', 'noopener noreferrer')
+  await expect(page.getByText(/For a separate installation in another namespace/)).toBeVisible()
+  const guideOpened = page.waitForEvent('popup')
+  await installGuide.click()
+  const guidePage = await guideOpened
+  await expect(guidePage).toHaveURL(/\/docs\/quick-start#deploy$/)
+  await expect(
+    guidePage.getByRole('heading', { name: 'Install the agent', exact: true }),
+  ).toBeVisible()
+  await expect(page).toHaveURL('/onboarding')
+  await expect(page.getByText(token, { exact: true })).toBeVisible()
+  expect((await page.locator('pre').allTextContents()).slice(1).join('\n')).toBe(commands)
+  await guidePage.close()
+  await page.getByLabel('Language').selectOption('ru')
+  await expect(page.getByText(/Для отдельной установки в другом namespace/)).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: 'Инструкция по установке', exact: true }),
+  ).toHaveAttribute('href', '/docs/quick-start#deploy')
+  await page.getByLabel('Язык').selectOption('en')
   expect(commands).toContain("--version '1.2.3'")
   expect(commands).toContain("server.caSecret.name='okoscope-ca'")
   expect(commands).toContain("server.caSecret.key='ca.crt'")
