@@ -8,11 +8,13 @@ import type {
   AttentionRecommendation,
   AttentionRecommendationKind,
   AttentionReleaseComparison,
+  ResourceFindingReason,
 } from '../../shared/api/types'
 import { formatNumber, useLocalization, type MessageKey } from '../../shared/i18n'
 import { Button } from '../../shared/ui/button'
 import { Card } from '../../shared/ui/card'
 import { getEventKindLabel } from '../observability/presentation'
+import { formatResourceValue, metricLabel } from '../resources/model'
 import { attentionDestination, type AttentionDestination } from './routing'
 
 const priorityKeys: Record<AttentionPriority, MessageKey> = {
@@ -26,10 +28,20 @@ const recommendationKeys: Record<AttentionRecommendationKind, MessageKey> = {
   review_notification_backlog: 'reviewBacklog',
   review_release_changes: 'reviewReleaseChanges',
   review_new_discoveries: 'reviewNewDiscoveries',
+  review_resource_regression: 'reviewResourceRegression',
 }
 const recommendationActionKeys: Partial<Record<AttentionRecommendationKind, MessageKey>> = {
   review_release_changes: 'checkAction',
   review_new_discoveries: 'reviewAction',
+}
+const resourceReasonKeys: Record<ResourceFindingReason, MessageKey> = {
+  oom_observed: 'reasonResource_oom_observed',
+  memory_limit_pressure: 'reasonResource_memory_limit_pressure',
+  cpu_throttling_increased: 'reasonResource_cpu_throttling_increased',
+  cpu_pressure_increased: 'reasonResource_cpu_pressure_increased',
+  memory_pressure_increased: 'reasonResource_memory_pressure_increased',
+  io_pressure_increased: 'reasonResource_io_pressure_increased',
+  resource_usage_increased: 'reasonResource_resource_usage_increased',
 }
 
 export function PriorityBadge({ priority }: { priority: AttentionPriority }) {
@@ -43,9 +55,9 @@ export function PriorityBadge({ priority }: { priority: AttentionPriority }) {
   const Icon = priority === 'urgent' ? AlertTriangle : priority === 'high' ? Sparkles : CircleDot
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold ${tone}`}
+      className={`inline-flex max-w-full items-center gap-1.5 whitespace-normal break-words rounded-full border px-2.5 py-1 text-xs font-bold leading-snug ${tone}`}
     >
-      <Icon size={13} aria-hidden="true" />
+      <Icon className="shrink-0" size={13} aria-hidden="true" />
       {t(priorityKeys[priority])}
     </span>
   )
@@ -82,6 +94,7 @@ export function reasonText(
     return t('reasonPolicyUnclassified', { count: facts.reason_count })
   if (reason === 'policy_evaluation_pending')
     return t('reasonPolicyEvaluationPending', { count: facts.reason_count })
+  if (facts.resource_regression) return t(resourceReasonKeys[facts.resource_regression.reason_code])
   return t('reasonDiscoveryOpen', { count: facts.reason_count })
 }
 
@@ -109,6 +122,32 @@ function RestartLoopFacts({ facts }: { facts: AttentionPriorityItem['facts'] }) 
         })}
       </p>
       <p className="mt-2 text-xs text-slate-400">{t('boundedFindingNote')}</p>
+    </div>
+  )
+}
+
+function ResourceRegressionFacts({ facts }: { facts: AttentionPriorityItem['facts'] }) {
+  const { locale, t } = useLocalization()
+  const resource = facts.resource_regression
+  if (!resource) return null
+  return (
+    <div className="mt-3 rounded-lg border border-dashed border-amber-700 bg-amber-950/20 p-3 text-sm">
+      <span className="inline-flex max-w-full whitespace-normal break-words rounded-full border border-amber-700 px-2 py-0.5 text-xs font-semibold leading-snug text-amber-200">
+        {t('resourceRegressionFinding')}
+      </span>
+      <p className="mt-2 text-sm text-slate-200">
+        {metricLabel(resource.metric, locale)}:{' '}
+        {formatResourceValue(locale, resource.baseline, resource.unit)} →{' '}
+        {formatResourceValue(locale, resource.target, resource.unit)}
+      </p>
+      <p className="mt-1 text-xs text-slate-400">
+        {t('resourceRuleEvidence', {
+          threshold: resource.threshold,
+          buckets: resource.sustained_buckets,
+          version: resource.rule_version,
+        })}
+      </p>
+      <p className="mt-1 text-xs text-slate-500">{t('resourceCausalNote')}</p>
     </div>
   )
 }
@@ -196,10 +235,10 @@ export function AttentionActionLink({
   const { t } = useLocalization()
   if (!destination) return <span className="text-sm text-slate-500">{t('actionUnavailable')}</span>
   const content = (
-    <>
+    <span className="inline-flex max-w-full items-center justify-center gap-1 whitespace-normal break-words text-center leading-snug">
       {label}
       {showArrow ? <ArrowRight size={14} aria-hidden="true" /> : null}
-    </>
+    </span>
   )
   if (destination.kind === 'project')
     return (
@@ -259,6 +298,22 @@ export function AttentionActionLink({
         </Link>
       </Button>
     )
+  if (destination.kind === 'resource-comparison')
+    return (
+      <Button asChild variant="outline">
+        <Link
+          to="/projects/$projectId/applications/$applicationId/releases/$targetReleaseId/runtime-diff"
+          params={{
+            projectId: destination.projectId,
+            applicationId: destination.applicationId,
+            targetReleaseId: destination.targetReleaseId,
+          }}
+          search={{}}
+        >
+          {content}
+        </Link>
+      </Button>
+    )
   return (
     <Button asChild variant="outline">
       <Link
@@ -307,8 +362,8 @@ export function PriorityList({ items }: { items: AttentionPriorityItem[] }) {
         {items.map((item) => (
           <li key={item.id}>
             <Card className="attention-item">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+                <div className="min-w-0 break-words">
                   <PriorityBadge priority={item.priority} />
                   <h3 className="mt-3 text-lg font-semibold">
                     {item.project.name}
@@ -319,6 +374,7 @@ export function PriorityList({ items }: { items: AttentionPriorityItem[] }) {
                     {reasonText(item.reason_code, item.facts, t)}
                   </p>
                   <RestartLoopFacts facts={item.facts} />
+                  <ResourceRegressionFacts facts={item.facts} />
                   <time className="mt-2 block text-xs text-slate-500" dateTime={item.occurred_at}>
                     {localDate(locale, item.occurred_at)}
                   </time>
@@ -356,11 +412,14 @@ export function RecommendationList({
       {recommendations.length ? (
         <ol className="divide-y divide-slate-800 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60">
           {recommendations.map((item) => (
-            <li key={item.id} className="flex flex-wrap items-center justify-between gap-4 p-4">
+            <li
+              key={item.id}
+              className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center"
+            >
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <PriorityBadge priority={item.priority} />
-                  <h3 className="font-semibold">
+                  <h3 className="min-w-0 break-words font-semibold">
                     {t(policyRecommendationKeys[item.reason_code] ?? recommendationKeys[item.kind])}
                   </h3>
                 </div>
@@ -368,12 +427,13 @@ export function RecommendationList({
                   {reasonText(item.reason_code, item.facts, t)}
                 </p>
                 <RestartLoopFacts facts={item.facts} />
+                <ResourceRegressionFacts facts={item.facts} />
                 <p className="mt-1 text-xs text-slate-500">
                   {item.project.name}
                   {item.application ? ` · ${item.application.name}` : ''}
                 </p>
               </div>
-              <div className="shrink-0">
+              <div className="min-w-0 lg:max-w-xs">
                 <AttentionActionLink
                   destination={attentionDestination(item.resource, {
                     recommendationKind: item.kind,

@@ -35,12 +35,29 @@ for (const locale of supportedLocales) {
       `${applicationPath}/attention?section=overview`,
       { height: 800 },
     )
+    await capture(page, locale, 'application-resources', `${applicationPath}/resources`, {
+      height: 1050,
+    })
+    await capture(
+      page,
+      locale,
+      'resource-attention',
+      `${applicationPath}/attention?section=recommendations`,
+      { height: 940 },
+    )
     await capture(
       page,
       locale,
       'release-comparison',
       `${applicationPath}/releases/${releases[0]!.id}/runtime-diff`,
       { height: 815 },
+    )
+    await capture(
+      page,
+      locale,
+      'release-resource-impact',
+      `${applicationPath}/releases/${releases[0]!.id}/runtime-diff`,
+      { height: 1300 },
     )
     await capture(
       page,

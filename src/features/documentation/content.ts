@@ -201,7 +201,13 @@ export const articles: Article[] = [
         ],
       },
     ],
-    related: ['quick-start', 'self-hosting', 'how-it-works', 'compatibility-and-limits'],
+    related: [
+      'application-resources',
+      'quick-start',
+      'self-hosting',
+      'how-it-works',
+      'compatibility-and-limits',
+    ],
   },
   {
     slug: 'how-it-works',
@@ -276,10 +282,129 @@ export const articles: Article[] = [
         ],
       },
     ],
-    related: ['capabilities', 'data-and-security', 'quick-start'],
+    related: ['application-resources', 'capabilities', 'data-and-security', 'quick-start'],
   },
   quickStartArticle,
   selfHostingArticle,
+  {
+    slug: 'application-resources',
+    title: { en: 'Application resources', ru: 'Ресурсы приложения' },
+    intro: {
+      en: 'Read CPU, memory and waiting signals together, then compare covered stable windows when a Release changes.',
+      ru: 'Сопоставляйте CPU, память и ожидания, а при смене релиза сравнивайте покрытые стабильные окна.',
+    },
+    sections: [
+      {
+        id: 'flow',
+        title: { en: 'From cgroup to Attention', ru: 'От cgroup до раздела внимания' },
+        paragraphs: [
+          {
+            en: 'When the optional resource profile is enabled, the node agent reads documented cgroup v2 files for regular containers in selected Deployments. It uses read-only access and adds no scheduler, allocation or I/O hot-path probe. Samples are combined into fixed UTC intervals before delivery, so storage and traffic remain bounded.',
+            ru: 'Когда дополнительный профиль ресурсов включён, агент узла читает документированные файлы cgroup v2 для обычных контейнеров выбранных Deployment. Доступ остаётся только для чтения, а новые зонды на горячих путях планировщика, выделения памяти и I/O не добавляются. Перед отправкой измерения объединяются в фиксированные интервалы UTC, поэтому объём трафика и хранения ограничен.',
+          },
+          {
+            en: 'Every interval keeps covered time, sample and contributor counts, observed and Ready replicas, container and Release identity, and independent source availability. A missing or incomplete interval stays a visible gap. It is never converted to zero.',
+            ru: 'Каждый интервал хранит покрытое время, число измерений и источников, наблюдаемые и Ready-реплики, контейнер, релиз и доступность каждого источника. Пропущенный или неполный интервал остаётся видимым разрывом и никогда не превращается в ноль.',
+          },
+        ],
+        diagram: {
+          source: {
+            en: '/documentation/resource-observation-flow.en.svg',
+            ru: '/documentation/resource-observation-flow.ru.svg',
+          },
+          alt: {
+            en: 'Flow diagram: read-only container cgroup counters are aggregated by the node agent, stored as resource history, compared across stable Release windows, and surfaced as causal-neutral Attention findings.',
+            ru: 'Схема потока: read-only счётчики cgroup контейнеров агрегируются агентом узла, сохраняются как история ресурсов, сравниваются в стабильных окнах релизов и попадают в причинно-нейтральные выводы внимания.',
+          },
+          caption: {
+            en: 'Resource measurements retain coverage and identity from collection to investigation.',
+            ru: 'Измерения ресурсов сохраняют покрытие и идентичность от сбора до расследования.',
+          },
+        },
+      },
+      {
+        id: 'cpu',
+        title: { en: 'CPU use, quota and throttling', ru: 'Использование CPU, квота и троттлинг' },
+        paragraphs: [
+          {
+            en: 'CPU use is delta usage time divided by covered wall time and is shown as average cores. Quota share exists only when the cgroup has a finite effective quota. Throttled-period share is delta nr_throttled divided by delta nr_periods; throttled duration is a separate signal. Neither value is a percentage of application performance lost.',
+            ru: 'Использование CPU — это разность времени CPU, делённая на покрытое реальное время; результат показан в средних ядрах. Доля квоты доступна только при конечной действующей квоте cgroup. Доля периодов троттлинга равна разности nr_throttled, делённой на разность nr_periods; длительность троттлинга остаётся отдельным сигналом. Ни одно из этих значений не является процентом потерянной производительности приложения.',
+          },
+          {
+            en: 'CPU PSI some measures wall time when at least one runnable task waited for CPU. CPU PSI full is shown only when the kernel source supports it. CPU use, quota enforcement and waiting answer different questions, so inspect them separately.',
+            ru: 'CPU PSI some измеряет долю реального времени, когда хотя бы одна готовая к выполнению задача ждала CPU. CPU PSI full показывается только при поддержке источником ядра. Расход CPU, применение квоты и ожидание отвечают на разные вопросы — рассматривайте их отдельно.',
+          },
+        ],
+      },
+      {
+        id: 'memory',
+        title: { en: 'Memory use and pressure', ru: 'Использование памяти и pressure' },
+        paragraphs: [
+          {
+            en: 'Memory current includes charged cache. Anonymous memory and file cache are separate measurements. Headroom is calculated only against a finite effective limit. memory.high, memory.max, OOM and OOM kill are distinct counter events and should not be collapsed into one generic memory warning.',
+            ru: 'Текущая память включает кеш, учтённый cgroup. Анонимная память и файловый кеш показаны отдельно. Запас вычисляется только относительно конечного действующего лимита. memory.high, memory.max, OOM и OOM kill — разные события счётчиков, их нельзя объединять в одно общее предупреждение о памяти.',
+          },
+          {
+            en: 'Memory PSI describes time tasks were delayed by the memory subsystem. It is not RAM utilization. An OOM finding is stronger evidence than a high memory graph, while a utilization increase without limit, pressure or failure evidence remains an ordinary investigation item.',
+            ru: 'Memory PSI описывает время задержки задач подсистемой памяти, а не утилизацию RAM. Вывод OOM — более сильное свидетельство, чем высокий график памяти; рост расхода без лимита, pressure или отказа остаётся обычным пунктом для разбора.',
+          },
+        ],
+      },
+      {
+        id: 'io-pids',
+        title: { en: 'I/O waiting and PID limits', ru: 'Ожидание I/O и лимиты PID' },
+        paragraphs: [
+          {
+            en: 'Read and write bytes or operations describe throughput attributed to the cgroup. I/O PSI describes time tasks waited on I/O. Okoscope does not know the capacity or saturation of the shared block device, so none of these values is labelled disk utilization percentage.',
+            ru: 'Байты и операции чтения или записи описывают поток данных, отнесённый к cgroup. I/O PSI описывает время ожидания задачами I/O. Okoscope не знает ёмкость или насыщение общего блочного устройства, поэтому ни одна из этих величин не называется процентом утилизации диска.',
+          },
+          {
+            en: 'PID measurements show the current count, finite-limit share and pids.max events. A limit event means a process or thread could not be created under that cgroup limit; the graph does not identify the failed caller.',
+            ru: 'Метрики PID показывают текущее число, долю конечного лимита и события pids.max. Событие лимита означает, что процесс или поток не удалось создать в рамках лимита cgroup; график не определяет конкретного вызывающего.',
+          },
+        ],
+      },
+      {
+        id: 'release-comparison',
+        title: { en: 'Compare Releases carefully', ru: 'Осторожно сравнивайте релизы' },
+        paragraphs: [
+          {
+            en: 'Resource impact compares equal-duration stable windows selected from the target deployment episode and its predecessor. Rollout warm-up is excluded, overlapping Releases remain separate, and both data coverage and Ready-replica coverage must be sufficient. While the target window is incomplete, the page says collecting instead of showing an all-clear result.',
+            ru: 'Влияние на ресурсы сравнивает стабильные окна одинаковой длительности из целевого эпизода развёртывания и его предшественника. Прогрев во время rollout исключается, пересекающиеся релизы разделяются, а покрытие данных и Ready-реплик должно быть достаточным. Пока целевое окно не завершено, страница показывает сбор данных, а не отсутствие проблем.',
+          },
+          {
+            en: 'The result reports baseline, target, absolute change, a relative change only when mathematically valid, and percentage-point change for ratios. The wording says observed after Release. Request volume, traffic mix, external dependencies and scaling can change at the same time, so correlation alone does not establish cause.',
+            ru: 'Результат показывает базовое и целевое значения, абсолютное изменение, относительное изменение только когда оно математически определено и изменение в процентных пунктах для долей. Формулировка говорит «наблюдалось после релиза». Одновременно могут измениться поток запросов, состав трафика, внешние зависимости и масштабирование, поэтому одна корреляция не устанавливает причину.',
+          },
+        ],
+      },
+      {
+        id: 'retention-troubleshooting',
+        title: {
+          en: 'Availability, retention and troubleshooting',
+          ru: 'Доступность, хранение и диагностика',
+        },
+        paragraphs: [
+          {
+            en: 'The resource profile is disabled by default until measured release gates pass. Operators configure bounded sampling and aggregation in the agent chart. Detailed and rollup retention are independent of runtime-event retention; older detail can expire while compatible rollups remain readable.',
+            ru: 'Профиль ресурсов выключен по умолчанию, пока не пройдены измеримые критерии выпуска. Оператор задаёт ограниченные интервалы сбора и агрегации в chart агента. Сроки хранения подробных и агрегированных данных не зависят от runtime events: старые детали могут истечь, а совместимые rollup остаться доступными.',
+          },
+          {
+            en: 'If a metric is empty, check profile enablement, workload selection, agent capability resource.utilization/v1, cgroup v2 source availability, delivery-loss counters, the selected time range and retention. Unsupported and no-limit states are reported explicitly; do not interpret either as zero.',
+            ru: 'Если метрика пуста, проверьте включение профиля, выбор нагрузки, capability агента resource.utilization/v1, доступность источников cgroup v2, счётчики потерь доставки, выбранный период и срок хранения. Состояния «не поддерживается» и «нет лимита» показаны явно; не воспринимайте их как ноль.',
+          },
+        ],
+      },
+    ],
+    related: [
+      'how-it-works',
+      'capabilities',
+      'workflows',
+      'data-and-security',
+      'compatibility-and-limits',
+      'troubleshooting',
+    ],
+  },
   {
     slug: 'capabilities',
     title: {
@@ -380,7 +505,12 @@ export const articles: Article[] = [
         },
       },
     ],
-    related: ['workflows', 'compatibility-and-limits', 'data-and-security'],
+    related: [
+      'application-resources',
+      'workflows',
+      'compatibility-and-limits',
+      'data-and-security',
+    ],
   },
   {
     slug: 'workflows',
@@ -540,7 +670,12 @@ export const articles: Article[] = [
         },
       },
     ],
-    related: ['capabilities', 'compatibility-and-limits', 'troubleshooting'],
+    related: [
+      'application-resources',
+      'capabilities',
+      'compatibility-and-limits',
+      'troubleshooting',
+    ],
   },
   {
     slug: 'compatibility-and-limits',
@@ -607,7 +742,7 @@ export const articles: Article[] = [
         ],
       },
     ],
-    related: ['quick-start', 'capabilities', 'data-and-security'],
+    related: ['application-resources', 'quick-start', 'capabilities', 'data-and-security'],
   },
   {
     slug: 'data-and-security',
@@ -689,7 +824,12 @@ export const articles: Article[] = [
         ],
       },
     ],
-    related: ['compatibility-and-limits', 'self-hosting', 'troubleshooting'],
+    related: [
+      'application-resources',
+      'compatibility-and-limits',
+      'self-hosting',
+      'troubleshooting',
+    ],
   },
   {
     slug: 'troubleshooting',
@@ -779,6 +919,12 @@ export const articles: Article[] = [
         ],
       },
     ],
-    related: ['quick-start', 'compatibility-and-limits', 'data-and-security', 'self-hosting'],
+    related: [
+      'application-resources',
+      'quick-start',
+      'compatibility-and-limits',
+      'data-and-security',
+      'self-hosting',
+    ],
   },
 ]

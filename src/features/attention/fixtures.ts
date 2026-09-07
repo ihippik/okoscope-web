@@ -64,6 +64,7 @@ export const populatedOrganizationAttentionFixture = {
     changed_applications: 1,
     projects_with_notification_problems: 1,
     failed_notification_deliveries: 14,
+    resource_regressions: 0,
     policy: policyTotals,
   },
   priority_items: [
@@ -199,6 +200,7 @@ export const allClearOrganizationAttentionFixture = {
     changed_applications: 0,
     projects_with_notification_problems: 0,
     failed_notification_deliveries: 0,
+    resource_regressions: 0,
     policy: { ...policyTotals, factual_total: 0, actionable_total: 0, unclassified: 0 },
   },
   priority_items: [],
@@ -220,6 +222,7 @@ export const populatedApplicationAttentionFixture = {
     disappeared_runtime_items: 2,
     unchanged_runtime_items: 20,
     total_runtime_items: 26,
+    resource_regressions: 0,
     policy: policyTotals,
   },
   release_comparison: comparison,
@@ -298,6 +301,88 @@ export const unavailableApplicationAttentionFixture = {
   release_comparison: null,
   priority_items: [],
   recommendations: [],
+} satisfies ApplicationAttentionSummary
+
+const resourceCoverage = {
+  covered_seconds: 1740,
+  expected_seconds: 1800,
+  ratio: 0.9667,
+  sample_count: 116,
+  contributor_count: 30,
+  observed_replicas: 2,
+  ready_replicas: 2,
+  complete: true,
+}
+const resourceBaselineWindow = {
+  from: '2026-08-22T09:30:00Z',
+  to: '2026-08-22T10:00:00Z',
+  duration_seconds: 1800,
+  release: { id: baseline.id, display_name: baseline.display_name },
+  episode_id: '60000000-0000-4000-8000-000000000001',
+  coverage: resourceCoverage,
+}
+const resourceTargetWindow = {
+  ...resourceBaselineWindow,
+  from: '2026-08-22T10:10:00Z',
+  to: '2026-08-22T10:40:00Z',
+  release: { id: target.id, display_name: target.display_name },
+  episode_id: '60000000-0000-4000-8000-000000000002',
+}
+const resourceFacts = {
+  reason_count: 1,
+  resource_regression: {
+    finding_id: '60000000-0000-4000-8000-000000000003',
+    reason_code: 'cpu_throttling_increased' as const,
+    metric: 'cpu_throttled_period_ratio' as const,
+    unit: 'ratio' as const,
+    rule_version: 1,
+    threshold: 0.05,
+    sustained_buckets: 3,
+    baseline: 0.01,
+    target: 0.18,
+    change: 0.17,
+    baseline_window: resourceBaselineWindow,
+    target_window: resourceTargetWindow,
+  },
+}
+const resourceReference = {
+  type: 'resource_comparison' as const,
+  project_id: project.id,
+  application_id: application.id,
+  target_release_id: target.id,
+  from: resourceTargetWindow.from,
+  to: resourceTargetWindow.to,
+}
+
+export const resourceRegressionApplicationAttentionFixture = {
+  ...populatedApplicationAttentionFixture,
+  totals: { ...populatedApplicationAttentionFixture.totals, resource_regressions: 1 },
+  priority_items: [
+    {
+      id: 'resource-regression:checkout',
+      kind: 'resource_regression',
+      priority: 'high',
+      reason_code: 'cpu_throttling_increased',
+      facts: resourceFacts,
+      occurred_at: resourceTargetWindow.to,
+      project,
+      application,
+      resource: resourceReference,
+    },
+  ],
+  recommendations: [
+    {
+      id: 'review-resource-regression:checkout',
+      kind: 'review_resource_regression',
+      priority: 'high',
+      reason_code: 'cpu_throttling_increased',
+      facts: resourceFacts,
+      project,
+      application,
+      resource: resourceReference,
+      created_from_snapshot_at: resourceTargetWindow.to,
+    },
+  ],
 } satisfies ApplicationAttentionSummary
 
 export const boundaryOrganizationAttentionFixture = {

@@ -1224,15 +1224,26 @@ export const baselineSelectionPresentation = (
     | 'concurrent_transition_fallback'
     | 'legacy_deployment_order'
     | 'none',
+  locale: 'en' | 'ru' = 'en',
 ) =>
   ({
-    explicit: 'Explicitly selected by the operator.',
-    transition: 'Selected by the backend from deployment transition evidence.',
-    concurrent_transition_fallback:
-      'Selected by the backend as a fallback for concurrent transition evidence; this does not establish rollout order or traffic allocation.',
-    legacy_deployment_order: 'Selected by the backend using legacy deployment order.',
-    none: 'No comparison baseline is available.',
-  })[source]
+    en: {
+      explicit: 'Explicitly selected by the operator.',
+      transition: 'Selected by the backend from deployment transition evidence.',
+      concurrent_transition_fallback:
+        'Selected by the backend as a fallback for concurrent transition evidence; this does not establish rollout order or traffic allocation.',
+      legacy_deployment_order: 'Selected by the backend using legacy deployment order.',
+      none: 'No comparison baseline is available.',
+    },
+    ru: {
+      explicit: 'Явно выбран оператором.',
+      transition: 'Выбран сервером по данным о переходе развёртывания.',
+      concurrent_transition_fallback:
+        'Выбран сервером как запасной вариант при параллельных переходах; это не устанавливает порядок rollout или распределение трафика.',
+      legacy_deployment_order: 'Выбран сервером по прежнему порядку развёртывания.',
+      none: 'Сравнимый базовый релиз недоступен.',
+    },
+  })[locale][source]
 
 export const hasEpisodeOwnershipMismatch = (episodes: DeploymentEpisode[], releaseId: string) =>
   episodes.some((episode) => episode.release_id !== releaseId)

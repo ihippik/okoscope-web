@@ -127,6 +127,27 @@ export type RuntimeDiff = components['schemas']['RuntimeDiff']
 export type RuntimeDiffEntry = components['schemas']['RuntimeDiffEntry']
 export type RuntimeDiffSummary = components['schemas']['RuntimeDiffSummary']
 export type RuntimeDiffChangeEntry = components['schemas']['RuntimeDiffChangeEntry']
+export type ResourceMetric = components['schemas']['ResourceMetric']
+export type ResourceUnit = components['schemas']['ResourceUnit']
+export type ResourceStep = components['schemas']['ResourceStep']
+export type ResourceNormalization = components['schemas']['ResourceNormalization']
+export type ResourceAvailability = components['schemas']['ResourceAvailability']
+export type ResourceCoverage = components['schemas']['ResourceCoverage']
+export type ResourceHistoryPoint = components['schemas']['ResourceHistoryPoint']
+export type ApplicationResourceHistory = components['schemas']['ApplicationResourceHistory']
+export type ResourceComparisonState = components['schemas']['ResourceComparisonState']
+export type ResourceMetricComparison = components['schemas']['ResourceMetricComparison']
+export type ResourceRegressionFinding = components['schemas']['ResourceRegressionFinding']
+export type ResourceFindingReason = components['schemas']['ResourceFindingReason']
+export type ReleaseResourceComparison = components['schemas']['ReleaseResourceComparison']
+export type AttentionResourceRegressionFacts =
+  components['schemas']['AttentionResourceRegressionFacts']
+export type ApplicationResourceHistoryQuery = NonNullable<
+  operations['getApplicationResourceHistory']['parameters']['query']
+>
+export type ReleaseResourceComparisonQuery = NonNullable<
+  operations['getReleaseResourceComparison']['parameters']['query']
+>
 export type InventoryKind = components['schemas']['InventoryKind']
 export type InventoryProcessIdentity = components['schemas']['InventoryProcessIdentity']
 export type InventoryDestinationIdentity = components['schemas']['InventoryDestinationIdentity']

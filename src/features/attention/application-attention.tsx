@@ -65,12 +65,13 @@ export function ApplicationAttention({
           <p>{t('snapshotStale')}</p>
         </Card>
       )}
-      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         {[
           [t('applicationNewDiscoveries'), summary.totals.new_discoveries],
           [t('applicationOpenDiscoveries'), summary.totals.open_discoveries],
           [t('applicationNewAfterRelease'), summary.totals.new_runtime_items],
           [t('applicationGoneAfterRelease'), summary.totals.disappeared_runtime_items],
+          [t('resourceRegressions'), summary.totals.resource_regressions],
         ].map(([label, value]) => (
           <div key={String(label)} className="rounded-lg bg-slate-950 p-3">
             <dt className="text-xs text-slate-400">{label}</dt>

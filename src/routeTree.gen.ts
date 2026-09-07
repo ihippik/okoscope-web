@@ -23,6 +23,7 @@ import { Route as AdminProjectsProjectIdApplicationsApplicationIdRouteImport } f
 import { Route as ProjectsProjectIdApplicationsApplicationIdAttentionRouteImport } from './routes/projects.$projectId.applications.$applicationId.attention'
 import { Route as ProjectsProjectIdApplicationsApplicationIdPoliciesRouteImport } from './routes/projects.$projectId.applications.$applicationId.policies'
 import { Route as ProjectsProjectIdApplicationsApplicationIdReleasesRouteImport } from './routes/projects.$projectId.applications.$applicationId.releases'
+import { Route as ProjectsProjectIdApplicationsApplicationIdResourcesRouteImport } from './routes/projects.$projectId.applications.$applicationId.resources'
 import { Route as ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteImport } from './routes/projects.$projectId.applications.$applicationId.runtime-groups'
 import { Route as ProjectsProjectIdApplicationsApplicationIdRuntimeInventoryRouteImport } from './routes/projects.$projectId.applications.$applicationId.runtime-inventory'
 import { Route as ProjectsProjectIdNotificationsDeliveriesDeliveryIdRouteImport } from './routes/projects.$projectId.notifications.deliveries.$deliveryId'
@@ -109,6 +110,12 @@ const ProjectsProjectIdApplicationsApplicationIdReleasesRoute =
     path: '/releases',
     getParentRoute: () => ProjectsProjectIdApplicationsApplicationIdRoute,
   } as any)
+const ProjectsProjectIdApplicationsApplicationIdResourcesRoute =
+  ProjectsProjectIdApplicationsApplicationIdResourcesRouteImport.update({
+    id: '/resources',
+    path: '/resources',
+    getParentRoute: () => ProjectsProjectIdApplicationsApplicationIdRoute,
+  } as any)
 const ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRoute =
   ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteImport.update({
     id: '/runtime-groups',
@@ -182,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/projects/$projectId/applications/$applicationId/attention': typeof ProjectsProjectIdApplicationsApplicationIdAttentionRoute
   '/projects/$projectId/applications/$applicationId/policies': typeof ProjectsProjectIdApplicationsApplicationIdPoliciesRoute
   '/projects/$projectId/applications/$applicationId/releases': typeof ProjectsProjectIdApplicationsApplicationIdReleasesRouteWithChildren
+  '/projects/$projectId/applications/$applicationId/resources': typeof ProjectsProjectIdApplicationsApplicationIdResourcesRoute
   '/projects/$projectId/applications/$applicationId/runtime-groups': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteWithChildren
   '/projects/$projectId/applications/$applicationId/runtime-inventory': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeInventoryRouteWithChildren
   '/projects/$projectId/notifications/deliveries/$deliveryId': typeof ProjectsProjectIdNotificationsDeliveriesDeliveryIdRoute
@@ -206,6 +214,7 @@ export interface FileRoutesByTo {
   '/projects/$projectId/applications/$applicationId/attention': typeof ProjectsProjectIdApplicationsApplicationIdAttentionRoute
   '/projects/$projectId/applications/$applicationId/policies': typeof ProjectsProjectIdApplicationsApplicationIdPoliciesRoute
   '/projects/$projectId/applications/$applicationId/releases': typeof ProjectsProjectIdApplicationsApplicationIdReleasesRouteWithChildren
+  '/projects/$projectId/applications/$applicationId/resources': typeof ProjectsProjectIdApplicationsApplicationIdResourcesRoute
   '/projects/$projectId/applications/$applicationId/runtime-groups': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteWithChildren
   '/projects/$projectId/applications/$applicationId/runtime-inventory': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeInventoryRouteWithChildren
   '/projects/$projectId/notifications/deliveries/$deliveryId': typeof ProjectsProjectIdNotificationsDeliveriesDeliveryIdRoute
@@ -231,6 +240,7 @@ export interface FileRoutesById {
   '/projects/$projectId/applications/$applicationId/attention': typeof ProjectsProjectIdApplicationsApplicationIdAttentionRoute
   '/projects/$projectId/applications/$applicationId/policies': typeof ProjectsProjectIdApplicationsApplicationIdPoliciesRoute
   '/projects/$projectId/applications/$applicationId/releases': typeof ProjectsProjectIdApplicationsApplicationIdReleasesRouteWithChildren
+  '/projects/$projectId/applications/$applicationId/resources': typeof ProjectsProjectIdApplicationsApplicationIdResourcesRoute
   '/projects/$projectId/applications/$applicationId/runtime-groups': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteWithChildren
   '/projects/$projectId/applications/$applicationId/runtime-inventory': typeof ProjectsProjectIdApplicationsApplicationIdRuntimeInventoryRouteWithChildren
   '/projects/$projectId/notifications/deliveries/$deliveryId': typeof ProjectsProjectIdNotificationsDeliveriesDeliveryIdRoute
@@ -257,6 +267,7 @@ export interface FileRouteTypes {
     | '/projects/$projectId/applications/$applicationId/attention'
     | '/projects/$projectId/applications/$applicationId/policies'
     | '/projects/$projectId/applications/$applicationId/releases'
+    | '/projects/$projectId/applications/$applicationId/resources'
     | '/projects/$projectId/applications/$applicationId/runtime-groups'
     | '/projects/$projectId/applications/$applicationId/runtime-inventory'
     | '/projects/$projectId/notifications/deliveries/$deliveryId'
@@ -281,6 +292,7 @@ export interface FileRouteTypes {
     | '/projects/$projectId/applications/$applicationId/attention'
     | '/projects/$projectId/applications/$applicationId/policies'
     | '/projects/$projectId/applications/$applicationId/releases'
+    | '/projects/$projectId/applications/$applicationId/resources'
     | '/projects/$projectId/applications/$applicationId/runtime-groups'
     | '/projects/$projectId/applications/$applicationId/runtime-inventory'
     | '/projects/$projectId/notifications/deliveries/$deliveryId'
@@ -305,6 +317,7 @@ export interface FileRouteTypes {
     | '/projects/$projectId/applications/$applicationId/attention'
     | '/projects/$projectId/applications/$applicationId/policies'
     | '/projects/$projectId/applications/$applicationId/releases'
+    | '/projects/$projectId/applications/$applicationId/resources'
     | '/projects/$projectId/applications/$applicationId/runtime-groups'
     | '/projects/$projectId/applications/$applicationId/runtime-inventory'
     | '/projects/$projectId/notifications/deliveries/$deliveryId'
@@ -426,6 +439,13 @@ declare module '@tanstack/react-router' {
       path: '/releases'
       fullPath: '/projects/$projectId/applications/$applicationId/releases'
       preLoaderRoute: typeof ProjectsProjectIdApplicationsApplicationIdReleasesRouteImport
+      parentRoute: typeof ProjectsProjectIdApplicationsApplicationIdRoute
+    }
+    '/projects/$projectId/applications/$applicationId/resources': {
+      id: '/projects/$projectId/applications/$applicationId/resources'
+      path: '/resources'
+      fullPath: '/projects/$projectId/applications/$applicationId/resources'
+      preLoaderRoute: typeof ProjectsProjectIdApplicationsApplicationIdResourcesRouteImport
       parentRoute: typeof ProjectsProjectIdApplicationsApplicationIdRoute
     }
     '/projects/$projectId/applications/$applicationId/runtime-groups': {
@@ -572,6 +592,7 @@ interface ProjectsProjectIdApplicationsApplicationIdRouteChildren {
   ProjectsProjectIdApplicationsApplicationIdAttentionRoute: typeof ProjectsProjectIdApplicationsApplicationIdAttentionRoute
   ProjectsProjectIdApplicationsApplicationIdPoliciesRoute: typeof ProjectsProjectIdApplicationsApplicationIdPoliciesRoute
   ProjectsProjectIdApplicationsApplicationIdReleasesRoute: typeof ProjectsProjectIdApplicationsApplicationIdReleasesRouteWithChildren
+  ProjectsProjectIdApplicationsApplicationIdResourcesRoute: typeof ProjectsProjectIdApplicationsApplicationIdResourcesRoute
   ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRoute: typeof ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteWithChildren
   ProjectsProjectIdApplicationsApplicationIdRuntimeInventoryRoute: typeof ProjectsProjectIdApplicationsApplicationIdRuntimeInventoryRouteWithChildren
 }
@@ -584,6 +605,8 @@ const ProjectsProjectIdApplicationsApplicationIdRouteChildren: ProjectsProjectId
       ProjectsProjectIdApplicationsApplicationIdPoliciesRoute,
     ProjectsProjectIdApplicationsApplicationIdReleasesRoute:
       ProjectsProjectIdApplicationsApplicationIdReleasesRouteWithChildren,
+    ProjectsProjectIdApplicationsApplicationIdResourcesRoute:
+      ProjectsProjectIdApplicationsApplicationIdResourcesRoute,
     ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRoute:
       ProjectsProjectIdApplicationsApplicationIdRuntimeGroupsRouteWithChildren,
     ProjectsProjectIdApplicationsApplicationIdRuntimeInventoryRoute:

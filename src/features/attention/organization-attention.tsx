@@ -49,6 +49,7 @@ export function OrganizationAttention({
     [t('newInWindow'), totals.new_discoveries],
     [t('openForReview'), totals.open_discoveries],
     [t('changedApplications'), totals.changed_applications],
+    [t('resourceRegressions'), totals.resource_regressions],
     [t('notificationProblems'), totals.projects_with_notification_problems],
     [t('failedDeliveries'), totals.failed_notification_deliveries],
   ] as const

@@ -1,6 +1,6 @@
 import { act, fireEvent, render, renderHook, screen } from '@testing-library/react'
 import { useState, type ReactNode } from 'react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   LocalizationProvider,
   englishMessages,
@@ -15,6 +15,7 @@ import {
 } from '.'
 
 describe('localization', () => {
+  afterEach(() => vi.restoreAllMocks())
   it('keeps dictionary keys aligned and interpolates values', () => {
     expect(Object.keys(russianMessages).sort()).toEqual(Object.keys(englishMessages).sort())
     expect(translate('ru', 'errorCode', { code: 'E_42' })).toBe('Код ошибки: E_42')
@@ -43,7 +44,7 @@ describe('localization', () => {
     ).toBe('ru')
   })
   it('switches immediately, persists, and updates document language', () => {
-    const setItem = vi.spyOn(Storage.prototype, 'setItem')
+    const setItem = vi.spyOn(localStorage, 'setItem')
     const wrapper = ({ children }: { children: ReactNode }) => (
       <LocalizationProvider initialLocale="en">{children}</LocalizationProvider>
     )

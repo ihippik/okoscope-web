@@ -39,9 +39,22 @@ function NotFound() {
 
 function RootComponent() {
   captureSetupTokenFragment()
-  const pathname = useRouterState({ select: (state) => state.location.pathname })
-  if (pathname === '/docs' || pathname.startsWith('/docs/')) return <Outlet />
-  return <ProtectedRoot />
+  const location = useRouterState({ select: (state) => state.location })
+  const content =
+    location.pathname === '/docs' || location.pathname.startsWith('/docs/') ? (
+      <Outlet />
+    ) : (
+      <ProtectedRoot />
+    )
+  const pageHref = location.href.split('#', 1)[0]
+  return (
+    <>
+      <a className="skip-link" href={`${pageHref}#main-content`}>
+        Skip to content
+      </a>
+      {content}
+    </>
+  )
 }
 
 function ProtectedRoot() {

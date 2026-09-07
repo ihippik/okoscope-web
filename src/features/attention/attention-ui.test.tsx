@@ -25,6 +25,7 @@ import {
   allClearOrganizationAttentionFixture,
   populatedOrganizationAttentionFixture,
   unavailableApplicationAttentionFixture,
+  resourceRegressionApplicationAttentionFixture,
 } from './fixtures'
 import { OrganizationAttention } from './organization-attention'
 import { PriorityBadge, reasonText, runtimeGroupDisplayName } from './components'
@@ -382,6 +383,27 @@ describe('attention presentation', () => {
     expect(screen.getByRole('tab', { name: 'Приоритетная очередь (0)' })).toHaveAttribute(
       'aria-selected',
       'true',
+    )
+  })
+
+  it('renders localized resource evidence and routes its recommendation to release comparison', async () => {
+    renderWithProviders(
+      <ApplicationAttention
+        projectId={resourceRegressionApplicationAttentionFixture.project.id}
+        applicationId={resourceRegressionApplicationAttentionFixture.application.id}
+        section="recommendations"
+      />,
+      vi.fn().mockResolvedValue(resourceRegressionApplicationAttentionFixture),
+      'ru',
+    )
+    expect(await screen.findByText('После релиза вырос троттлинг CPU.')).toBeVisible()
+    expect(screen.getByText('Периоды троттлинга CPU: 1 % → 18 %')).toBeVisible()
+    expect(screen.getByText(/Корреляция не устанавливает причину/)).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Разобрать регрессию ресурсов' })).toHaveAttribute(
+      'href',
+      expect.stringContaining(
+        resourceRegressionApplicationAttentionFixture.priority_items[0]!.resource.target_release_id,
+      ),
     )
   })
 

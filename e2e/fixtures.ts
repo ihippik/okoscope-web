@@ -1,4 +1,8 @@
 import type { Page, Route } from '@playwright/test'
+import {
+  resourceComparisonFixture,
+  resourceHistoryFixture,
+} from '../src/features/resources/fixtures'
 
 const organization = {
   id: '00000000-0000-4000-8000-000000000001',
@@ -196,6 +200,48 @@ const attentionRecommendation = {
   project: attentionItem.project,
   application: attentionItem.application,
   resource: attentionItem.resource,
+  created_from_snapshot_at: attentionWindow.to,
+}
+const resourceAttentionFacts = {
+  reason_count: 1,
+  resource_regression: {
+    finding_id: resourceComparisonFixture.findings[0]!.id,
+    reason_code: resourceComparisonFixture.findings[0]!.reason_code,
+    metric: resourceComparisonFixture.findings[0]!.metric,
+    unit: 'ratio',
+    rule_version: 1,
+    threshold: 0.05,
+    sustained_buckets: 3,
+    baseline: 0.01,
+    target: 0.18,
+    change: 0.17,
+    baseline_window: resourceComparisonFixture.baseline_window,
+    target_window: resourceComparisonFixture.target_window,
+  },
+}
+const resourceAttentionReference = {
+  type: 'resource_comparison',
+  project_id: project.id,
+  application_id: application.id,
+  target_release_id: targetRelease.id,
+  from: resourceComparisonFixture.target_window.from,
+  to: resourceComparisonFixture.target_window.to,
+}
+const resourceAttentionItem = {
+  id: 'resource-regression:gateway',
+  kind: 'resource_regression',
+  priority: 'high',
+  reason_code: 'cpu_throttling_increased',
+  facts: resourceAttentionFacts,
+  occurred_at: resourceComparisonFixture.target_window.to,
+  project: attentionItem.project,
+  application: attentionItem.application,
+  resource: resourceAttentionReference,
+}
+const resourceAttentionRecommendation = {
+  ...resourceAttentionItem,
+  id: 'review-resource-regression:gateway',
+  kind: 'review_resource_regression',
   created_from_snapshot_at: attentionWindow.to,
 }
 const inventoryItemId = '10000000-0000-4000-8000-000000000001'
@@ -416,8 +462,9 @@ export async function mockApi(page: Page, role: 'owner' | 'member' = 'owner') {
           changed_applications: 1,
           projects_with_notification_problems: 0,
           failed_notification_deliveries: 0,
+          resource_regressions: 1,
         },
-        priority_items: [attentionItem],
+        priority_items: [resourceAttentionItem, attentionItem],
         changed_applications: [
           {
             ...attentionComparison,
@@ -427,7 +474,7 @@ export async function mockApi(page: Page, role: 'owner' | 'member' = 'owner') {
           },
         ],
         notification_problems: [],
-        recommendations: [attentionRecommendation],
+        recommendations: [attentionRecommendation, resourceAttentionRecommendation],
       })
     if (path === '/api/v1/organization') return json(route, organization)
     if (path === '/api/v1/projects') return json(route, { items: [project], next_cursor: null })
@@ -598,6 +645,7 @@ export async function mockApi(page: Page, role: 'owner' | 'member' = 'owner') {
           disappeared_runtime_items: 0,
           unchanged_runtime_items: 2,
           total_runtime_items: 3,
+          resource_regressions: 1,
           policy: {
             factual_total: 4,
             actionable_total: 2,
@@ -609,9 +657,10 @@ export async function mockApi(page: Page, role: 'owner' | 'member' = 'owner') {
           },
         },
         release_comparison: attentionComparison,
-        priority_items: [attentionItem],
+        priority_items: [resourceAttentionItem, attentionItem],
         recommendations: [
           attentionRecommendation,
+          resourceAttentionRecommendation,
           {
             ...attentionRecommendation,
             id: 'policy-unclassified',
@@ -846,6 +895,13 @@ export async function mockApi(page: Page, role: 'owner' | 'member' = 'owner') {
       })
     if (path === `/api/v1/projects/${project.id}/applications/${application.id}/releases`)
       return json(route, { items: releases, next_cursor: null })
+    if (path === `/api/v1/projects/${project.id}/applications/${application.id}/resources`)
+      return json(route, resourceHistoryFixture)
+    if (
+      path ===
+      `/api/v1/projects/${project.id}/applications/${application.id}/releases/${targetRelease.id}/resource-comparison`
+    )
+      return json(route, resourceComparisonFixture)
     if (
       path ===
       `/api/v1/projects/${project.id}/applications/${application.id}/releases/${targetRelease.id}/runtime-diff`

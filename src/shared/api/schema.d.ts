@@ -1175,6 +1175,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/applications/{application_id}/resources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        /** @description Returns bounded UTC resource rollups. Missing or insufficiently covered buckets remain explicit gaps and are never converted to zero. I/O rates are transferred data, not disk capacity utilization. */
+        get: operations["getApplicationResourceHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/applications/{application_id}/releases/{target_id}/resource-comparison": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                target_id: components["parameters"]["TargetId"];
+            };
+            cookie?: never;
+        };
+        /** @description Compares equal stable windows and reports observations after a Release without claiming that the Release caused them. */
+        get: operations["getReleaseResourceComparison"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/applications/{application_id}/releases/{target_id}/runtime-diff": {
         parameters: {
             query?: never;
@@ -1951,11 +1992,11 @@ export interface components {
         /** @enum {string} */
         AttentionPriority: "urgent" | "high" | "normal";
         /** @enum {string} */
-        AttentionItemKind: "notification_delivery_failing" | "notification_delivery_backlogged" | "notification_destination_missing" | "release_runtime_changed" | "new_discovery" | "open_discovery" | "container_restart_loop";
+        AttentionItemKind: "notification_delivery_failing" | "notification_delivery_backlogged" | "notification_destination_missing" | "release_runtime_changed" | "new_discovery" | "open_discovery" | "container_restart_loop" | "resource_regression";
         /** @enum {string} */
-        AttentionReasonCode: "terminal_deliveries_failed" | "notification_health_failing" | "notification_health_backlogged" | "notification_health_retrying" | "enabled_destination_missing" | "release_runtime_changed" | "discovery_first_seen_in_window" | "discovery_open" | "container_restart_loop_observed" | "policy_review_required" | "policy_conflict" | "policy_unclassified" | "policy_evaluation_pending";
+        AttentionReasonCode: "terminal_deliveries_failed" | "notification_health_failing" | "notification_health_backlogged" | "notification_health_retrying" | "enabled_destination_missing" | "release_runtime_changed" | "discovery_first_seen_in_window" | "discovery_open" | "container_restart_loop_observed" | "policy_review_required" | "policy_conflict" | "policy_unclassified" | "policy_evaluation_pending" | "oom_observed" | "memory_limit_pressure" | "cpu_throttling_increased" | "cpu_pressure_increased" | "memory_pressure_increased" | "io_pressure_increased" | "resource_usage_increased";
         /** @enum {string} */
-        AttentionRecommendationKind: "review_failed_deliveries" | "configure_webhook_destination" | "review_notification_backlog" | "review_release_changes" | "review_new_discoveries";
+        AttentionRecommendationKind: "review_failed_deliveries" | "configure_webhook_destination" | "review_notification_backlog" | "review_release_changes" | "review_new_discoveries" | "review_resource_regression";
         AttentionWindow: {
             kind: components["schemas"]["AttentionWindowKind"];
             from: components["schemas"]["Timestamp"];
@@ -1989,6 +2030,7 @@ export interface components {
             /** Format: int64 */
             occurrence_count?: number;
             restart_loop?: components["schemas"]["AttentionRestartLoopFacts"];
+            resource_regression?: components["schemas"]["AttentionResourceRegressionFacts"];
         };
         AttentionRestartLoopFacts: {
             /** Format: int64 */
@@ -2001,7 +2043,7 @@ export interface components {
             window_ended_at: components["schemas"]["Timestamp"];
             container_name: string;
         };
-        AttentionResourceRef: components["schemas"]["AttentionProjectResourceRef"] | components["schemas"]["AttentionApplicationResourceRef"] | components["schemas"]["AttentionRuntimeGroupResourceRef"] | components["schemas"]["AttentionRuntimeDiffResourceRef"];
+        AttentionResourceRef: components["schemas"]["AttentionProjectResourceRef"] | components["schemas"]["AttentionApplicationResourceRef"] | components["schemas"]["AttentionRuntimeGroupResourceRef"] | components["schemas"]["AttentionRuntimeDiffResourceRef"] | components["schemas"]["AttentionResourceComparisonRef"];
         AttentionProjectResourceRef: {
             /** @constant */
             type: "project";
@@ -2131,6 +2173,8 @@ export interface components {
             projects_with_notification_problems: number;
             /** Format: int64 */
             failed_notification_deliveries: number;
+            /** Format: int64 */
+            resource_regressions: number;
             policy: components["schemas"]["AttentionPolicyTotals"];
         };
         /**
@@ -2179,6 +2223,8 @@ export interface components {
             unchanged_runtime_items: number;
             /** Format: int64 */
             total_runtime_items: number;
+            /** Format: int64 */
+            resource_regressions: number;
             policy: components["schemas"]["AttentionPolicyTotals"];
         };
         AttentionPolicyTotals: {
@@ -2897,8 +2943,7 @@ export interface components {
             target: components["schemas"]["Release"];
             items: components["schemas"]["RuntimeDiffEntry"][];
             next_cursor: components["schemas"]["NullableUuid"];
-            /** @enum {string} */
-            baseline_selection_source: "explicit" | "transition" | "concurrent_transition_fallback" | "legacy_deployment_order" | "none";
+            baseline_selection_source: components["schemas"]["BaselineSelectionSource"];
         };
         RuntimeDiffClassificationCount: {
             /** @enum {string} */
@@ -2923,8 +2968,7 @@ export interface components {
             coverage: components["schemas"]["RuntimeRetentionCoverage"];
             baseline: components["schemas"]["Release"] | null;
             target: components["schemas"]["Release"];
-            /** @enum {string} */
-            baseline_selection_source: "explicit" | "transition" | "concurrent_transition_fallback" | "legacy_deployment_order" | "none";
+            baseline_selection_source: components["schemas"]["BaselineSelectionSource"];
             /** Format: int64 */
             total_item_count: number;
             classifications: components["schemas"]["RuntimeDiffClassificationCount"][];
@@ -3427,6 +3471,327 @@ export interface components {
             items: components["schemas"]["InventoryOccurrence"][];
             next_cursor: components["schemas"]["NullableUuid"];
         };
+        /** @enum {string} */
+        BaselineSelectionSource: "explicit" | "transition" | "concurrent_transition_fallback" | "legacy_deployment_order" | "none";
+        /** @enum {string} */
+        ResourceMetric: "cpu_usage_cores" | "cpu_quota_ratio" | "cpu_throttled_period_ratio" | "cpu_throttled_seconds" | "memory_current_bytes" | "memory_anon_bytes" | "memory_file_bytes" | "memory_headroom_ratio" | "memory_high_events" | "memory_max_events" | "oom_events" | "oom_kill_events" | "cpu_psi_some_ratio" | "cpu_psi_full_ratio" | "memory_psi_some_ratio" | "memory_psi_full_ratio" | "io_psi_some_ratio" | "io_psi_full_ratio" | "io_read_bytes" | "io_write_bytes" | "io_read_operations" | "io_write_operations" | "pids_current" | "pids_limit_ratio" | "pids_max_events";
+        /** @enum {string} */
+        ResourceUnit: "cores" | "ratio" | "seconds" | "bytes" | "bytes_per_second" | "operations" | "operations_per_second" | "count";
+        /** @enum {string} */
+        ResourceStep: "minute" | "hour";
+        /**
+         * @default total
+         * @enum {string}
+         */
+        ResourceNormalization: "total" | "per_ready_replica";
+        /** @enum {string} */
+        ResourceAvailability: "available" | "unsupported" | "no_limit" | "insufficient_coverage";
+        /** @enum {string} */
+        ResourceComparisonState: "collecting" | "insufficient_coverage" | "unavailable" | "comparable";
+        /** @enum {string} */
+        ResourceInterpretation: "no_material_change" | "observed_increase" | "resource_pressure" | "resource_failure";
+        /** @enum {string} */
+        ResourceFindingPriority: "urgent" | "high" | "normal";
+        /** @enum {string} */
+        ResourceFindingReason: "oom_observed" | "memory_limit_pressure" | "cpu_throttling_increased" | "cpu_pressure_increased" | "memory_pressure_increased" | "io_pressure_increased" | "resource_usage_increased";
+        ResourceCoverage: {
+            /** Format: double */
+            covered_seconds: number;
+            /** Format: double */
+            expected_seconds: number;
+            /** Format: double */
+            ratio: number;
+            /** Format: int64 */
+            sample_count: number;
+            /** Format: int64 */
+            contributor_count: number;
+            observed_replicas: number;
+            ready_replicas: number;
+            complete: boolean;
+        };
+        ResourceLimit: {
+            /** Format: double */
+            value: number;
+            unit: components["schemas"]["ResourceUnit"];
+        };
+        ResourceReleaseRef: {
+            id: components["schemas"]["Uuid"];
+            display_name: string;
+        };
+        ResourceHistoryPoint: {
+            from: components["schemas"]["Timestamp"];
+            to: components["schemas"]["Timestamp"];
+            /** Format: double */
+            value: number | null;
+            availability: components["schemas"]["ResourceAvailability"];
+            coverage: components["schemas"]["ResourceCoverage"];
+            release: components["schemas"]["ResourceReleaseRef"] | null;
+            container: string | null;
+            limit: components["schemas"]["ResourceLimit"] | null;
+        };
+        ResourceReleaseMarker: {
+            release: components["schemas"]["ResourceReleaseRef"];
+            observed_at: components["schemas"]["Timestamp"];
+        };
+        /**
+         * @example {
+         *       "metric": "memory_current_bytes",
+         *       "unit": "bytes",
+         *       "step": "minute",
+         *       "normalization": "per_ready_replica",
+         *       "from": "2026-09-07T11:58:00Z",
+         *       "to": "2026-09-07T12:02:00Z",
+         *       "availability": "available",
+         *       "containers": [
+         *         "api"
+         *       ],
+         *       "releases": [
+         *         {
+         *           "release": {
+         *             "id": "00000000-0000-0000-0000-000000000003",
+         *             "display_name": "v1.8"
+         *           },
+         *           "observed_at": "2026-09-07T12:00:00Z"
+         *         }
+         *       ],
+         *       "points": [
+         *         {
+         *           "from": "2026-09-07T11:58:00Z",
+         *           "to": "2026-09-07T11:59:00Z",
+         *           "value": 440401920,
+         *           "availability": "available",
+         *           "coverage": {
+         *             "covered_seconds": 120,
+         *             "expected_seconds": 120,
+         *             "ratio": 1,
+         *             "sample_count": 8,
+         *             "contributor_count": 2,
+         *             "observed_replicas": 2,
+         *             "ready_replicas": 2,
+         *             "complete": true
+         *           },
+         *           "release": null,
+         *           "container": "api",
+         *           "limit": {
+         *             "value": 1073741824,
+         *             "unit": "bytes"
+         *           }
+         *         },
+         *         {
+         *           "from": "2026-09-07T11:59:00Z",
+         *           "to": "2026-09-07T12:00:00Z",
+         *           "value": null,
+         *           "availability": "insufficient_coverage",
+         *           "coverage": {
+         *             "covered_seconds": 0,
+         *             "expected_seconds": 120,
+         *             "ratio": 0,
+         *             "sample_count": 0,
+         *             "contributor_count": 0,
+         *             "observed_replicas": 0,
+         *             "ready_replicas": 2,
+         *             "complete": false
+         *           },
+         *           "release": null,
+         *           "container": "api",
+         *           "limit": null
+         *         }
+         *       ]
+         *     }
+         */
+        ApplicationResourceHistory: {
+            metric: components["schemas"]["ResourceMetric"];
+            unit: components["schemas"]["ResourceUnit"];
+            step: components["schemas"]["ResourceStep"];
+            normalization: components["schemas"]["ResourceNormalization"];
+            from: components["schemas"]["Timestamp"];
+            to: components["schemas"]["Timestamp"];
+            availability: components["schemas"]["ResourceAvailability"];
+            points: components["schemas"]["ResourceHistoryPoint"][];
+            releases: components["schemas"]["ResourceReleaseMarker"][];
+            containers: string[];
+        };
+        ResourceComparisonWindow: {
+            from: components["schemas"]["Timestamp"];
+            to: components["schemas"]["Timestamp"];
+            /** Format: int64 */
+            duration_seconds: number;
+            release: components["schemas"]["ResourceReleaseRef"];
+            episode_id: components["schemas"]["Uuid"];
+            coverage: components["schemas"]["ResourceCoverage"];
+        };
+        ResourceMetricComparison: {
+            metric: components["schemas"]["ResourceMetric"];
+            unit: components["schemas"]["ResourceUnit"];
+            state: components["schemas"]["ResourceComparisonState"];
+            interpretation: components["schemas"]["ResourceInterpretation"];
+            availability: components["schemas"]["ResourceAvailability"];
+            /** Format: double */
+            baseline: number | null;
+            /** Format: double */
+            target: number | null;
+            /** Format: double */
+            absolute_change: number | null;
+            /**
+             * Format: double
+             * @description Null when the baseline is zero or values are unavailable.
+             */
+            relative_change: number | null;
+            /**
+             * Format: double
+             * @description Used only for ratio metrics.
+             */
+            percentage_point_change: number | null;
+            limit: components["schemas"]["ResourceLimit"] | null;
+        };
+        ResourceRegressionFinding: {
+            id: components["schemas"]["Uuid"];
+            reason_code: components["schemas"]["ResourceFindingReason"];
+            priority: components["schemas"]["ResourceFindingPriority"];
+            metric: components["schemas"]["ResourceMetric"];
+            rule_version: number;
+            /** Format: double */
+            threshold: number;
+            sustained_buckets: number;
+            /** Format: double */
+            baseline: number | null;
+            /** Format: double */
+            target: number;
+            /** Format: double */
+            change: number | null;
+        };
+        /**
+         * @example {
+         *       "state": "comparable",
+         *       "interpretation": "observed_after_release",
+         *       "baseline_selection_source": "transition",
+         *       "collection_progress": 1,
+         *       "baseline_window": {
+         *         "from": "2026-09-07T10:30:00Z",
+         *         "to": "2026-09-07T11:00:00Z",
+         *         "duration_seconds": 1800,
+         *         "release": {
+         *           "id": "00000000-0000-0000-0000-000000000002",
+         *           "display_name": "v1.7"
+         *         },
+         *         "episode_id": "00000000-0000-0000-0000-000000000012",
+         *         "coverage": {
+         *           "covered_seconds": 3480,
+         *           "expected_seconds": 3600,
+         *           "ratio": 0.9667,
+         *           "sample_count": 232,
+         *           "contributor_count": 60,
+         *           "observed_replicas": 2,
+         *           "ready_replicas": 2,
+         *           "complete": true
+         *         }
+         *       },
+         *       "target_window": {
+         *         "from": "2026-09-07T11:10:00Z",
+         *         "to": "2026-09-07T11:40:00Z",
+         *         "duration_seconds": 1800,
+         *         "release": {
+         *           "id": "00000000-0000-0000-0000-000000000003",
+         *           "display_name": "v1.8"
+         *         },
+         *         "episode_id": "00000000-0000-0000-0000-000000000013",
+         *         "coverage": {
+         *           "covered_seconds": 3500,
+         *           "expected_seconds": 3600,
+         *           "ratio": 0.9722,
+         *           "sample_count": 234,
+         *           "contributor_count": 60,
+         *           "observed_replicas": 2,
+         *           "ready_replicas": 2,
+         *           "complete": true
+         *         }
+         *       },
+         *       "metrics": [
+         *         {
+         *           "metric": "cpu_throttled_period_ratio",
+         *           "unit": "ratio",
+         *           "state": "comparable",
+         *           "interpretation": "resource_pressure",
+         *           "availability": "available",
+         *           "baseline": 0.01,
+         *           "target": 0.18,
+         *           "absolute_change": 0.17,
+         *           "relative_change": 17,
+         *           "percentage_point_change": 17,
+         *           "limit": null
+         *         },
+         *         {
+         *           "metric": "memory_current_bytes",
+         *           "unit": "bytes",
+         *           "state": "comparable",
+         *           "interpretation": "observed_increase",
+         *           "availability": "available",
+         *           "baseline": 440401920,
+         *           "target": 639631360,
+         *           "absolute_change": 199229440,
+         *           "relative_change": 0.4524,
+         *           "percentage_point_change": null,
+         *           "limit": {
+         *             "value": 1073741824,
+         *             "unit": "bytes"
+         *           }
+         *         }
+         *       ],
+         *       "findings": [
+         *         {
+         *           "id": "00000000-0000-0000-0000-000000000020",
+         *           "reason_code": "cpu_throttling_increased",
+         *           "priority": "high",
+         *           "metric": "cpu_throttled_period_ratio",
+         *           "rule_version": 1,
+         *           "threshold": 0.05,
+         *           "sustained_buckets": 3,
+         *           "baseline": 0.01,
+         *           "target": 0.18,
+         *           "change": 0.17
+         *         }
+         *       ]
+         *     }
+         */
+        ReleaseResourceComparison: {
+            state: components["schemas"]["ResourceComparisonState"];
+            /** @constant */
+            interpretation: "observed_after_release";
+            baseline_selection_source: components["schemas"]["BaselineSelectionSource"];
+            baseline_window: components["schemas"]["ResourceComparisonWindow"] | null;
+            target_window: components["schemas"]["ResourceComparisonWindow"] | null;
+            /** Format: double */
+            collection_progress: number;
+            metrics: components["schemas"]["ResourceMetricComparison"][];
+            findings: components["schemas"]["ResourceRegressionFinding"][];
+        };
+        AttentionResourceRegressionFacts: {
+            finding_id: components["schemas"]["Uuid"];
+            reason_code: components["schemas"]["ResourceFindingReason"];
+            metric: components["schemas"]["ResourceMetric"];
+            unit: components["schemas"]["ResourceUnit"];
+            rule_version: number;
+            /** Format: double */
+            threshold: number;
+            sustained_buckets: number;
+            /** Format: double */
+            baseline: number | null;
+            /** Format: double */
+            target: number;
+            /** Format: double */
+            change: number | null;
+            baseline_window: components["schemas"]["ResourceComparisonWindow"];
+            target_window: components["schemas"]["ResourceComparisonWindow"];
+        };
+        AttentionResourceComparisonRef: {
+            /** @constant */
+            type: "resource_comparison";
+            project_id: components["schemas"]["Uuid"];
+            application_id: components["schemas"]["Uuid"];
+            target_release_id: components["schemas"]["Uuid"];
+            from: components["schemas"]["Timestamp"];
+            to: components["schemas"]["Timestamp"];
+        };
         /** Format: uuid */
         Uuid: string;
         /** Format: uuid */
@@ -3701,6 +4066,26 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["DeploymentEpisodePage"];
+            };
+        };
+        /** @description Bounded Application resource history with explicit gaps and coverage */
+        ApplicationResourceHistory: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ApplicationResourceHistory"];
+            };
+        };
+        /** @description Causal-neutral comparison of equal stable resource windows */
+        ReleaseResourceComparison: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ReleaseResourceComparison"];
             };
         };
         /** @description Runtime behavior diff */
@@ -5848,6 +6233,55 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["DeploymentEpisodePage"];
+        };
+    };
+    getApplicationResourceHistory: {
+        parameters: {
+            query: {
+                metric: components["schemas"]["ResourceMetric"];
+                from: components["schemas"]["Timestamp"];
+                to: components["schemas"]["Timestamp"];
+                step: components["schemas"]["ResourceStep"];
+                release_id?: string;
+                container?: string;
+                mode?: components["schemas"]["ResourceNormalization"];
+            };
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ApplicationResourceHistory"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    getReleaseResourceComparison: {
+        parameters: {
+            query?: {
+                baseline_id?: string;
+            };
+            header?: never;
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                application_id: components["parameters"]["ApplicationId"];
+                target_id: components["parameters"]["TargetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ReleaseResourceComparison"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            500: components["responses"]["Error"];
         };
     };
     getRuntimeDiff: {

@@ -470,6 +470,21 @@ export const englishMessages = {
   readinessSnapshot: 'Readiness snapshot',
   readyPodShareDisclaimer:
     'Ready Pod share is the share of Ready Pods in this observation. It is not traffic share and does not confirm canary or A/B deployment intent.',
+  applicationResources: 'Application resources',
+  applicationResourcesHelp: 'CPU, memory, pressure, I/O and PID history with Release markers.',
+  resourceRegressions: 'Resource regressions',
+  reviewResourceRegression: 'Review resource regression',
+  resourceRegressionFinding: 'Derived resource finding',
+  resourceRuleEvidence: 'Threshold {threshold} · {buckets} sustained intervals · rule v{version}',
+  resourceCausalNote: 'Observed after the Release. This correlation does not establish cause.',
+  reasonResource_oom_observed: 'An OOM event was observed after the Release.',
+  reasonResource_memory_limit_pressure: 'Memory limit pressure increased after the Release.',
+  reasonResource_cpu_throttling_increased: 'CPU throttling increased after the Release.',
+  reasonResource_cpu_pressure_increased: 'CPU waiting pressure increased after the Release.',
+  reasonResource_memory_pressure_increased: 'Memory waiting pressure increased after the Release.',
+  reasonResource_io_pressure_increased: 'I/O waiting pressure increased after the Release.',
+  reasonResource_resource_usage_increased:
+    'Resource use increased after the Release without confirmed pressure.',
   unavailable: 'Unavailable',
 } as const
 
@@ -934,6 +949,21 @@ export const russianMessages = {
   readinessSnapshot: 'Снимок готовности',
   readyPodShareDisclaimer:
     'Доля готовых подов отражает готовые поды в этом наблюдении. Это не доля трафика и не подтверждение canary- или A/B-развертывания.',
+  applicationResources: 'Ресурсы приложения',
+  applicationResourcesHelp: 'История CPU, памяти, pressure, I/O и PID с метками релизов.',
+  resourceRegressions: 'Регрессии ресурсов',
+  reviewResourceRegression: 'Разобрать регрессию ресурсов',
+  resourceRegressionFinding: 'Производный вывод о ресурсах',
+  resourceRuleEvidence: 'Порог {threshold} · устойчивых интервалов: {buckets} · правило v{version}',
+  resourceCausalNote: 'Наблюдалось после релиза. Корреляция не устанавливает причину.',
+  reasonResource_oom_observed: 'После релиза наблюдалось событие OOM.',
+  reasonResource_memory_limit_pressure: 'После релиза выросло давление лимита памяти.',
+  reasonResource_cpu_throttling_increased: 'После релиза вырос троттлинг CPU.',
+  reasonResource_cpu_pressure_increased: 'После релиза выросло ожидание CPU.',
+  reasonResource_memory_pressure_increased: 'После релиза выросло ожидание памяти.',
+  reasonResource_io_pressure_increased: 'После релиза выросло ожидание I/O.',
+  reasonResource_resource_usage_increased:
+    'После релиза вырос расход ресурсов без подтверждённого pressure.',
   unavailable: 'Недоступно',
 } as const satisfies Record<MessageKey, string>
 

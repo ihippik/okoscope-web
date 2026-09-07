@@ -16,12 +16,14 @@ import {
   runtimeDiffSummaryOptions,
 } from '../features/observability/queries'
 import { RuntimeDiffVisualization } from '../features/observability/visualization'
+import { ResourceComparison } from '../features/resources/resource-comparison'
 import { changeBaseline, parseRuntimeDiffSearch } from '../features/observability/url-state'
 import { applicationOptions, projectOptions } from '../shared/api/queries'
 import { useApi } from '../shared/api/context'
 import { Card } from '../shared/ui/card'
 import { Loading } from '../shared/ui/loading'
 import { formatTimestamp } from '../features/tenant/format'
+import { useLocalization } from '../shared/i18n'
 
 export const Route = createFileRoute(
   '/projects/$projectId/applications/$applicationId/releases/$targetReleaseId/runtime-diff',
@@ -31,6 +33,7 @@ function RuntimeDiffPage() {
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const api = useApi()
+  const { locale } = useLocalization()
   const project = useQuery(projectOptions(api, projectId))
   const application = useQuery(applicationOptions(api, projectId, applicationId))
   const releaseChoices = useQuery(releasesOptions(api, projectId, applicationId, {}))
@@ -171,9 +174,17 @@ function RuntimeDiffPage() {
               : 'No baseline available'}
           </dd>
           <dt>Baseline selection</dt>
-          <dd>{baselineSelectionPresentation(diff.data.baseline_selection_source)}</dd>
+          <dd className="min-w-0 break-words">
+            {baselineSelectionPresentation(diff.data.baseline_selection_source, locale)}
+          </dd>
         </dl>
       </Card>
+      <ResourceComparison
+        projectId={projectId}
+        applicationId={applicationId}
+        targetReleaseId={targetReleaseId}
+        baselineReleaseId={search.baseline}
+      />
       {diff.data.baseline &&
         (diffSummary.isPending ? (
           <Loading label="Loading complete comparison summary…" />

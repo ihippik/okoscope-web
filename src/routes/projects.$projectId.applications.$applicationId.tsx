@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, Outlet, createFileRoute, useLocation } from '@tanstack/react-router'
-import { CircleAlert } from 'lucide-react'
+import { CircleAlert, Gauge } from 'lucide-react'
 import { useEffect } from 'react'
 import { formatCount, formatTimestamp } from '../features/tenant/format'
 import { ApplicationWorkers } from '../features/tenant/application-workers'
@@ -90,6 +90,23 @@ function ApplicationPage() {
           <dd>{formatTimestamp(application.data.created_at)}</dd>
         </dl>
         <div className="mt-7 grid gap-3 sm:grid-cols-2">
+          <Link
+            className="rounded-xl border border-slate-700 p-4 transition hover:border-slate-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
+            to="/projects/$projectId/applications/$applicationId/resources"
+            params={{ projectId, applicationId }}
+            search={{
+              range: '24h',
+              metric: 'memory_current_bytes',
+              mode: 'per_ready_replica',
+              step: 'minute',
+            }}
+          >
+            <Gauge className="mb-2 h-5 w-5 text-cyan-300" aria-hidden="true" />
+            <strong className="block text-lg">{t('applicationResources')}</strong>
+            <span className="mt-1 block text-sm text-slate-400">
+              {t('applicationResourcesHelp')}
+            </span>
+          </Link>
           <Link
             className="rounded-xl border border-slate-700 p-4 transition hover:border-slate-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
             to="/projects/$projectId/applications/$applicationId/policies"

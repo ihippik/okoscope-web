@@ -80,6 +80,21 @@ describe('attention resource routing', () => {
       targetReleaseId: 'target',
       baselineReleaseId: 'baseline',
     })
+    expect(
+      attentionDestination({
+        type: 'resource_comparison',
+        project_id: 'p',
+        application_id: 'a',
+        target_release_id: 'target',
+        from: '2026-09-07T11:00:00Z',
+        to: '2026-09-07T11:30:00Z',
+      }),
+    ).toEqual({
+      kind: 'resource-comparison',
+      projectId: 'p',
+      applicationId: 'a',
+      targetReleaseId: 'target',
+    })
   })
 
   it('uses notification context for broad Project resources and fails closed', () => {

@@ -1332,6 +1332,10 @@ test('unknown article stays public and both entry links preserve protected acces
 }) => {
   await mockApi(page)
   await page.goto('/docs/not-a-real-article')
+  await expect(page.getByRole('link', { name: 'Skip to content' })).toHaveAttribute(
+    'href',
+    '/docs/not-a-real-article#main-content',
+  )
   await expect(page.getByRole('heading', { name: 'Article not found' })).toBeVisible()
   await page.getByRole('link', { name: 'Documentation overview' }).click()
   await expect(page.getByRole('heading', { name: 'Meet Okoscope' })).toBeVisible()
@@ -1342,6 +1346,10 @@ test('unknown article stays public and both entry links preserve protected acces
   await page.getByRole('link', { name: 'Documentation', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Meet Okoscope' })).toBeVisible()
   await page.goto('/docs-private')
+  await expect(page.getByRole('link', { name: 'Skip to content' })).toHaveAttribute(
+    'href',
+    '/docs-private#main-content',
+  )
   await expect(
     page.locator('form').getByRole('button', { name: 'Sign in', exact: true }),
   ).toBeVisible()
@@ -1358,7 +1366,9 @@ test('mobile navigation is keyboard operable without horizontal overflow', async
     page.getByRole('heading', { level: 1, name: 'Okoscope Cloud — Quick start' }),
   ).toBeVisible()
   await page.keyboard.press('Tab')
-  await expect(page.getByRole('link', { name: 'Skip to content' })).toBeFocused()
+  const appSkipLink = page.getByRole('link', { name: 'Skip to content' })
+  await expect(appSkipLink).toBeFocused()
+  await expect(appSkipLink).toHaveAttribute('href', '/docs/quick-start#main-content')
   await page.keyboard.press('Tab')
   await expect(page.getByRole('link', { name: 'Skip to article' })).toBeFocused()
   await page.keyboard.press('Enter')
@@ -1371,7 +1381,7 @@ test('mobile navigation is keyboard operable without horizontal overflow', async
   await expect(page.locator('.docs-mobile a').first()).toBeFocused()
   await expect(page.locator('.docs-mobile a').first()).toHaveCSS('outline-style', 'solid')
   await expect(page.locator('.docs-mobile a').first()).toHaveCSS('outline-width', '2px')
-  await expect(page.locator('.docs-mobile a')).toHaveCount(9)
+  await expect(page.locator('.docs-mobile a')).toHaveCount(articles.length)
   await verifyActiveArticleStyling(page, 'Okoscope Cloud — Quick start', '.docs-mobile')
   await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { name: 'Meet Okoscope' })).toBeVisible()

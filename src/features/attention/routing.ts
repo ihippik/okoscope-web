@@ -36,6 +36,12 @@ export type AttentionDestination =
       targetReleaseId: string
       baselineReleaseId: string
     }
+  | {
+      kind: 'resource-comparison'
+      projectId: string
+      applicationId: string
+      targetReleaseId: string
+    }
 
 const notificationReasons = new Set<AttentionReasonCode>([
   'terminal_deliveries_failed',
@@ -100,6 +106,13 @@ export function attentionDestination(
       applicationId: value.application_id,
       targetReleaseId: value.target_release_id,
       baselineReleaseId: value.baseline_release_id,
+    }
+  if (value.type === 'resource_comparison')
+    return {
+      kind: 'resource-comparison',
+      projectId: value.project_id,
+      applicationId: value.application_id,
+      targetReleaseId: value.target_release_id,
     }
   return null
 }

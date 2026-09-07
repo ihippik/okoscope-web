@@ -252,6 +252,7 @@ test('investigates a restart loop from Requires attention with source-qualified 
             disappeared_runtime_items: 0,
             unchanged_runtime_items: 0,
             total_runtime_items: 0,
+            resource_regressions: 0,
             policy: {
               factual_total: 1,
               actionable_total: 1,
