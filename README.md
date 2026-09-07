@@ -68,3 +68,30 @@ OKOSCOPE_DEV_API_TARGET=http://127.0.0.1:18080 npm run dev
 ```
 
 This server-side development setting routes `/api` to the specified backend. It defaults to `https://okoscope.com`; production runtime configuration is unchanged.
+
+## Link previews
+
+The initial `index.html` includes English Open Graph and Twitter card metadata, so
+Telegram and other crawlers can read the product title, description, and image
+without running JavaScript or signing in. All routes share this product preview;
+private application data is never included. The metadata uses the public origin
+`https://okoscope.com/`; deployments on another domain should update these absolute
+URLs in `index.html` before building.
+
+`public/social-preview.png` is a 1200 × 630 PNG based on the existing favicon. Its
+editable source is `public/social-preview.svg`. To regenerate it with librsvg:
+
+```sh
+rsvg-convert public/social-preview.svg -o public/social-preview.png
+```
+
+After deploying the frontend image, verify that a crawler receives the metadata
+and that the image returns `200` with `Content-Type: image/png` without authentication:
+
+```sh
+curl -fsSL -A TelegramBot https://okoscope.com/
+curl -I https://okoscope.com/social-preview.png
+```
+
+Messaging services may cache an earlier preview; a previously shared link may need
+a refresh through that service before the new card appears.
