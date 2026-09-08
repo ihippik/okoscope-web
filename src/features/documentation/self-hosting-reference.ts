@@ -26,8 +26,8 @@ export const selfHostingReferenceSections: Article['sections'] = [
       },
     ],
     codeLanguage: 'bash',
-    code: `helm show values oci://ghcr.io/ihippik/charts/okoscope --version <OKOSCOPE_VERSION>
-helm show values oci://ghcr.io/ihippik/charts/okoscope-agent --version <OKOSCOPE_VERSION>`,
+    code: `helm show values oci://ghcr.io/okoscope/charts/okoscope --version <OKOSCOPE_VERSION>
+helm show values oci://ghcr.io/okoscope/charts/okoscope-agent --version <OKOSCOPE_VERSION>`,
   },
   {
     id: 'values-server',
@@ -48,7 +48,7 @@ helm show values oci://ghcr.io/ihippik/charts/okoscope-agent --version <OKOSCOPE
 # Configuration example. Read release defaults with helm show values.
 # Image and resource overrides are omitted to preserve the published chart settings.
 #
-# helm upgrade --install okoscope oci://ghcr.io/ihippik/charts/okoscope \\
+# helm upgrade --install okoscope oci://ghcr.io/okoscope/charts/okoscope \\
 #   --version <OKOSCOPE_VERSION> --namespace okoscope-system -f values.yaml
 
 database:
@@ -112,7 +112,7 @@ notifications:
 # empty publicGrpcEndpoint omits this metadata entirely.
 agentInstallation:
   publicGrpcEndpoint: ""              # example: empty, e.g. https://agents.okoscope.example.com:443
-  chartReference: oci://ghcr.io/ihippik/charts/okoscope-agent  # required with an endpoint
+  chartReference: oci://ghcr.io/okoscope/charts/okoscope-agent  # required with an endpoint
   chartVersion: <OKOSCOPE_VERSION>          # required with an endpoint
   recommendedAgentVersion: <OKOSCOPE_VERSION>  # required with an endpoint
   minimumAgentVersion: <OKOSCOPE_VERSION>   # required with an endpoint
@@ -130,7 +130,7 @@ okoscope-agent:
 # Пример конфигурации. Значения релиза смотрите через helm show values.
 # Образы и ресурсы не переопределены: сохраняются настройки опубликованного чарта.
 #
-# helm upgrade --install okoscope oci://ghcr.io/ihippik/charts/okoscope \\
+# helm upgrade --install okoscope oci://ghcr.io/okoscope/charts/okoscope \\
 #   --version <OKOSCOPE_VERSION> --namespace okoscope-system -f values.yaml
 
 database:
@@ -194,7 +194,7 @@ notifications:
 # а при пустом publicGrpcEndpoint метаданные не передаются вовсе.
 agentInstallation:
   publicGrpcEndpoint: ""              # пример пусто, например https://agents.okoscope.example.com:443
-  chartReference: oci://ghcr.io/ihippik/charts/okoscope-agent  # обязательно, если задан endpoint
+  chartReference: oci://ghcr.io/okoscope/charts/okoscope-agent  # обязательно, если задан endpoint
   chartVersion: <OKOSCOPE_VERSION>          # обязательно, если задан endpoint
   recommendedAgentVersion: <OKOSCOPE_VERSION>  # обязательно, если задан endpoint
   minimumAgentVersion: <OKOSCOPE_VERSION>   # обязательно, если задан endpoint
@@ -232,7 +232,7 @@ okoscope-agent:
       en: `# values.yaml - chart okoscope-agent: the DaemonSet with the eBPF agent.
 # Configuration example. Read release defaults with helm show values.
 #
-# helm upgrade --install okoscope-agent oci://ghcr.io/ihippik/charts/okoscope-agent \\
+# helm upgrade --install okoscope-agent oci://ghcr.io/okoscope/charts/okoscope-agent \\
 #   --version <OKOSCOPE_VERSION> --namespace okoscope-system -f values.yaml
 
 server:
@@ -287,7 +287,7 @@ podAnnotations: {}`,
       ru: `# values.yaml - чарт okoscope-agent: DaemonSet с агентом eBPF.
 # Пример конфигурации. Значения релиза смотрите через helm show values.
 #
-# helm upgrade --install okoscope-agent oci://ghcr.io/ihippik/charts/okoscope-agent \\
+# helm upgrade --install okoscope-agent oci://ghcr.io/okoscope/charts/okoscope-agent \\
 #   --version <OKOSCOPE_VERSION> --namespace okoscope-system -f values.yaml
 
 server:

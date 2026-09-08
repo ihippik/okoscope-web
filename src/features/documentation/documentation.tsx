@@ -153,7 +153,7 @@ export function Documentation({ slug }: { slug: string }) {
                 </p>
                 {(slug === 'quick-start' || slug === 'self-hosting') && (
                   <p>
-                    <a href="https://github.com/ihippik/okoscope/tree/main/deploy/helm">
+                    <a href="https://github.com/okoscope/okoscope/tree/main/deploy/helm">
                       {ui.repository}
                     </a>
                   </p>
@@ -345,19 +345,19 @@ function DocumentationList({ list, locale }: { list: ArticleList; locale: Locale
 const documentationLinks = {
   'https://okoscope.com/onboarding': 'https://okoscope.com/onboarding',
   'https://okoscope.com': 'https://okoscope.com',
-  'https://github.com/ihippik/okoscope': 'https://github.com/ihippik/okoscope',
+  'https://github.com/okoscope/okoscope': 'https://github.com/okoscope/okoscope',
   'deploy/kubernetes/agent/daemonset.yaml':
-    'https://github.com/ihippik/okoscope/blob/main/deploy/kubernetes/agent/daemonset.yaml',
+    'https://github.com/okoscope/okoscope/blob/main/deploy/kubernetes/agent/daemonset.yaml',
   'deploy/kubernetes/common/secret.example.yaml':
-    'https://github.com/ihippik/okoscope/blob/main/deploy/kubernetes/common/secret.example.yaml',
+    'https://github.com/okoscope/okoscope/blob/main/deploy/kubernetes/common/secret.example.yaml',
   'deploy/kubernetes/common/namespace.yaml':
-    'https://github.com/ihippik/okoscope/blob/main/deploy/kubernetes/common/namespace.yaml',
+    'https://github.com/okoscope/okoscope/blob/main/deploy/kubernetes/common/namespace.yaml',
   'deploy/kubernetes/common/postgres.yaml':
-    'https://github.com/ihippik/okoscope/blob/main/deploy/kubernetes/common/postgres.yaml',
+    'https://github.com/okoscope/okoscope/blob/main/deploy/kubernetes/common/postgres.yaml',
   'deploy/kubernetes/common':
-    'https://github.com/ihippik/okoscope/tree/main/deploy/kubernetes/common',
+    'https://github.com/okoscope/okoscope/tree/main/deploy/kubernetes/common',
   'deploy/kubernetes/agent':
-    'https://github.com/ihippik/okoscope/tree/main/deploy/kubernetes/agent',
+    'https://github.com/okoscope/okoscope/tree/main/deploy/kubernetes/agent',
 } as const
 
 const documentationLinkPattern = new RegExp(

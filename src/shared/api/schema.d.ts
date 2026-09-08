@@ -2419,7 +2419,7 @@ export interface components {
             };
         };
         BuildInfo: {
-            /** @example 0.2.1 */
+            /** @example 0.1.0 */
             service_version: string;
             /** @example ac23c0b4d042e8d430ea6880f6b66ed1a9d4580a */
             git_commit: string;

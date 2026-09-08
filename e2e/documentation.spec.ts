@@ -581,7 +581,7 @@ test('documentation safely links every allowlisted repository reference', async 
     for (const locale of ['en', 'ru'] as const) {
       await page.getByLabel(/Language|Язык/).selectOption(locale)
       const prose = page.locator('main section p')
-      const links = prose.locator('a[href^="https://github.com/ihippik/okoscope"]')
+      const links = prose.locator('a[href^="https://github.com/okoscope/okoscope"]')
       const expected: Record<string, number> = {}
       await expect(links).toHaveCount(
         Object.values(expected).reduce((sum, count) => sum + count, 0),
@@ -641,7 +641,7 @@ test('documentation safely links every allowlisted repository reference', async 
         })
         await expect(sources).toHaveAttribute(
           'href',
-          'https://github.com/ihippik/okoscope/tree/main/deploy/helm',
+          'https://github.com/okoscope/okoscope/tree/main/deploy/helm',
         )
       }
       expect(
@@ -660,7 +660,7 @@ test('installation journeys match the secure Helm chart contract in both languag
     await page.goto('/docs/quick-start')
     await page.getByLabel(/Language|Язык/).selectOption(locale)
     const quickStart = page.locator('main')
-    await expect(quickStart).toContainText('oci://ghcr.io/ihippik/charts/okoscope-agent')
+    await expect(quickStart).toContainText('oci://ghcr.io/okoscope/charts/okoscope-agent')
     await expect(quickStart).toContainText('okoscope-application-credentials')
     await expect(quickStart).toContainText('credentialSecret.name')
     await expect(quickStart).not.toContainText('server.caSecret.name')
@@ -676,7 +676,7 @@ test('installation journeys match the secure Helm chart contract in both languag
 
     await page.goto('/docs/self-hosting')
     const selfHosting = page.locator('main')
-    await expect(selfHosting).toContainText('oci://ghcr.io/ihippik/charts/okoscope')
+    await expect(selfHosting).toContainText('oci://ghcr.io/okoscope/charts/okoscope')
     await expect(selfHosting).toContainText('database.existingSecret')
     await expect(selfHosting).toContainText('database.urlKey')
     await expect(
@@ -872,7 +872,7 @@ test('chart values are copyable localized files with intact shell continuations'
     }
     const installCommand =
       (await page.locator('section[aria-labelledby="rollout"] .docs-code code').textContent()) ?? ''
-    expect(installCommand).toContain(' \\\n  oci://ghcr.io/ihippik/charts/okoscope')
+    expect(installCommand).toContain(' \\\n  oci://ghcr.io/okoscope/charts/okoscope')
   }
 })
 

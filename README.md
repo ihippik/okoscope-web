@@ -15,7 +15,7 @@ npm run dev
 
 ## OpenAPI contract
 
-Generated TypeScript is committed at `src/shared/api/schema.d.ts`. The source contract is the backend repository's `openapi/okoscope-v1.yaml`; locally it defaults to `/Users/ihippik/RustroverProjects/okoscope/openapi/okoscope-v1.yaml` and can be overridden:
+Generated TypeScript is committed at `src/shared/api/schema.d.ts`. The source contract is the backend repository's `openapi/okoscope-v1.yaml`; it can be supplied explicitly when generating or checking the frontend copy:
 
 ```sh
 OKOSCOPE_OPENAPI_SOURCE=/path/to/okoscope-v1.yaml npm run api:generate
@@ -59,7 +59,7 @@ npm run container:smoke
 
 Images should be published by immutable digest with OCI version/commit labels added by release automation. Roll back by restoring the previous image digest; the Web UI performs no database migrations.
 
-On every successful GitHub `push`, CI publishes the tested image to GHCR as `ghcr.io/ihippik/okoscope-web:<commit-sha>`. Pushes to `main` also update `ghcr.io/ihippik/okoscope-web:main`. Kubernetes manifests should use the immutable commit SHA tag rather than the mutable alias.
+On every successful GitHub `push`, CI publishes the tested image to GHCR as `ghcr.io/okoscope/okoscope-web:<commit-sha>`. Pushes to `main` also update `ghcr.io/okoscope/okoscope-web:main`. Kubernetes manifests should use the immutable commit SHA tag rather than the mutable alias.
 
 For a local backend, override the development proxy target:
 

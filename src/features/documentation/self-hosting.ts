@@ -167,7 +167,7 @@ ingress:
       ],
       codeLanguage: 'bash',
       code: `helm upgrade --install okoscope \\
-  oci://ghcr.io/ihippik/charts/okoscope \\
+  oci://ghcr.io/okoscope/charts/okoscope \\
   --version <OKOSCOPE_VERSION> \\
   --namespace okoscope-system \\
   -f values.yaml \\

@@ -244,7 +244,7 @@ unset OKOSCOPE_TOKEN`,
       },
       codeLanguage: 'bash',
       code: `helm upgrade --install okoscope-agent \\
-  oci://ghcr.io/ihippik/charts/okoscope-agent \\
+  oci://ghcr.io/okoscope/charts/okoscope-agent \\
   --version <OKOSCOPE_VERSION> \\
   --namespace okoscope-system \\
   --set server.endpoint=https://grpc.okoscope.com:443 \\
