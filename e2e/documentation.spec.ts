@@ -1359,6 +1359,31 @@ test('unknown article stays public and both entry links preserve protected acces
   await expect(page.getByRole('heading', { name: 'Meet Okoscope' })).toBeVisible()
 })
 
+test('global skip link follows SPA location and the selected language', async ({ page }) => {
+  await page.goto('/docs/quick-start?source=release#install-agent')
+
+  const englishSkipLink = page.getByRole('link', { name: 'Skip to content' })
+  await expect(englishSkipLink).toHaveAttribute(
+    'href',
+    '/docs/quick-start?source=release#main-content',
+  )
+
+  await page.getByLabel('Language').selectOption('ru')
+  const russianSkipLink = page.getByRole('link', { name: 'Перейти к содержимому' })
+  await expect(russianSkipLink).toHaveAttribute(
+    'href',
+    '/docs/quick-start?source=release#main-content',
+  )
+  await russianSkipLink.focus()
+  await expect(russianSkipLink).toBeFocused()
+
+  await page.getByRole('link', { name: 'Принцип работы', exact: true }).first().click()
+  await expect(page).toHaveURL(/\/docs\/how-it-works$/)
+  await expect(russianSkipLink).toHaveAttribute('href', '/docs/how-it-works#main-content')
+
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+})
+
 test('mobile navigation is keyboard operable without horizontal overflow', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 })
   await page.goto('/docs/quick-start')

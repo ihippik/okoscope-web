@@ -38,6 +38,7 @@ function NotFound() {
 }
 
 function RootComponent() {
+  const t = useT()
   captureSetupTokenFragment()
   const location = useRouterState({ select: (state) => state.location })
   const content =
@@ -50,7 +51,7 @@ function RootComponent() {
   return (
     <>
       <a className="skip-link" href={`${pageHref}#main-content`}>
-        Skip to content
+        {t('skipToContent')}
       </a>
       {content}
     </>
