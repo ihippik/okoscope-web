@@ -217,8 +217,8 @@ test('quick start presents sequential semantic instructions in both languages', 
     const access = article.locator('section[aria-labelledby="access"]')
     await expect(access.locator(':scope > p').first()).toHaveText(
       locale === 'en'
-        ? 'Open https://okoscope.com and sign in or register.'
-        : 'Откройте https://okoscope.com и войдите в учётную запись или зарегистрируйтесь.',
+        ? 'Open https://okoscope.com and sign in or register. Registration sends a welcome verification email and creates no session until you explicitly confirm the link and sign in.'
+        : 'Откройте https://okoscope.com и войдите в учётную запись или зарегистрируйтесь. После регистрации придёт приветственное письмо: сеанс появится только после явного подтверждения ссылки и последующего входа.',
     )
     await expect(access.locator('ol > li')).toHaveCount(3)
     await expect(access.locator(':scope > p').nth(2)).toHaveText(
@@ -268,6 +268,31 @@ test('quick start presents sequential semantic instructions in both languages', 
       ).toBe(true)
       expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
     }
+  }
+})
+
+test('account email docs distinguish registration context from creation notifications', async ({
+  page,
+}) => {
+  await page.goto('/docs/account-email#creation-notifications')
+  for (const locale of ['en', 'ru'] as const) {
+    await page.getByLabel(/Language|Язык/).selectOption(locale)
+    const notifications = page.locator('section[aria-labelledby="creation-notifications"]')
+    await expect(notifications).toContainText(
+      locale === 'en'
+        ? 'includes the Organization name only as registration context'
+        : 'содержит название организации только как контекст регистрации',
+    )
+    await expect(notifications).toContainText(
+      locale === 'en'
+        ? 'does not send a separate Organization-created email'
+        : 'не отправляет отдельное письмо о создании организации',
+    )
+    await expect(notifications).toContainText(
+      locale === 'en'
+        ? 'every currently verified Organization owner receives one localized message'
+        : 'каждый текущий подтверждённый владелец организации получает одно локализованное письмо',
+    )
   }
 })
 

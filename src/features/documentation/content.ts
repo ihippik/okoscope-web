@@ -1,6 +1,7 @@
 import type { Locale } from '../../shared/i18n'
 import { quickStartArticle } from './quick-start'
 import { selfHostingArticle } from './self-hosting'
+import { accountEmailArticle } from './account-email'
 
 type Localized = Record<Locale, string>
 export type SectionIcon = 'processes' | 'network' | 'files' | 'review'
@@ -284,6 +285,7 @@ export const articles: Article[] = [
     ],
     related: ['application-resources', 'capabilities', 'data-and-security', 'quick-start'],
   },
+  accountEmailArticle,
   quickStartArticle,
   selfHostingArticle,
   {

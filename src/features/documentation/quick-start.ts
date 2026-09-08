@@ -60,8 +60,8 @@ export const quickStartArticle: Article = {
       },
       paragraphs: [
         {
-          en: 'Open https://okoscope.com and sign in or register.',
-          ru: 'Откройте https://okoscope.com и войдите в учётную запись или зарегистрируйтесь.',
+          en: 'Open https://okoscope.com and sign in or register. Registration sends a welcome verification email and creates no session until you explicitly confirm the link and sign in.',
+          ru: 'Откройте https://okoscope.com и войдите в учётную запись или зарегистрируйтесь. После регистрации придёт приветственное письмо: сеанс появится только после явного подтверждения ссылки и последующего входа.',
         },
         {
           en: 'Registration creates your **Organization** and makes you its owner. Projects and Applications are created within it:',

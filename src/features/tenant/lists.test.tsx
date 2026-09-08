@@ -20,7 +20,7 @@ function renderWithProviders(
   post: ApiClient['post'] = vi.fn(),
 ) {
   authenticationSession.authenticate({
-    user: { id: 'user', email: 'owner@example.com' },
+    user: { id: 'user', email: 'owner@example.com', email_verified: true, preferred_locale: 'en' },
     organization: { id: 'organization', name: 'Acme', slug: 'acme' },
     role: 'owner',
   })

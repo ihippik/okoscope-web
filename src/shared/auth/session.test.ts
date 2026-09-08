@@ -8,7 +8,7 @@ describe('authentication session', () => {
     const listener = vi.fn()
     const unsubscribe = authenticationSession.subscribe(listener)
     authenticationSession.authenticate({
-      user: { id: 'u', email: 'owner@example.com' },
+      user: { id: 'u', email: 'owner@example.com', email_verified: true, preferred_locale: 'en' },
       organization: { id: 'o', name: 'Acme', slug: 'acme' },
       role: 'owner',
     })

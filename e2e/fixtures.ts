@@ -306,6 +306,7 @@ export async function mockApi(page: Page, role: 'owner' | 'member' = 'owner') {
   let organizationRetention = { enabled: false, history_days: 90 }
   let projectRetention: typeof organizationRetention | null = null
   let loggedIn = false
+  let preferredLocale: 'en' | 'ru' = 'en'
   let groupStatus: 'open' | 'acknowledged' | 'resolved' = 'open'
   const destination = {
     id: '00000000-0000-4000-8000-000000000010',
@@ -412,11 +413,16 @@ export async function mockApi(page: Page, role: 'owner' | 'member' = 'owner') {
         service_version: '0.1.0',
         git_commit: 'abcdef',
         api_version: 'v1',
-        required_database_migration: 16,
+        required_database_migration: 26,
       })
     if (path === '/api/v1/setup/status') return json(route, { state: 'ready' })
     const authContext = {
-      user: { id: '00000000-0000-4000-8000-000000000020', email: 'owner@example.com' },
+      user: {
+        id: '00000000-0000-4000-8000-000000000020',
+        email: 'owner@example.com',
+        email_verified: true,
+        preferred_locale: preferredLocale,
+      },
       organization,
       role,
     }
@@ -434,13 +440,22 @@ export async function mockApi(page: Page, role: 'owner' | 'member' = 'owner') {
       return json(route, authContext)
     }
     if (path === '/api/v1/auth/register' && route.request().method() === 'POST') {
-      loggedIn = true
-      return json(route, authContext, 201)
+      return json(route, { status: 'accepted' }, 202)
     }
     if (path === '/api/v1/auth/logout' && route.request().method() === 'POST') {
       loggedIn = false
       return route.fulfill({ status: 204 })
     }
+    if (path === '/api/v1/auth/preferences' && route.request().method() === 'PUT') {
+      const body = route.request().postDataJSON() as { locale: 'en' | 'ru' }
+      preferredLocale = body.locale
+      return json(route, {
+        ...authContext,
+        user: { ...authContext.user, preferred_locale: preferredLocale },
+      })
+    }
+    if (path === '/api/v1/auth/password' && route.request().method() === 'PUT')
+      return json(route, authContext)
     if (!loggedIn)
       return json(
         route,

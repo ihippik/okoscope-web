@@ -7,6 +7,12 @@ export type AuthenticatedOrganization = components['schemas']['AuthenticatedOrga
 export type OrganizationRole = components['schemas']['OrganizationRole']
 export type RegisterRequest = components['schemas']['RegisterRequest']
 export type LoginRequest = components['schemas']['LoginRequest']
+export type AcceptedSecurityAction = components['schemas']['AcceptedSecurityAction']
+export type EmailSecurityRequest = components['schemas']['EmailSecurityRequest']
+export type EmailActionRequest = components['schemas']['EmailActionRequest']
+export type PasswordResetRequest = components['schemas']['PasswordResetRequest']
+export type PasswordChangeRequest = components['schemas']['PasswordChangeRequest']
+export type UserPreferencesRequest = components['schemas']['UserPreferencesRequest']
 export type Organization = components['schemas']['Organization']
 export type Project = components['schemas']['Project']
 export type ProjectPage = components['schemas']['ProjectPage']
@@ -316,7 +322,7 @@ export const contractFixture = {
     service_version: '0.1.0',
     git_commit: 'unknown',
     api_version: 'v1',
-    required_database_migration: 16,
+    required_database_migration: 26,
   } satisfies BuildInfo,
   applicationWorkerPage: {
     coverage: { closed_before: null, history_expired_before: null, detail_scope: 'raw' },

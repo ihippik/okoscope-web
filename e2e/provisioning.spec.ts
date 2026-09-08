@@ -48,9 +48,18 @@ const build = {
   service_version: '1',
   git_commit: 'test',
   api_version: 'v1',
-  required_database_migration: 16,
+  required_database_migration: 26,
 }
-const auth = { user: { id: 'user', email: 'owner@example.com' }, organization: org, role: 'owner' }
+const auth = {
+  user: {
+    id: 'user',
+    email: 'owner@example.com',
+    email_verified: true,
+    preferred_locale: 'en',
+  },
+  organization: org,
+  role: 'owner',
+}
 
 test('first owner setup removes fragment and never persists its secrets', async ({ page }) => {
   let body: Record<string, string> = {}

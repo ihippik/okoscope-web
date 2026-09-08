@@ -259,7 +259,9 @@ test('keeps registration visible and shows registration_disabled without a capab
   expect(capabilityRequests).toBe(0)
 })
 
-test('registers an Organization and enters the requested route', async ({ page }) => {
+test('registers an Organization and waits for email verification without a session', async ({
+  page,
+}) => {
   await mockApi(page)
   await page.goto('/projects')
   await page.getByRole('button', { name: 'Create organization' }).click()
@@ -269,7 +271,8 @@ test('registers an Organization and enters the requested route', async ({ page }
   await expect(page.getByLabel('Organization slug')).toHaveValue('acme')
   await page.getByRole('button', { name: 'Create account' }).click()
   await expect(page).toHaveURL('/projects')
-  await expect(page.getByRole('heading', { name: 'Projects', level: 1 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeFocused()
+  await expect(page.getByRole('heading', { name: 'Projects', level: 1 })).toHaveCount(0)
 })
 
 test('keeps invalid login local to the form', async ({ page }) => {
@@ -391,7 +394,7 @@ test('shows correlated session errors without protected content', async ({ page 
           service_version: '0.1.0',
           git_commit: 'abc',
           api_version: 'v1',
-          required_database_migration: 16,
+          required_database_migration: 26,
         }),
       })
     if (route.request().url().endsWith('/setup/status'))

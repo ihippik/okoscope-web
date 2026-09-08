@@ -273,6 +273,104 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/email-verification-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["requestEmailVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/email-verifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["confirmEmailVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/password-reset-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["requestPasswordReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/password-resets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["completePasswordReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Requires a trusted Origin. Rotates the current session and revokes every other session. */
+        put: operations["changePassword"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Requires a trusted Origin. */
+        put: operations["updateUserPreferences"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/me": {
         parameters: {
             query?: never;
@@ -1962,6 +2060,34 @@ export interface components {
             password: string;
             organization_slug: string;
             organization_name: string;
+            locale: components["schemas"]["SupportedLocale"];
+        };
+        /** @enum {string} */
+        SupportedLocale: "en" | "ru";
+        EmailSecurityRequest: {
+            /** Format: email */
+            email: string;
+        };
+        EmailActionRequest: {
+            token: string;
+        };
+        PasswordResetRequest: {
+            token: string;
+            /** Format: password */
+            new_password: string;
+        };
+        PasswordChangeRequest: {
+            /** Format: password */
+            current_password: string;
+            /** Format: password */
+            new_password: string;
+        };
+        UserPreferencesRequest: {
+            locale: components["schemas"]["SupportedLocale"];
+        };
+        AcceptedSecurityAction: {
+            /** @enum {string} */
+            status: "accepted";
         };
         LoginRequest: {
             /** Format: email */
@@ -1973,6 +2099,8 @@ export interface components {
             id: components["schemas"]["Uuid"];
             /** Format: email */
             email: string;
+            email_verified: boolean;
+            preferred_locale: components["schemas"]["SupportedLocale"];
         };
         AuthenticatedOrganization: {
             id: components["schemas"]["Uuid"];
@@ -2291,7 +2419,7 @@ export interface components {
             };
         };
         BuildInfo: {
-            /** @example 0.1.0 */
+            /** @example 0.2.1 */
             service_version: string;
             /** @example ac23c0b4d042e8d430ea6880f6b66ed1a9d4580a */
             git_commit: string;
@@ -3806,6 +3934,19 @@ export interface components {
         NullableTimestamp: string | null;
     };
     responses: {
+        /** @description Accepted without disclosing identity eligibility or delivery state */
+        AcceptedSecurityAction: {
+            headers: {
+                /** @description Always `no-store` */
+                "Cache-Control"?: string;
+                /** @description Correlated request identifier */
+                "X-Request-Id"?: string;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["AcceptedSecurityAction"];
+            };
+        };
         /** @description Safe authenticated user, Organization, and role context; the opaque session is set only as an HttpOnly cookie. */
         AuthResponse: {
             headers: {
@@ -4871,7 +5012,7 @@ export interface operations {
             };
         };
         responses: {
-            201: components["responses"]["AuthResponse"];
+            202: components["responses"]["AcceptedSecurityAction"];
             400: components["responses"]["Error"];
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
@@ -4894,6 +5035,131 @@ export interface operations {
             200: components["responses"]["AuthResponse"];
             400: components["responses"]["Error"];
             401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    requestEmailVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailSecurityRequest"];
+            };
+        };
+        responses: {
+            202: components["responses"]["AcceptedSecurityAction"];
+            400: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    confirmEmailVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailActionRequest"];
+            };
+        };
+        responses: {
+            /** @description Email verified; the user must sign in */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    requestPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailSecurityRequest"];
+            };
+        };
+        responses: {
+            202: components["responses"]["AcceptedSecurityAction"];
+            400: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    completePasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequest"];
+            };
+        };
+        responses: {
+            /** @description Password changed and all sessions revoked; the user must sign in */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    changePassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordChangeRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["AuthResponse"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    updateUserPreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserPreferencesRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["AuthResponse"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
             500: components["responses"]["Error"];
         };
     };

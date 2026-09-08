@@ -8,7 +8,12 @@ import { authenticationSession } from '../../shared/auth/session'
 import { RuntimeRetention } from './settings'
 
 const auth = {
-  user: { id: 'user-1', email: 'owner@example.com' },
+  user: {
+    id: 'user-1',
+    email: 'owner@example.com',
+    email_verified: true,
+    preferred_locale: 'en' as const,
+  },
   organization: { id: 'org-1', name: 'Acme', slug: 'acme' },
   role: 'owner' as const,
 }
